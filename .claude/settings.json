@@ -1,0 +1,52 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install *)",
+      "Bash(pnpm approve-builds *)",
+      "Bash(pnpm exec *)",
+      "Bash(pnpm build *)",
+      "Bash(mkdir -p /tmp/apt-test-data)",
+      "Bash(DATA_DIR=/tmp/apt-test-data node /home/rnukes/Work/apartments_manager/packages/server/dist/index.js)",
+      "Bash(curl -s http://localhost:5000/api/auth/config)",
+      "Bash(curl -s -X POST http://localhost:5000/api/auth/setup -H 'Content-Type: application/json' -d '{\"username\":\"admin\",\"password\":\"admin1234\",\"full_name\":\"Admin\"}')",
+      "Bash(pnpm -F client exec vue-tsc --noEmit)",
+      "Bash(pnpm -F client build)",
+      "Bash(pnpm -F server build)",
+      "Bash(DATA_DIR=/tmp/apt-smoke-test node packages/server/dist/index.js)",
+      "Bash(curl -s http://localhost:5000/api/bookings)",
+      "Bash(curl -s -X POST http://localhost:5000/api/auth/setup -H 'Content-Type: application/json' -d '{\"username\":\"admin\",\"password\":\"admin1234\",\"full_name\":\"Administrator\"}')",
+      "Bash(curl -s -c /tmp/apt-cookie.txt -X POST http://localhost:5000/api/auth/login -H 'Content-Type: application/json' -d '{\"username\":\"admin\",\"password\":\"admin1234\"}' -w '%{http_code}')",
+      "Bash(curl -s -b /tmp/apt-cookie.txt http://localhost:5000/api/auth/config)",
+      "Bash(kill %1)",
+      "Bash(rm -rf /tmp/apt-smoke-test /tmp/apt-cookie.txt)",
+      "Bash(pkill -f \"packages/server/dist/index.js\")",
+      "Bash(DATA_DIR=/tmp/apt-test2 node packages/server/dist/index.js)",
+      "Bash(curl -s http://localhost:5000/)",
+      "Bash(pkill -f \"node.*index.js\")",
+      "Bash(DATA_DIR=/tmp/apt-test3 node /home/rnukes/Work/apartments_manager/packages/server/dist/index.js)",
+      "Bash(pkill -f \"node.*5000\")",
+      "Bash(fuser -k 5000/tcp)",
+      "Bash(DATA_DIR=/tmp/apt-final PORT=5001 node packages/server/dist/index.js)",
+      "Bash(curl -s http://localhost:5001/api/auth/config)",
+      "Bash(curl -s http://localhost:5001/)",
+      "Bash(pnpm -F server test)",
+      "Bash(pacman -Ss mongodb-tools)",
+      "Bash(yay -Ss mongodb-tools)",
+      "Bash(paru -Ss mongodb-tools)",
+      "Bash(chmod +x /home/rnukes/Work/apartments_manager/scripts/dump-to-json.sh)",
+      "Bash(node convert_mongo.mjs)",
+      "Bash(sudo mkdir -p /home/rnukes/Work/apartments_manager/data/data)",
+      "Bash(sudo chown -R rnukes:rnukes /home/rnukes/Work/apartments_manager/data/)",
+      "Bash(node -e ' *)",
+      "Bash(chmod +x /home/rnukes/Work/apartments_manager/scripts/migrate-dump.mjs)",
+      "Bash(mkdir -p /home/rnukes/Work/apartments_manager/data/mongodb/2026-05-08 && cp /home/rnukes/Work/apartments_manager/mongo_backup/json/*.json /home/rnukes/Work/apartments_manager/data/mongodb/2026-05-08/)",
+      "Bash(node scripts/migrate-dump.mjs --list)",
+      "Bash(node scripts/migrate-dump.mjs 2026-05-08)",
+      "Bash(sudo chown rnukes:rnukes /home/rnukes/Work/apartments_manager/data/config/settings.json)"
+    ],
+    "additionalDirectories": [
+      "/tmp",
+      "/home/rnukes/Work/apartments_manager/mongo_backup/json"
+    ]
+  }
+}

@@ -1,0 +1,93 @@
+.date-picker__wrapper {
+    cursor: default;
+    border: 1px solid var(--color-gray-600);
+    border-radius: 7px;
+    background-color: var(--color-gray-100);
+    width: 18rem;
+    padding: 0.7rem;
+}
+
+.date-picker__wrapper button {
+    cursor: pointer;
+    border: none;
+    outline: none;
+    background: none;
+    background-color: var(--color-gray-100);
+}
+
+.date-picker__body {
+    margin: 0.5rem;
+}
+
+.date-picker__day-grid {
+    display: grid;
+    row-gap: 0.5rem;
+    grid-template-columns: repeat(7, 1fr);
+}
+
+.date-picker__day-grid p {
+    display: flex;
+    justify-content: center;
+}
+
+.date-picker__day-prev,
+.date-picker__day-next {
+    cursor: pointer;
+    color: var(--color-gray-300);
+}
+
+.date-picker__day {
+    cursor: pointer;
+    color: var(--color-gray-500);
+}
+
+.date-picker__day:hover,
+.date-picker__day-prev:hover,
+.date-picker__day-next:hover {
+    color: var(--color-gray-100);
+    background-color: var(--color-analogous-1);
+    border-radius: 1rem;
+}
+
+.date-picker__day-prev.active,
+.date-picker__day.active,
+.date-picker__day-next.active {
+    color: var(--color-gray-100);
+    background-color: var(--color-analogous-2);
+    border-radius: 1rem;
+}
+
+.date-picker__day-prev.disabled,
+.date-picker__day.disabled,
+.date-picker__day-next.disabled {
+    color: var(--color-gray-300);
+    background-color: var(--color-gray-100);
+    text-decoration: line-through;
+    cursor: default;
+}
+
+.month-picker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-gray-600);
+    font-weight: 600;
+    margin: 0.8rem;
+
+}
+
+.month-picker button{
+    width: 1rem !important;
+    font-size: 1.5rem;
+    background-color: transparent !important;
+    color: var(--color-gray-600) !important;
+    cursor: pointer;
+}
+
+.month-picker p {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    flex: 1 0 0;
+    cursor: default;
+}

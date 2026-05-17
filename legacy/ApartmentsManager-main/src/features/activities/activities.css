@@ -1,0 +1,18 @@
+.activity-card__wrapper{
+    display: grid;
+    grid-template-columns: 20rem 2fr;
+    height: 20rem;
+    margin-bottom: 2rem;
+    overflow: hidden;
+}
+
+.activity-card__image{
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+
+.activity-card__text{
+    padding: 0 0.5rem;
+    height: 20rem;
+}

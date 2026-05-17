@@ -1,0 +1,65 @@
+.apartment-card__wrapper {
+    width: 100%;
+    padding: 0.5rem 0;
+    border: 2px solid var(--color-gray-600);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.apartment-card__wrapper:nth-child(even) {
+    background-color: var(--color-gray-100);
+}
+
+.apartment-card__wrapper:nth-child(odd) {
+    background-color: var(--color-gray-200);
+}
+
+
+.apartment-card__wrapper:hover {
+    background-color: var(--color-analogous-1);
+    color: var(--color-gray-100);
+    border: 2px solid transparent;
+}
+
+.apartment-card__grid {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(2, 3fr) 1fr;
+}
+
+.apartment-card__grid p {
+    overflow: hidden;
+    text-wrap: nowrap;
+    padding: 0 0.5rem;
+}
+.apartment-card__grid svg {
+    padding: 0 0.5rem;
+}
+.missing-data {
+    color: var(--color-gray-300);
+}
+
+/* MEDIA QUERIES (medium screens) */
+
+@media screen and (max-width: 1024px) {
+    .apartment-card__grid p {
+        font-weight: 400;
+        font-size: 0.8rem;
+    }
+}
+
+/* MEDIA QUERIES (small screens) */
+
+@media screen and (max-width: 600px) {
+    .apartment-card__grid {
+        display: grid;
+        width: 100%;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .apartment-card__grid p {
+        font-weight: 600;
+        font-size: 0.6rem;
+    }
+}

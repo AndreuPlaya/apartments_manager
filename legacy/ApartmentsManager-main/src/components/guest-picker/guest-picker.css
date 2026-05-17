@@ -1,0 +1,34 @@
+.guest-picker__wrapper{
+    cursor: default;
+    border: 1px solid var(--color-gray-600);
+    border-radius: 7px;
+    background-color: var(--color-gray-100);
+    width: 18rem;
+    padding: 0.7rem;
+}
+.guest-picker__selector{
+    display: grid;
+    grid-template-columns: 4fr repeat(3, 1fr);
+}
+
+.guest-picker__selector p{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.guest-picker__selector :first-child{
+    justify-content: left;
+}
+.guest-picker__selector svg{
+    cursor: pointer;
+}
+.guest-picker__selector svg.enabled{
+    color: var(--color-gray-600);
+}
+.guest-picker__selector svg.enabled :hover{
+    color: var(--color-analogous-1);
+}
+.guest-picker__selector svg.disabled{
+    color: var(--color-gray-400);
+}
+

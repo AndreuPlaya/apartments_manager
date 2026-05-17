@@ -1,0 +1,7 @@
+node_modules/
+packages/*/dist/
+data/
+.git/
+legacy/
+docs/
+*.md

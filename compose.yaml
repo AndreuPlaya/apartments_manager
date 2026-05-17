@@ -1,0 +1,20 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: apartments-manager
+    volumes:
+      - ./data:/data
+    ports:
+      - "8081:5000"
+    environment:
+      - DATA_DIR=/data
+      - NODE_ENV=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5000/api/auth/config"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

@@ -1,0 +1,14 @@
+{
+  "name": "apartments-manager",
+  "private": true,
+  "scripts": {
+    "dev:server": "pnpm -F server dev",
+    "dev:client": "pnpm -F client dev",
+    "build": "pnpm -F client build && pnpm -F server build",
+    "start": "pnpm -F server start",
+    "test": "pnpm -r test",
+    "test:server": "pnpm -F server test",
+    "test:client": "pnpm -F client test",
+    "migrate": "node scripts/migrate-dump.mjs"
+  }
+}

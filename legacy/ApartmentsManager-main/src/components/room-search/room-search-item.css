@@ -1,0 +1,38 @@
+
+.item-wrapper{    
+    padding: 1rem 1.7rem;
+}
+.room-search__item-text {
+    color: var(--color-gray-400);
+    margin-bottom: 0.3rem;
+    font-weight: bold;
+}
+
+.room-search__item-value {
+    display: flex;
+    font-size: 0.7rem;
+    font-weight: 600;
+    justify-content: space-between;
+}
+
+.room-search__children-wrapper {
+    position: absolute;
+    left: 0;
+    top: 100%;
+    margin-top: 0.5rem;
+    z-index: 10;
+}
+
+/* MEDIA QUERIES (small screens) */
+
+@media screen and (max-width: 600px) {
+    .item-wrapper{
+        padding: 0.2rem 1rem;
+    }
+
+    .room-search__children-wrapper  {
+        left: 50%;
+        transform: translateX(-50%);
+    }
+  
+  }

@@ -1,0 +1,82 @@
+.room-card {
+    display: flex;
+    border: 1px solid var(--color-gray-300);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    margin: 2rem 0;
+    max-width: 100%;
+}
+
+.room-card__image {
+    width: 20rem;
+    background-size: cover;
+    background-position: center;
+}
+
+.room-card__description {
+    width: 100%;
+    padding: 2rem;
+    display: flex;
+    justify-content: space-between;
+    flex-direction: row;
+}
+.room-card__description-column{
+    width: 100%;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.room-card__description-row{
+    width: 100%;
+    padding: 2rem;
+    display: flex;
+    justify-content: space-between;
+    flex-direction: row; 
+}
+.room-card__title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.room-card__text {
+    font-size: 18px;
+    color: #555;
+    margin-bottom: 20px;
+}
+
+.room-card__features {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.room-card__features p {
+    margin: 0;
+    font-size: 16px;
+    color: #777;
+}
+
+.room-card__cta {
+    text-align: right;
+    font-size: 16px;
+    color: #007bff;
+    cursor: pointer;
+}
+.room-card__cta button {
+    background-color: var(--color-gray-600);
+    color: var(--color-gray-100);
+    text-align: right;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.2rem;
+    height: 100%;
+    width: 100%;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    cursor: pointer;
+}
