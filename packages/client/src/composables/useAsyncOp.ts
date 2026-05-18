@@ -19,6 +19,7 @@ export function useAsyncOp() {
         error('An unexpected error occurred')
       }
       return undefined
+    /* c8 ignore next */
     } finally {
       loading.value = false
     }

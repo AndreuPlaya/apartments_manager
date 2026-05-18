@@ -9,7 +9,7 @@ import {
   saveSettings,
 } from '../infrastructure/settings.js'
 
-import { authenticate, createUser, deleteUser, listUsers } from './userService.js'
+import { authenticate, createUser, deleteUser, listUsers, updateUser } from './userService.js'
 
 // Pre-compute a real bcrypt hash for 'password123' (4 rounds = fast in tests)
 const adminPasswordHash = bcrypt.hashSync('password123', 4)
@@ -122,6 +122,66 @@ describe('createUser', () => {
     const result = await createUser({ username: 'superadmin', password: 'password123', full_name: 'Super', isAdmin: true })
     expect(result.isAdmin).toBe(true)
     expect(result.id).toBe('superadmin')
+  })
+})
+
+describe('updateUser', () => {
+  it('updates admin password and full_name without renaming', async () => {
+    vi.mocked(loadSettings).mockReturnValue(structuredClone(mockSettings))
+    const result = await updateUser('admin', { password: 'newpassword1', full_name: 'New Name' })
+    expect(result.isAdmin).toBe(true)
+    expect(result.full_name).toBe('New Name')
+    expect(result.id).toBe('admin')
+    expect(saveSettings).toHaveBeenCalledOnce()
+  })
+
+  it('renames an admin to a new username', async () => {
+    vi.mocked(loadSettings).mockReturnValue(structuredClone(mockSettings))
+    vi.mocked(findUser).mockReturnValue(null)
+    const result = await updateUser('admin', { username: 'superadmin', full_name: 'Super Admin' })
+    expect(result.username).toBe('superadmin')
+    expect(result.id).toBe('superadmin')
+    expect(result.isAdmin).toBe(true)
+  })
+
+  it('renames an admin with new password and without full_name (uses existing)', async () => {
+    vi.mocked(loadSettings).mockReturnValue(structuredClone(mockSettings))
+    vi.mocked(findUser).mockReturnValue(null)
+    const result = await updateUser('admin', { username: 'superadmin', password: 'newpassword1' })
+    expect(result.username).toBe('superadmin')
+    expect(result.full_name).toBe('Administrator')
+  })
+
+  it('throws ConflictError when renaming admin to existing username', async () => {
+    vi.mocked(loadSettings).mockReturnValue(structuredClone(mockSettings))
+    await expect(updateUser('admin', { username: 'alice' })).rejects.toThrow('already exists')
+  })
+
+  it('updates a regular user full_name, enabled, and username', async () => {
+    vi.mocked(loadSettings).mockReturnValue(structuredClone(mockSettings))
+    vi.mocked(findUser).mockReturnValue(null)
+    const result = await updateUser('user-uuid-1', { username: 'carol', full_name: 'Carol Smith', enabled: false })
+    expect(result.username).toBe('carol')
+    expect(result.full_name).toBe('Carol Smith')
+    expect(result.enabled).toBe(false)
+    expect(result.isAdmin).toBe(false)
+  })
+
+  it('updates a regular user password', async () => {
+    vi.mocked(loadSettings).mockReturnValue(structuredClone(mockSettings))
+    const result = await updateUser('user-uuid-1', { password: 'newpassword1' })
+    expect(result.username).toBe('alice')
+    expect(saveSettings).toHaveBeenCalledOnce()
+  })
+
+  it('throws ConflictError when renaming regular user to existing username', async () => {
+    vi.mocked(loadSettings).mockReturnValue(structuredClone(mockSettings))
+    await expect(updateUser('user-uuid-1', { username: 'bob' })).rejects.toThrow('already exists')
+  })
+
+  it('throws NotFoundError for unknown user id', async () => {
+    vi.mocked(loadSettings).mockReturnValue(structuredClone(mockSettings))
+    await expect(updateUser('does-not-exist', {})).rejects.toThrow('not found')
   })
 })
 

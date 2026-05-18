@@ -103,4 +103,10 @@ describe('computeMetrics', () => {
     expect(result).toHaveProperty('occupancy')
     expect(result).toHaveProperty('revenue')
   })
+
+  it('uses current year when referenceYear is not provided', () => {
+    const result = computeMetrics([], 1)
+    const currentYear = new Date().getFullYear()
+    expect(result.occupancy.some((r) => r.year === currentYear)).toBe(true)
+  })
 })

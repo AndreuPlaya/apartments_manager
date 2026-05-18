@@ -7,10 +7,11 @@ import {
   loadBookings,
   loadChannels,
   loadClients,
+  queryBookings,
   saveBookings,
 } from '../infrastructure/data.js'
 
-import { createBooking, deleteBooking, updateBooking } from './bookingService.js'
+import { createBooking, deleteBooking, listBookings, updateBooking } from './bookingService.js'
 
 const apt: Apartment = {
   id: 'apt1',
@@ -56,6 +57,21 @@ beforeEach(() => {
   vi.mocked(loadChannels).mockReturnValue([channel])
   vi.mocked(loadBookings).mockReturnValue([])
   vi.mocked(saveBookings).mockImplementation(() => undefined)
+  vi.mocked(queryBookings).mockReturnValue([])
+})
+
+describe('listBookings', () => {
+  it('delegates to queryBookings and returns its result', () => {
+    const b: Booking = {
+      id: 'b1', apartmentId: 'apt1', clientId: 'cli1', channelId: 'ch1',
+      fromDate: '2025-06-01', toDate: '2025-06-05', adultCount: 1, childrenCount: 0,
+      status: 'NotPaid', totalAmountDue: 400, createdAt: '2025-01-01T00:00:00Z',
+    }
+    vi.mocked(queryBookings).mockReturnValue([b])
+    const result = listBookings({ apartmentId: 'apt1' })
+    expect(result).toEqual([b])
+    expect(queryBookings).toHaveBeenCalledWith({ apartmentId: 'apt1' })
+  })
 })
 
 describe('createBooking', () => {
@@ -188,6 +204,38 @@ describe('updateBooking', () => {
     }
     vi.mocked(loadBookings).mockReturnValue([existingBooking, other])
     expect(() => updateBooking('b1', { toDate: '2025-06-10' })).toThrow('overlap')
+  })
+
+  it('throws ValidationError when updated dates are invalid (toDate <= fromDate)', () => {
+    expect(() => updateBooking('b1', { toDate: '2025-05-31' })).toThrow('toDate must be after fromDate')
+  })
+
+  it('throws ValidationError when updated apartment not found', () => {
+    vi.mocked(loadApartments).mockReturnValue([])
+    expect(() => updateBooking('b1', { apartmentId: 'no-such-apt' })).toThrow('not found')
+  })
+
+  it('throws ValidationError when updated apartment is unavailable', () => {
+    vi.mocked(loadApartments).mockReturnValue([{ ...apt, isAvailable: false }])
+    expect(() => updateBooking('b1', { apartmentId: 'apt1' })).toThrow('not available')
+  })
+
+  it('throws ValidationError when minNights not met after date change', () => {
+    expect(() => updateBooking('b1', { toDate: '2025-06-02' })).toThrow('Minimum')
+  })
+
+  it('validates channelId when updating channel', () => {
+    expect(() => updateBooking('b1', { channelId: 'no-such-ch' })).toThrow('not found')
+  })
+
+  it('throws ValidationError when updated channel is inactive', () => {
+    vi.mocked(loadChannels).mockReturnValue([{ ...channel, isActive: false }])
+    expect(() => updateBooking('b1', { channelId: 'ch1' })).toThrow('not active')
+  })
+
+  it('validates clientId when updating client', () => {
+    vi.mocked(loadClients).mockReturnValue([])
+    expect(() => updateBooking('b1', { clientId: 'no-such-cli' })).toThrow('not found')
   })
 })
 

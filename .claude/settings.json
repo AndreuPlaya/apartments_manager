@@ -42,7 +42,15 @@
       "Bash(mkdir -p /home/rnukes/Work/apartments_manager/data/mongodb/2026-05-08 && cp /home/rnukes/Work/apartments_manager/mongo_backup/json/*.json /home/rnukes/Work/apartments_manager/data/mongodb/2026-05-08/)",
       "Bash(node scripts/migrate-dump.mjs --list)",
       "Bash(node scripts/migrate-dump.mjs 2026-05-08)",
-      "Bash(sudo chown rnukes:rnukes /home/rnukes/Work/apartments_manager/data/config/settings.json)"
+      "Bash(sudo chown rnukes:rnukes /home/rnukes/Work/apartments_manager/data/config/settings.json)",
+      "Bash(gh auth *)",
+      "Bash(pnpm -F server add -D @vitest/coverage-v8)",
+      "Bash(pnpm -F client add -D @vitest/coverage-v8 happy-dom)",
+      "Bash(pnpm -F server add -D @vitest/coverage-v8@^2.1.0)",
+      "Bash(pnpm -F client add -D @vitest/coverage-v8@^2.1.0)",
+      "Bash(pnpm -F client test)",
+      "Bash(pnpm -F server test:coverage)",
+      "Bash(pnpm -F client test:coverage)"
     ],
     "additionalDirectories": [
       "/tmp",
