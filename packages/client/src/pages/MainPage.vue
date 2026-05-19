@@ -7,6 +7,8 @@ import { useConfirm } from '../composables/useConfirm'
 import { useAsyncOp } from '../composables/useAsyncOp'
 import BookingFormModal from './main/BookingFormModal.vue'
 import CalendarView from './main/CalendarView.vue'
+import AppIcon from '../components/AppIcon.vue'
+import TrashIcon from '../components/TrashIcon.vue'
 
 const { success, error } = useToast()
 const { confirm } = useConfirm()
@@ -181,20 +183,11 @@ function nights(from: string, to: string) {
       <h2>Bookings</h2>
       <div class="view-toggle">
         <button :class="['view-toggle__btn', { active: viewMode === 'list' }]" @click="viewMode = 'list'" title="List view">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="1" y="3" width="14" height="2" rx="1" fill="currentColor"/>
-            <rect x="1" y="7" width="14" height="2" rx="1" fill="currentColor"/>
-            <rect x="1" y="11" width="14" height="2" rx="1" fill="currentColor"/>
-          </svg>
+          <AppIcon name="list" />
           List
         </button>
         <button :class="['view-toggle__btn', { active: viewMode === 'calendar' }]" @click="viewMode = 'calendar'" title="Calendar view">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="1" y="3" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
-            <line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" stroke-width="1.5"/>
-            <line x1="5" y1="1" x2="5" y2="5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="11" y1="1" x2="11" y2="5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
+          <AppIcon name="calendar" />
           Calendar
         </button>
       </div>
@@ -238,13 +231,13 @@ function nights(from: string, to: string) {
             <tr>
               <th>Apartment</th>
               <th class="sortable-th" @click="toggleSort('client')">
-                Client <span class="sort-icon" :class="{ 'sort-icon--active': sortField === 'client' }">{{ sortField === 'client' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+                Client <AppIcon :name="sortField === 'client' ? (sortDir === 'asc' ? 'chevron-up' : 'chevron-down') : 'chevron-up-down'" :size="10" class="sort-icon" :class="{ 'sort-icon--active': sortField === 'client' }" />
               </th>
               <th class="sortable-th" @click="toggleSort('fromDate')">
-                Check-in <span class="sort-icon" :class="{ 'sort-icon--active': sortField === 'fromDate' }">{{ sortField === 'fromDate' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+                Check-in <AppIcon :name="sortField === 'fromDate' ? (sortDir === 'asc' ? 'chevron-up' : 'chevron-down') : 'chevron-up-down'" :size="10" class="sort-icon" :class="{ 'sort-icon--active': sortField === 'fromDate' }" />
               </th>
               <th class="sortable-th" @click="toggleSort('toDate')">
-                Check-out <span class="sort-icon" :class="{ 'sort-icon--active': sortField === 'toDate' }">{{ sortField === 'toDate' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+                Check-out <AppIcon :name="sortField === 'toDate' ? (sortDir === 'asc' ? 'chevron-up' : 'chevron-down') : 'chevron-up-down'" :size="10" class="sort-icon" :class="{ 'sort-icon--active': sortField === 'toDate' }" />
               </th>
               <th>Nights</th>
               <th>Guests</th>
@@ -279,7 +272,7 @@ function nights(from: string, to: string) {
               <td v-if="isAdmin">
                 <div class="action-btns">
                   <button class="btn btn--ghost btn--sm" @click="openEdit(b)">Edit</button>
-                  <button class="btn btn--ghost btn--sm text-danger" @click="deleteBooking(b)">Del</button>
+                  <button class="btn btn--ghost btn--sm btn--icon text-danger" title="Delete" @click="deleteBooking(b)"><TrashIcon /></button>
                 </div>
               </td>
             </tr>

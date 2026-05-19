@@ -242,6 +242,8 @@ textarea { resize: vertical; min-height: 80px; }
     color: var(--text-muted);
     padding: 0.3rem 0.5rem;
     &:hover:not(:disabled) { color: var(--text); background: var(--bg); }
+    &.text-danger { color: var(--danger); }
+    &.text-danger:hover:not(:disabled) { color: var(--danger); background: var(--bg); }
   }
 
   &--sm { padding: 0.3rem 0.65rem; font-size: 0.8rem; }
@@ -821,9 +823,9 @@ textarea { resize: vertical; min-height: 80px; }
 }
 
 .sort-icon {
-  font-size: 0.7rem;
   margin-left: 4px;
   opacity: 0.35;
+  vertical-align: middle;
   &--active { opacity: 1; color: var(--accent); }
 }
 

@@ -2,6 +2,7 @@
 import { ref, computed, onUnmounted } from 'vue'
 import type { Booking, Apartment, Client, Channel } from '../../api/client'
 import BookingInfoPopup from './BookingInfoPopup.vue'
+import AppIcon from '../../components/AppIcon.vue'
 
 const props = defineProps<{
   bookings: Booking[]
@@ -376,10 +377,10 @@ function onDelete(b: Booking) { closePopup(); emit('delete', b) }
 
     <!-- Month navigation -->
     <div class="booking-calendar__nav">
-      <button class="btn btn--ghost btn--sm" @click="prevMonth">‹</button>
+      <button class="btn btn--ghost btn--sm" @click="prevMonth"><AppIcon name="chevron-left" /></button>
       <span class="booking-calendar__month-label">{{ monthLabel }}</span>
       <button class="btn btn--ghost btn--sm" @click="goToday">Today</button>
-      <button class="btn btn--ghost btn--sm" @click="nextMonth">›</button>
+      <button class="btn btn--ghost btn--sm" @click="nextMonth"><AppIcon name="chevron-right" /></button>
     </div>
 
     <!-- Legend -->

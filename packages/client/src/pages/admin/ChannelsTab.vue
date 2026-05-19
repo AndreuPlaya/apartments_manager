@@ -5,6 +5,8 @@ import { api } from '../../api/client'
 import { useAsyncOp } from '../../composables/useAsyncOp'
 import { useToast } from '../../composables/useToast'
 import { useConfirm } from '../../composables/useConfirm'
+import AppIcon from '../../components/AppIcon.vue'
+import TrashIcon from '../../components/TrashIcon.vue'
 
 const { loading, run } = useAsyncOp()
 const { success } = useToast()
@@ -71,7 +73,7 @@ async function del(c: Channel) {
             <td>
               <div class="action-btns">
                 <button class="btn btn--ghost btn--sm" @click="openEdit(c)">Edit</button>
-                <button class="btn btn--ghost btn--sm text-danger" @click="del(c)">Delete</button>
+                <button class="btn btn--ghost btn--sm btn--icon text-danger" title="Delete" @click="del(c)"><TrashIcon /></button>
               </div>
             </td>
           </tr>
@@ -84,7 +86,7 @@ async function del(c: Channel) {
         <div class="modal modal--sm">
           <div class="modal__header">
             <h3>{{ editing ? 'Edit channel' : 'New channel' }}</h3>
-            <button class="btn btn--ghost btn--sm" @click="showForm = false">✕</button>
+            <button class="btn btn--ghost btn--sm" @click="showForm = false"><AppIcon name="x" /></button>
           </div>
           <form @submit.prevent="save">
             <div class="modal__body">

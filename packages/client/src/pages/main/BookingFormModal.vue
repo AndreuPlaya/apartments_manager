@@ -4,6 +4,7 @@ import type { Booking, Apartment, Client, Channel } from '../../api/client'
 import { api } from '../../api/client'
 import { useAsyncOp } from '../../composables/useAsyncOp'
 import ClientSearchInput, { type NewClientData } from '../../components/ClientSearchInput.vue'
+import AppIcon from '../../components/AppIcon.vue'
 
 const props = defineProps<{
   booking: Booking | null
@@ -103,7 +104,7 @@ const activeChannels = props.channels.filter((c) => c.isActive)
       <div class="modal modal--lg">
         <div class="modal__header">
           <h3>{{ booking ? 'Edit booking' : 'New booking' }}</h3>
-          <button class="btn btn--ghost btn--sm" @click="emit('close')">✕</button>
+          <button class="btn btn--ghost btn--sm" @click="emit('close')"><AppIcon name="x" /></button>
         </div>
         <form @submit.prevent="save">
           <div class="modal__body">

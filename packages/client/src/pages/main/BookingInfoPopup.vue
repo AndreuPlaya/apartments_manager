@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted } from 'vue'
 import type { Booking } from '../../api/client'
+import AppIcon from '../../components/AppIcon.vue'
 
 const props = defineProps<{
   booking: Booking
@@ -49,7 +50,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
       :style="popupStyle"
       @click.stop
     >
-      <button class="booking-popup__close" @click="emit('close')">✕</button>
+      <button class="booking-popup__close" @click="emit('close')"><AppIcon name="x" :size="14" /></button>
 
       <div class="booking-popup__client">{{ clientName }}</div>
       <div class="booking-popup__sub">{{ aptName }} · {{ channelName }}</div>
@@ -59,7 +60,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
           <div class="booking-popup__date-label">Check-in</div>
           <div class="booking-popup__date-value">{{ formatDate(booking.fromDate) }}</div>
         </div>
-        <div class="booking-popup__date-sep">→</div>
+        <div class="booking-popup__date-sep"><AppIcon name="arrow-right" :size="14" /></div>
         <div class="booking-popup__date-block">
           <div class="booking-popup__date-label">Check-out</div>
           <div class="booking-popup__date-value">{{ formatDate(booking.toDate) }}</div>

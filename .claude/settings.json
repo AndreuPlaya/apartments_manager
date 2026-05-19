@@ -50,7 +50,10 @@
       "Bash(pnpm -F client add -D @vitest/coverage-v8@^2.1.0)",
       "Bash(pnpm -F client test)",
       "Bash(pnpm -F server test:coverage)",
-      "Bash(pnpm -F client test:coverage)"
+      "Bash(pnpm -F client test:coverage)",
+      "Bash(pnpm -F client test --run)",
+      "Skill(frontend-design)",
+      "Skill(frontend-design:*)"
     ],
     "additionalDirectories": [
       "/tmp",

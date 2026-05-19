@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import type { Client } from '../api/client'
+import AppIcon from './AppIcon.vue'
 
 export interface NewClientData {
   name: string
@@ -156,7 +157,7 @@ function onClickOutside(e: MouseEvent) {
           tabindex="-1"
           @mousedown.prevent="clearSelection"
         >
-          ✕
+          <AppIcon name="x" :size="12" />
         </button>
       </div>
 
@@ -194,7 +195,7 @@ function onClickOutside(e: MouseEvent) {
       <div class="client-search__new-panel">
         <div class="client-search__new-header">
           <span class="client-search__new-label">New client</span>
-          <button type="button" class="btn btn--ghost btn--sm" @click="cancelNew">✕ Cancel</button>
+          <button type="button" class="btn btn--ghost btn--sm" @click="cancelNew"><AppIcon name="x" :size="12" /> Cancel</button>
         </div>
         <div class="form-group">
           <label>Full name *</label>
