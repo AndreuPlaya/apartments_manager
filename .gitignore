@@ -1,7 +1,39 @@
+# Dependencies
 node_modules/
+
+# Build output
 packages/*/dist/
 packages/*/coverage/
+
+# Runtime data (bind-mounted volume)
 data/
+
+# Environment & secrets
 .env
+.env.*
+*.pem
+*.key
+*.cert
+*.p12
+*.pfx
+
+# Database backups
+mongo_backup/
+
+# Logs
+*.log
+logs/
+pnpm-debug.log*
+
+# Temp files
 *.tmp
 *.vue.js
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+*.swp
+*.swo

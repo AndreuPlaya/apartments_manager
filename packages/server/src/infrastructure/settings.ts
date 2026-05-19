@@ -17,17 +17,23 @@ export function saveSettings(settings: Settings): void {
   writeJson(PATHS.settingsJson, settings)
 }
 
+let _cachedSecret: Uint8Array | null = null
+
 export function ensureSecretKey(): string {
   const settings = loadSettings()
   if (!settings.secret_key) {
     settings.secret_key = randomBytes(32).toString('hex')
     saveSettings(settings)
+    _cachedSecret = null
   }
   return settings.secret_key
 }
 
 export function getSecret(): Uint8Array {
-  return new TextEncoder().encode(loadSettings().secret_key)
+  if (_cachedSecret === null) {
+    _cachedSecret = new TextEncoder().encode(loadSettings().secret_key)
+  }
+  return _cachedSecret
 }
 
 export function isFirstRun(): boolean {

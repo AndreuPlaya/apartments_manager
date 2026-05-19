@@ -1,6 +1,8 @@
 import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
 import { Hono } from 'hono'
+import { bodyLimit } from 'hono/body-limit'
+import { secureHeaders } from 'hono/secure-headers'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -12,6 +14,9 @@ import editorRoutes from './routes/editor.js'
 ensureSecretKey()
 
 const app = new Hono()
+
+app.use('*', secureHeaders())
+app.use('/api/*', bodyLimit({ maxSize: 512 * 1024 }))
 
 // First-run guard — all non-auth API routes return 503 until an admin is created
 app.use('/api/*', async (c, next) => {

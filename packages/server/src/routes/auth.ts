@@ -1,10 +1,17 @@
 import { Hono } from 'hono'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 import { jwtVerify, SignJWT } from 'jose'
+import { rateLimiter } from 'hono-rate-limiter'
 import type { Context } from 'hono'
 import { AppError } from '../application/errors.js'
 import { authenticate, createUser } from '../application/userService.js'
 import { getSecret, isFirstRun } from '../infrastructure/settings.js'
+
+const authLimiter = rateLimiter({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  keyGenerator: (c) => c.req.header('x-forwarded-for') ?? c.req.header('x-real-ip') ?? 'unknown',
+})
 
 const authRoutes = new Hono()
 
@@ -24,10 +31,11 @@ async function issueSessionCookie(
     sameSite: 'Lax',
     path: '/',
     maxAge: 604_800,
+    secure: process.env['NODE_ENV'] === 'production',
   })
 }
 
-authRoutes.post('/api/auth/login', async (c) => {
+authRoutes.post('/api/auth/login', authLimiter, async (c) => {
   try {
     const body = await c.req.json<{ username?: string; password?: string }>()
     if (!body.username || !body.password) {
@@ -63,7 +71,7 @@ authRoutes.get('/api/auth/config', async (c) => {
   }
 })
 
-authRoutes.post('/api/auth/setup', async (c) => {
+authRoutes.post('/api/auth/setup', authLimiter, async (c) => {
   try {
     if (!isFirstRun()) return c.json({ error: 'Setup already complete' }, 409)
 

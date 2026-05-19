@@ -2,7 +2,7 @@ import { getCookie } from 'hono/cookie'
 import { jwtVerify } from 'jose'
 import type { MiddlewareHandler } from 'hono'
 import type { SessionUser } from '../domain/models.js'
-import { getSecret } from '../infrastructure/settings.js'
+import { findUser, getSecret } from '../infrastructure/settings.js'
 
 declare module 'hono' {
   interface ContextVariableMap {
@@ -16,8 +16,12 @@ export const authMiddleware: MiddlewareHandler = async (c, next) => {
 
   try {
     const { payload } = await jwtVerify(token, getSecret())
+    const username = payload['username'] as string
+    const found = findUser(username)
+    if (found === null) return c.json({ error: 'Unauthorized' }, 401)
+    if (found.type === 'user' && !found.record.enabled) return c.json({ error: 'Unauthorized' }, 401)
     c.set('user', {
-      username: payload['username'] as string,
+      username,
       isAdmin: payload['isAdmin'] as boolean,
       resourceId: (payload['resourceId'] as string | null) ?? null,
     })

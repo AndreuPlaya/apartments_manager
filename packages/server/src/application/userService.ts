@@ -73,7 +73,7 @@ export async function createUser(req: CreateUserRequest): Promise<UserListItem> 
   if (req.password.length < 8) throw new ValidationError('Password must be at least 8 characters')
 
   const existing = findUser(req.username)
-  if (existing !== null) throw new ConflictError(`Username '${req.username}' already exists`)
+  if (existing !== null) throw new ConflictError('Username already exists')
 
   const password_hash = await bcrypt.hash(req.password, 12)
   const settings = loadSettings()
@@ -105,7 +105,7 @@ export async function updateUser(id: string, req: UpdateUserRequest): Promise<Us
   if (adminRecord !== undefined) {
     if (req.username !== undefined && req.username !== id) {
       // Renaming admin — check for conflicts
-      if (findUser(req.username) !== null) throw new ConflictError(`Username '${req.username}' already exists`)
+      if (findUser(req.username) !== null) throw new ConflictError('Username already exists')
       const updatedRecord: AdminRecord = {
         password_hash: req.password ? await bcrypt.hash(req.password, 12) : adminRecord.password_hash,
         full_name: req.full_name ?? adminRecord.full_name,
@@ -126,7 +126,7 @@ export async function updateUser(id: string, req: UpdateUserRequest): Promise<Us
   if (record === undefined) throw new NotFoundError(`User '${id}' not found`)
 
   if (req.username !== undefined && req.username !== record.username) {
-    if (findUser(req.username) !== null) throw new ConflictError(`Username '${req.username}' already exists`)
+    if (findUser(req.username) !== null) throw new ConflictError('Username already exists')
     record.username = req.username
   }
   if (req.password) record.password_hash = await bcrypt.hash(req.password, 12)
