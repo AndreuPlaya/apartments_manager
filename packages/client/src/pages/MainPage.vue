@@ -3,18 +3,18 @@ import { ref, computed, onMounted } from 'vue'
 import { api } from '../api/client'
 import type { Apartment, Booking, Client, Channel } from '../api/client'
 import { useToast } from '../composables/useToast'
-import { useConfirm } from '../composables/useConfirm'
 import { useAsyncOp } from '../composables/useAsyncOp'
 import BookingFormModal from './main/BookingFormModal.vue'
-import BookingInfoPopup from './main/BookingInfoPopup.vue'
+import BookingListView from './main/BookingListView.vue'
+import ClientEditModal from './main/ClientEditModal.vue'
 import CalendarView from './main/CalendarView.vue'
+import TodaySummary from './main/TodaySummary.vue'
+import ActiveBookingsView from './main/ActiveBookingsView.vue'
 import AppIcon from '../components/AppIcon.vue'
-import TrashIcon from '../components/TrashIcon.vue'
 import type { BookingStatus } from '../api/client'
 
 const { success, error } = useToast()
-const { confirm } = useConfirm()
-const { loading: saving, run } = useAsyncOp()
+const { run } = useAsyncOp()
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 
@@ -24,63 +24,30 @@ const clients = ref<Client[]>([])
 const channels = ref<Channel[]>([])
 const isAdmin = ref(false)
 const pageLoading = ref(true)
+const loadingMore = ref(false)
 
-// ── Filters ───────────────────────────────────────────────────────────────────
+// ── Booking window ────────────────────────────────────────────────────────────
 
-const filterApartment = ref('')
-const filterStatus = ref('')
-const filterFrom = ref('')
-const filterTo = ref('')
-
-// ── Lookup maps ───────────────────────────────────────────────────────────────
-
-const aptMap = computed(() => Object.fromEntries(apartments.value.map((a) => [a.id, a])))
-const clientMap = computed(() => Object.fromEntries(clients.value.map((c) => [c.id, c])))
-const channelMap = computed(() => Object.fromEntries(channels.value.map((c) => [c.id, c])))
-
-// ── Sorting ───────────────────────────────────────────────────────────────────
-
-const sortField = ref<'client' | 'fromDate' | 'toDate'>('fromDate')
-const sortDir = ref<'asc' | 'desc'>('desc')
-
-function toggleSort(field: 'client' | 'fromDate' | 'toDate') {
-  if (sortField.value === field) sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
-  else { sortField.value = field; sortDir.value = 'desc' }
+function monthsAgo(fromDate: string, months: number): string {
+  const d = new Date(fromDate + 'T00:00:00')
+  d.setMonth(d.getMonth() - months)
+  return d.toISOString().split('T')[0]!
 }
 
-// ── Filtered bookings ─────────────────────────────────────────────────────────
-
-const filteredBookings = computed(() => {
-  let list = [...bookings.value]
-  if (filterApartment.value) list = list.filter((b) => b.apartmentId === filterApartment.value)
-  if (filterStatus.value === 'unpaid') list = list.filter((b) => !b.paidDate && b.status !== 'Cancelled')
-  else if (filterStatus.value === 'paid') list = list.filter((b) => !!b.paidDate)
-  else if (filterStatus.value) list = list.filter((b) => b.status === filterStatus.value)
-  if (filterFrom.value) list = list.filter((b) => b.toDate > filterFrom.value)
-  if (filterTo.value) list = list.filter((b) => b.fromDate < filterTo.value)
-  list.sort((a, b) => {
-    let cmp = 0
-    if (sortField.value === 'client')
-      cmp = (clientMap.value[a.clientId]?.name ?? '').localeCompare(clientMap.value[b.clientId]?.name ?? '')
-    else if (sortField.value === 'fromDate') cmp = a.fromDate.localeCompare(b.fromDate)
-    else cmp = a.toDate.localeCompare(b.toDate)
-    return sortDir.value === 'asc' ? cmp : -cmp
-  })
-  return list
-})
+const loadFromDate = ref(monthsAgo(new Date().toISOString().split('T')[0]!, 2))
 
 // ── Stats ─────────────────────────────────────────────────────────────────────
 
 const today = new Date().toISOString().split('T')[0] ?? ''
 
-const todayArrivals = computed(
-  () => bookings.value.filter((b) => b.fromDate === today && b.status !== 'Cancelled').length,
+const arrivalBookings = computed(() =>
+  bookings.value.filter((b) => b.fromDate === today && b.status !== 'Cancelled'),
 )
-const todayDepartures = computed(
-  () => bookings.value.filter((b) => b.toDate === today && b.status !== 'Cancelled').length,
+const departureBookings = computed(() =>
+  bookings.value.filter((b) => b.toDate === today && b.status !== 'Cancelled'),
 )
-const currentlyOccupied = computed(
-  () => bookings.value.filter((b) => b.fromDate <= today && b.toDate > today && b.status !== 'Cancelled').length,
+const occupiedBookings = computed(() =>
+  bookings.value.filter((b) => b.fromDate < today && b.toDate > today && b.status !== 'Cancelled'),
 )
 
 // ── Load ──────────────────────────────────────────────────────────────────────
@@ -93,7 +60,7 @@ async function load() {
 
     const [apts, bks, cls, chs] = await Promise.all([
       api.apartments.list(),
-      api.bookings.list(),
+      api.bookings.list({ from: loadFromDate.value }),
       api.clients.list(),
       api.channels.list(),
     ])
@@ -140,15 +107,40 @@ async function onPatch(id: string, changes: { comment?: string; status?: Booking
   const res = await run(() => api.bookings.patch(id, changes))
   if (res !== undefined) {
     bookings.value = bookings.value.map((b) => b.id === id ? res : b)
-    if (listPopupBooking.value?.id === id) listPopupBooking.value = res
     success('Booking updated')
   }
 }
 
+async function handleUpdate(id: string, payload: Partial<Omit<Booking, 'id' | 'createdAt'>>) {
+  const res = await run(() => api.bookings.update(id, payload))
+  if (res !== undefined) {
+    bookings.value = bookings.value.map((b) => b.id === id ? res : b)
+    success('Booking updated')
+  }
+}
+
+async function handleCancel(b: Booking) {
+  const res = await run(() => api.bookings.patch(b.id, { status: 'Cancelled' }))
+  if (res !== undefined) {
+    bookings.value = bookings.value.map((x) => x.id === b.id ? res : x)
+    success('Booking cancelled')
+  }
+}
+
+async function handleLoadMore() {
+  loadingMore.value = true
+  try {
+    loadFromDate.value = monthsAgo(loadFromDate.value, 1)
+    const bks = await api.bookings.list({ from: loadFromDate.value })
+    bookings.value = bks
+  } catch (e) {
+    if (e instanceof Error) error(e.message)
+  } finally {
+    loadingMore.value = false
+  }
+}
+
 async function deleteBooking(b: Booking) {
-  const apt = aptMap.value[b.apartmentId]?.name ?? 'unknown'
-  const ok = await confirm(`Delete booking for ${apt}? This cannot be undone.`)
-  if (!ok) return
   const res = await run(() => api.bookings.delete(b.id))
   if (res !== undefined) {
     await load()
@@ -156,51 +148,53 @@ async function deleteBooking(b: Booking) {
   }
 }
 
+// ── Client edit ────────────────────────────────────────────────────────────────
+
+const clientEditTarget = ref<Client | null>(null)
+
+function openClient(client: Client) {
+  clientEditTarget.value = client
+}
+
+async function handleClientSave(client: Client, patch: Partial<Omit<Client, 'id'>>) {
+  const res = await run(() => api.clients.update(client.id, patch))
+  if (res !== undefined) {
+    clients.value = clients.value.map((c) => c.id === client.id ? res : c)
+    clientEditTarget.value = null
+    success('Client updated')
+  }
+}
+
 // ── View mode ─────────────────────────────────────────────────────────────────
 
 const viewMode = ref<'list' | 'calendar'>('calendar')
-
-// ── List popup ────────────────────────────────────────────────────────────────
-
-const listPopupBooking = ref<Booking | null>(null)
-const listPopupPos = ref<{ x: number; y: number }>({ x: 0, y: 0 })
-
-function openListPopup(b: Booking, event: MouseEvent) {
-  listPopupBooking.value = b
-  listPopupPos.value = { x: event.clientX, y: event.clientY }
-}
-function closeListPopup() { listPopupBooking.value = null }
-
-// ── Formatting ────────────────────────────────────────────────────────────────
-
-function formatDate(d: string) {
-  return new Date(d + 'T00:00:00').toLocaleDateString(undefined, {
-    day: '2-digit', month: 'short', year: 'numeric',
-  })
-}
-
-function nights(from: string, to: string) {
-  return Math.round((Date.parse(to) - Date.parse(from)) / 86400000)
-}
 </script>
 
 <template>
   <div class="page-container">
     <!-- Summary -->
-    <div class="summary-strip">
-      <div class="stat-card">
-        <div class="stat-card__value">{{ todayArrivals }}</div>
-        <div class="stat-card__label">Today's arrivals</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-card__value">{{ todayDepartures }}</div>
-        <div class="stat-card__label">Today's departures</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-card__value">{{ currentlyOccupied }}</div>
-        <div class="stat-card__label">Currently occupied</div>
-      </div>
-    </div>
+    <TodaySummary
+      :arrival-count="arrivalBookings.length"
+      :departure-count="departureBookings.length"
+      :occupied-count="occupiedBookings.length"
+    />
+
+    <!-- Active bookings -->
+    <ActiveBookingsView
+      :arrival-bookings="arrivalBookings"
+      :departure-bookings="departureBookings"
+      :occupied-bookings="occupiedBookings"
+      :apartments="apartments"
+      :clients="clients"
+      :channels="channels"
+      :is-admin="isAdmin"
+      :loading="pageLoading"
+      :today="today"
+      @update="handleUpdate"
+      @patch="onPatch"
+      @cancel="handleCancel"
+      @open-client="openClient"
+    />
 
     <!-- Header -->
     <div class="page-header">
@@ -220,102 +214,22 @@ function nights(from: string, to: string) {
     </div>
 
     <!-- List view -->
-    <template v-if="viewMode === 'list'">
-      <!-- Filters -->
-      <div class="filters">
-        <select v-model="filterApartment">
-          <option value="">All apartments</option>
-          <option v-for="a in apartments" :key="a.id" :value="a.id">{{ a.name }}</option>
-        </select>
-        <select v-model="filterStatus">
-          <option value="">All statuses</option>
-          <option value="unpaid">Not paid</option>
-          <option value="paid">Paid</option>
-          <option value="Cancelled">Cancelled</option>
-        </select>
-        <input v-model="filterFrom" type="date" title="From date" />
-        <input v-model="filterTo" type="date" title="To date" />
-        <button
-          v-if="filterApartment || filterStatus || filterFrom || filterTo"
-          class="btn btn--ghost btn--sm"
-          @click="filterApartment = ''; filterStatus = ''; filterFrom = ''; filterTo = ''"
-        >
-          Clear
-        </button>
-      </div>
-
-      <!-- Table -->
-      <div v-if="pageLoading" class="empty-state"><p>Loading…</p></div>
-      <div v-else-if="filteredBookings.length === 0" class="empty-state">
-        <p>No bookings match the current filters.</p>
-      </div>
-      <div v-else class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Apartment</th>
-              <th class="sortable-th" @click="toggleSort('client')">
-                Client <AppIcon :name="sortField === 'client' ? (sortDir === 'asc' ? 'chevron-up' : 'chevron-down') : 'chevron-up-down'" :size="10" class="sort-icon" :class="{ 'sort-icon--active': sortField === 'client' }" />
-              </th>
-              <th class="sortable-th" @click="toggleSort('fromDate')">
-                Check-in <AppIcon :name="sortField === 'fromDate' ? (sortDir === 'asc' ? 'chevron-up' : 'chevron-down') : 'chevron-up-down'" :size="10" class="sort-icon" :class="{ 'sort-icon--active': sortField === 'fromDate' }" />
-              </th>
-              <th class="sortable-th" @click="toggleSort('toDate')">
-                Check-out <AppIcon :name="sortField === 'toDate' ? (sortDir === 'asc' ? 'chevron-up' : 'chevron-down') : 'chevron-up-down'" :size="10" class="sort-icon" :class="{ 'sort-icon--active': sortField === 'toDate' }" />
-              </th>
-              <th>Nights</th>
-              <th>Guests</th>
-              <th>Status</th>
-              <th>Amount</th>
-              <th>Channel</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="b in filteredBookings"
-              :key="b.id"
-              :class="{
-                'row--arriving': b.fromDate === today && b.status !== 'Cancelled',
-                'row--staying': b.fromDate < today && b.toDate > today && b.status !== 'Cancelled',
-              }"
-            >
-              <td>{{ aptMap[b.apartmentId]?.name ?? '—' }}</td>
-              <td>{{ clientMap[b.clientId]?.name ?? '—' }}</td>
-              <td>{{ formatDate(b.fromDate) }}</td>
-              <td>{{ formatDate(b.toDate) }}</td>
-              <td>{{ nights(b.fromDate, b.toDate) }}</td>
-              <td>{{ b.adultCount + b.childrenCount }}</td>
-              <td>
-                <span
-                  v-if="b.status === 'Cancelled'"
-                  class="badge badge--cancelled"
-                >Cancelled</span>
-                <span
-                  v-else-if="b.paidDate"
-                  class="badge badge--paid"
-                >Paid {{ formatDate(b.paidDate) }}</span>
-                <span
-                  v-else
-                  class="badge badge--notpaid"
-                >Not paid</span>
-              </td>
-              <td>€{{ b.totalAmountDue.toFixed(2) }}</td>
-              <td>{{ channelMap[b.channelId]?.name ?? '—' }}</td>
-              <td>
-                <div class="action-btns">
-                  <button class="btn btn--ghost btn--sm btn--icon" title="View" @click.stop="openListPopup(b, $event)"><AppIcon name="info" :size="14" /></button>
-                  <template v-if="isAdmin">
-                    <button class="btn btn--ghost btn--sm" @click="openEdit(b)">Edit</button>
-                    <button class="btn btn--ghost btn--sm btn--icon text-danger" title="Delete" @click="deleteBooking(b)"><TrashIcon /></button>
-                  </template>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </template>
+    <BookingListView
+      v-if="viewMode === 'list'"
+      :bookings="bookings"
+      :apartments="apartments"
+      :clients="clients"
+      :channels="channels"
+      :is-admin="isAdmin"
+      :loading="pageLoading"
+      :loading-more="loadingMore"
+      :today="today"
+      @update="handleUpdate"
+      @patch="onPatch"
+      @cancel="handleCancel"
+      @open-client="openClient"
+      @load-more="handleLoadMore"
+    />
 
     <!-- Calendar view -->
     <CalendarView
@@ -333,21 +247,6 @@ function nights(from: string, to: string) {
     />
   </div>
 
-  <!-- List view popup -->
-  <BookingInfoPopup
-    v-if="listPopupBooking"
-    :booking="listPopupBooking"
-    :apt-name="aptMap[listPopupBooking.apartmentId]?.name ?? '—'"
-    :client-name="clientMap[listPopupBooking.clientId]?.name ?? '—'"
-    :channel-name="channelMap[listPopupBooking.channelId]?.name ?? '—'"
-    :is-admin="isAdmin"
-    :pos="listPopupPos"
-    @close="closeListPopup"
-    @edit="openEdit(listPopupBooking); closeListPopup()"
-    @delete="deleteBooking(listPopupBooking); closeListPopup()"
-    @patch="onPatch(listPopupBooking.id, $event)"
-  />
-
   <!-- Booking form modal -->
   <BookingFormModal
     v-if="showForm"
@@ -357,5 +256,14 @@ function nights(from: string, to: string) {
     :channels="channels"
     @save="onFormSave"
     @close="showForm = false"
+  />
+
+  <!-- Client edit/info modal -->
+  <ClientEditModal
+    v-if="clientEditTarget"
+    :client="clientEditTarget"
+    :is-admin="isAdmin"
+    @save="handleClientSave"
+    @close="clientEditTarget = null"
   />
 </template>

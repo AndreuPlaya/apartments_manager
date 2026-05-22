@@ -348,6 +348,27 @@ h1, h2, h3, h4 { margin: 0 0 0.5rem; font-weight: 600; }
 
   &__value { font-size: 2rem; font-weight: 700; color: var(--accent); }
   &__label { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+  &__bookings {
+    list-style: none;
+    margin: 0.5rem 0 0;
+    padding: 0.4rem 0 0;
+    text-align: left;
+    border-top: 1px solid var(--border);
+  }
+
+  &__booking-item {
+    display: flex;
+    gap: 0.4rem;
+    padding: 0.15rem 0;
+    font-size: 0.72rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__apt   { font-weight: 600; color: var(--text); }
+  &__client { color: var(--text-muted); }
 }
 
 // ── Tables ───────────────────────────────────────────────────────────────────
@@ -1118,5 +1139,3 @@ textarea { resize: vertical; min-height: 80px; }
 
 // ── List row highlights ────────────────────────────────────────────────────────
 
-tbody tr.row--arriving td { background: rgba(245, 158, 11, 0.09); }
-tbody tr.row--staying td  { background: rgba(16, 185, 129, 0.08); }
