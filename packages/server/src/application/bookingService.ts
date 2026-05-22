@@ -136,6 +136,19 @@ export function updateBooking(id: string, req: UpdateBookingRequest): Booking {
   return merged
 }
 
+export function patchBookingFields(
+  id: string,
+  req: { comment?: string; status?: import('../domain/models.js').BookingStatus },
+): Booking {
+  const allBookings = loadBookings()
+  const idx = allBookings.findIndex((b) => b.id === id)
+  if (idx === -1) throw new NotFoundError(`Booking '${id}' not found`)
+  const updated: Booking = { ...allBookings[idx]!, ...req }
+  allBookings[idx] = updated
+  saveBookings(allBookings)
+  return updated
+}
+
 export function deleteBooking(id: string): void {
   const all = loadBookings()
   const idx = all.findIndex((b) => b.id === id)

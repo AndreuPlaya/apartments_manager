@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue'
-import type { Booking } from '../../api/client'
+import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
+import type { Booking, BookingStatus } from '../../api/client'
 import AppIcon from '../../components/AppIcon.vue'
 
 const props = defineProps<{
@@ -16,7 +16,18 @@ const emit = defineEmits<{
   close: []
   edit: []
   delete: []
+  patch: [changes: { comment?: string; status?: BookingStatus }]
 }>()
+
+const localComment = ref(props.booking.comment ?? '')
+const localStatus = ref<BookingStatus>(props.booking.status)
+
+watch(() => props.booking, (b) => {
+  localComment.value = b.comment ?? ''
+  localStatus.value = b.status
+})
+
+const commentDirty = computed(() => localComment.value !== (props.booking.comment ?? ''))
 
 function formatDate(d: string) {
   return new Date(d + 'T00:00:00').toLocaleDateString(undefined, {
@@ -39,6 +50,16 @@ function onKeydown(e: KeyboardEvent) {
 
 onMounted(() => document.addEventListener('keydown', onKeydown))
 onUnmounted(() => document.removeEventListener('keydown', onKeydown))
+
+function setStatus(s: BookingStatus) {
+  if (s === localStatus.value) return
+  localStatus.value = s
+  emit('patch', { status: s })
+}
+
+function saveComment() {
+  emit('patch', { comment: localComment.value })
+}
 </script>
 
 <template>
@@ -83,14 +104,30 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
       </div>
 
       <div class="booking-popup__row">
-        <span
-          :class="['badge', booking.status === 'Paid' ? 'badge--paid' : booking.status === 'NotPaid' ? 'badge--notpaid' : 'badge--cancelled']"
-        >{{ booking.status === 'NotPaid' ? 'Not paid' : booking.status }}</span>
         <span class="booking-popup__amount">€{{ booking.totalAmountDue.toFixed(2) }}</span>
       </div>
 
-      <div v-if="booking.comment" class="booking-popup__comment">
-        {{ booking.comment }}
+      <div class="booking-popup__status-pills">
+        <button
+          v-for="s in (['NotPaid', 'Paid', 'Cancelled'] as BookingStatus[])"
+          :key="s"
+          :class="['status-pill', { 'status-pill--active': localStatus === s }]"
+          @click="setStatus(s)"
+        >{{ s === 'NotPaid' ? 'Not paid' : s }}</button>
+      </div>
+
+      <div class="booking-popup__comment-field">
+        <textarea
+          v-model="localComment"
+          class="booking-popup__comment-input"
+          placeholder="Add a comment…"
+          rows="2"
+        />
+        <button
+          v-if="commentDirty"
+          class="btn btn--primary btn--sm booking-popup__comment-save"
+          @click="saveComment"
+        >Save</button>
       </div>
 
       <div v-if="isAdmin" class="booking-popup__actions">

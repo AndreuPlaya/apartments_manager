@@ -1,10 +1,17 @@
 import { Hono } from 'hono'
 import { listApartments } from '../application/apartmentService.js'
-import { listBookings } from '../application/bookingService.js'
+import { listBookings, patchBookingFields } from '../application/bookingService.js'
 import { listChannels } from '../application/channelService.js'
 import { listClients } from '../application/clientService.js'
 import { listProperties } from '../application/propertyService.js'
 import { authMiddleware } from '../middleware/auth.js'
+import { AppError } from '../application/errors.js'
+import type { Context } from 'hono'
+
+function handleError(err: unknown, c: Context) {
+  if (err instanceof AppError) return c.json({ error: err.message }, err.statusCode as any)
+  throw err
+}
 
 const editorRoutes = new Hono()
 
@@ -31,6 +38,14 @@ editorRoutes.get('/api/clients', (c) => {
 
 editorRoutes.get('/api/channels', (c) => {
   return c.json(listChannels())
+})
+
+editorRoutes.patch('/api/bookings/:id', async (c) => {
+  try {
+    const body = await c.req.json<{ comment?: string; status?: string }>()
+    const { comment, status } = body
+    return c.json(patchBookingFields(c.req.param('id'), { comment, status: status as any }))
+  } catch (err) { return handleError(err, c) }
 })
 
 export default editorRoutes

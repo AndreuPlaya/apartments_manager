@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import ApartmentsTab from './admin/ApartmentsTab.vue'
 import ClientsTab from './admin/ClientsTab.vue'
 import ChannelsTab from './admin/ChannelsTab.vue'
@@ -8,7 +9,34 @@ import MetricsTab from './admin/MetricsTab.vue'
 
 const tabs = ['Apartments', 'Clients', 'Channels', 'Users', 'Metrics'] as const
 type Tab = (typeof tabs)[number]
-const activeTab = ref<Tab>('Apartments')
+
+const route = useRoute()
+const router = useRouter()
+
+const tabParamMap: Record<string, Tab> = {
+  apartments: 'Apartments',
+  clients:    'Clients',
+  channels:   'Channels',
+  users:      'Users',
+  metrics:    'Metrics',
+}
+
+const tabValueMap: Record<Tab, string> = {
+  Apartments: 'apartments',
+  Clients:    'clients',
+  Channels:   'channels',
+  Users:      'users',
+  Metrics:    'metrics',
+}
+
+const activeTab = computed<Tab>(() => {
+  const param = route.query.tab as string | undefined
+  return (param && tabParamMap[param]) || 'Apartments'
+})
+
+function setTab(tab: Tab) {
+  router.replace({ query: { tab: tabValueMap[tab] } })
+}
 </script>
 
 <template>
@@ -19,7 +47,7 @@ const activeTab = ref<Tab>('Apartments')
         v-for="t in tabs"
         :key="t"
         :class="['tab-btn', { active: activeTab === t }]"
-        @click="activeTab = t"
+        @click="setTab(t)"
       >
         {{ t }}
       </button>

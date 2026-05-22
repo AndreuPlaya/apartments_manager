@@ -6,9 +6,11 @@ import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 import { useAsyncOp } from '../composables/useAsyncOp'
 import BookingFormModal from './main/BookingFormModal.vue'
+import BookingInfoPopup from './main/BookingInfoPopup.vue'
 import CalendarView from './main/CalendarView.vue'
 import AppIcon from '../components/AppIcon.vue'
 import TrashIcon from '../components/TrashIcon.vue'
+import type { BookingStatus } from '../api/client'
 
 const { success, error } = useToast()
 const { confirm } = useConfirm()
@@ -132,6 +134,15 @@ async function updateBookingDates(id: string, changes: { fromDate?: string; toDa
   if (res !== undefined) { await load(); success('Booking updated') }
 }
 
+async function onPatch(id: string, changes: { comment?: string; status?: BookingStatus }) {
+  const res = await run(() => api.bookings.patch(id, changes))
+  if (res !== undefined) {
+    bookings.value = bookings.value.map((b) => b.id === id ? res : b)
+    if (listPopupBooking.value?.id === id) listPopupBooking.value = res
+    success('Booking updated')
+  }
+}
+
 async function deleteBooking(b: Booking) {
   const apt = aptMap.value[b.apartmentId]?.name ?? 'unknown'
   const ok = await confirm(`Delete booking for ${apt}? This cannot be undone.`)
@@ -145,7 +156,18 @@ async function deleteBooking(b: Booking) {
 
 // ── View mode ─────────────────────────────────────────────────────────────────
 
-const viewMode = ref<'list' | 'calendar'>('list')
+const viewMode = ref<'list' | 'calendar'>('calendar')
+
+// ── List popup ────────────────────────────────────────────────────────────────
+
+const listPopupBooking = ref<Booking | null>(null)
+const listPopupPos = ref<{ x: number; y: number }>({ x: 0, y: 0 })
+
+function openListPopup(b: Booking, event: MouseEvent) {
+  listPopupBooking.value = b
+  listPopupPos.value = { x: event.clientX, y: event.clientY }
+}
+function closeListPopup() { listPopupBooking.value = null }
 
 // ── Formatting ────────────────────────────────────────────────────────────────
 
@@ -244,7 +266,7 @@ function nights(from: string, to: string) {
               <th>Status</th>
               <th>Amount</th>
               <th>Channel</th>
-              <th v-if="isAdmin" />
+              <th />
             </tr>
           </thead>
           <tbody>
@@ -269,10 +291,13 @@ function nights(from: string, to: string) {
               </td>
               <td>€{{ b.totalAmountDue.toFixed(2) }}</td>
               <td>{{ channelMap[b.channelId]?.name ?? '—' }}</td>
-              <td v-if="isAdmin">
+              <td>
                 <div class="action-btns">
-                  <button class="btn btn--ghost btn--sm" @click="openEdit(b)">Edit</button>
-                  <button class="btn btn--ghost btn--sm btn--icon text-danger" title="Delete" @click="deleteBooking(b)"><TrashIcon /></button>
+                  <button class="btn btn--ghost btn--sm btn--icon" title="View" @click.stop="openListPopup(b, $event)"><AppIcon name="info" :size="14" /></button>
+                  <template v-if="isAdmin">
+                    <button class="btn btn--ghost btn--sm" @click="openEdit(b)">Edit</button>
+                    <button class="btn btn--ghost btn--sm btn--icon text-danger" title="Delete" @click="deleteBooking(b)"><TrashIcon /></button>
+                  </template>
                 </div>
               </td>
             </tr>
@@ -293,8 +318,24 @@ function nights(from: string, to: string) {
       @edit="openEdit"
       @delete="deleteBooking"
       @update="updateBookingDates"
+      @patch="onPatch"
     />
   </div>
+
+  <!-- List view popup -->
+  <BookingInfoPopup
+    v-if="listPopupBooking"
+    :booking="listPopupBooking"
+    :apt-name="aptMap[listPopupBooking.apartmentId]?.name ?? '—'"
+    :client-name="clientMap[listPopupBooking.clientId]?.name ?? '—'"
+    :channel-name="channelMap[listPopupBooking.channelId]?.name ?? '—'"
+    :is-admin="isAdmin"
+    :pos="listPopupPos"
+    @close="closeListPopup"
+    @edit="openEdit(listPopupBooking); closeListPopup()"
+    @delete="deleteBooking(listPopupBooking); closeListPopup()"
+    @patch="onPatch(listPopupBooking.id, $event)"
+  />
 
   <!-- Booking form modal -->
   <BookingFormModal

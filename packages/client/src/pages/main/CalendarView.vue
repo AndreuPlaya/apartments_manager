@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onUnmounted } from 'vue'
-import type { Booking, Apartment, Client, Channel } from '../../api/client'
+import type { Booking, Apartment, Client, Channel, BookingStatus } from '../../api/client'
 import BookingInfoPopup from './BookingInfoPopup.vue'
 import AppIcon from '../../components/AppIcon.vue'
 
@@ -17,6 +17,7 @@ const emit = defineEmits<{
   edit: [booking: Booking]
   delete: [booking: Booking]
   update: [id: string, changes: { fromDate?: string; toDate?: string }]
+  patch: [id: string, changes: { comment?: string; status?: BookingStatus }]
 }>()
 
 // ── Month navigation ──────────────────────────────────────────────────────────
@@ -487,5 +488,6 @@ function onDelete(b: Booking) { closePopup(); emit('delete', b) }
     @close="closePopup"
     @edit="onEdit(popupBooking)"
     @delete="onDelete(popupBooking)"
+    @patch="emit('patch', popupBooking.id, $event)"
   />
 </template>
