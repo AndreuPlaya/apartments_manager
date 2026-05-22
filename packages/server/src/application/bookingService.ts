@@ -138,7 +138,7 @@ export function updateBooking(id: string, req: UpdateBookingRequest): Booking {
 
 export function patchBookingFields(
   id: string,
-  req: { comment?: string; status?: import('../domain/models.js').BookingStatus },
+  req: { comment?: string; status?: import('../domain/models.js').BookingStatus; paidDate?: string },
 ): Booking {
   const allBookings = loadBookings()
   const idx = allBookings.findIndex((b) => b.id === id)

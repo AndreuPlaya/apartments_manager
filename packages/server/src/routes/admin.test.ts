@@ -152,7 +152,7 @@ describe('Bookings admin routes', () => {
   const bookingBody = {
     apartmentId: 'apt1', clientId: 'cli1', channelId: 'ch1',
     fromDate: '2025-06-01', toDate: '2025-06-05',
-    adultCount: 2, childrenCount: 0, status: 'NotPaid', totalAmountDue: 400,
+    adultCount: 2, childrenCount: 0, status: 'Active', totalAmountDue: 400,
   }
   const booking = { id: 'b1', ...bookingBody, createdAt: '2025-01-01T00:00:00Z' }
 

@@ -1,4 +1,4 @@
-export type BookingStatus = 'NotPaid' | 'Paid' | 'Cancelled'
+export type BookingStatus = 'Active' | 'Cancelled'
 
 export interface Apartment {
   id: string
@@ -37,6 +37,7 @@ export interface Booking {
   adultCount: number
   childrenCount: number
   status: BookingStatus
+  paidDate?: string
   totalAmountDue: number
   comment?: string
   createdAt: string

@@ -16,7 +16,7 @@ const makeBooking = (
   toDate,
   adultCount: 2,
   childrenCount: 0,
-  status: 'Paid',
+  status: 'Active', paidDate: '2025-01-01',
   totalAmountDue,
   createdAt: '2025-01-01T00:00:00.000Z',
 })

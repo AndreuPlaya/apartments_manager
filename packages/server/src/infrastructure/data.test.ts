@@ -21,7 +21,7 @@ import {
 const booking = (id: string, apartmentId: string, from: string, to: string): Booking => ({
   id, apartmentId, clientId: 'cli1', channelId: 'ch1',
   fromDate: from, toDate: to,
-  adultCount: 1, childrenCount: 0, status: 'NotPaid', totalAmountDue: 0, createdAt: '',
+  adultCount: 1, childrenCount: 0, status: 'Active', totalAmountDue: 0, createdAt: '',
 })
 
 const apt: Apartment = {
@@ -68,6 +68,26 @@ describe('loadBookings / saveBookings', () => {
   it('saveBookings delegates to writeJson', () => {
     saveBookings([b1])
     expect(writeJson).toHaveBeenCalledOnce()
+  })
+  it('migrates old NotPaid status to Active', () => {
+    const old = { ...b1, status: 'NotPaid' }
+    vi.mocked(readJson).mockReturnValue([old])
+    const [result] = loadBookings()
+    expect(result!.status).toBe('Active')
+    expect(result!.paidDate).toBeUndefined()
+  })
+  it('migrates old Paid status to Active with paidDate from createdAt', () => {
+    const old = { ...b1, status: 'Paid', createdAt: '2025-01-15T10:00:00Z' }
+    vi.mocked(readJson).mockReturnValue([old])
+    const [result] = loadBookings()
+    expect(result!.status).toBe('Active')
+    expect(result!.paidDate).toBe('2025-01-15')
+  })
+  it('migrates old Paid status preserving existing paidDate', () => {
+    const old = { ...b1, status: 'Paid', paidDate: '2025-03-10', createdAt: '2025-01-15T10:00:00Z' }
+    vi.mocked(readJson).mockReturnValue([old])
+    const [result] = loadBookings()
+    expect(result!.paidDate).toBe('2025-03-10')
   })
 })
 

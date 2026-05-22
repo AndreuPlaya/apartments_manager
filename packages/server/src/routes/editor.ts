@@ -42,9 +42,9 @@ editorRoutes.get('/api/channels', (c) => {
 
 editorRoutes.patch('/api/bookings/:id', async (c) => {
   try {
-    const body = await c.req.json<{ comment?: string; status?: string }>()
-    const { comment, status } = body
-    return c.json(patchBookingFields(c.req.param('id'), { comment, status: status as any }))
+    const body = await c.req.json<{ comment?: string; status?: string; paidDate?: string }>()
+    const { comment, status, paidDate } = body
+    return c.json(patchBookingFields(c.req.param('id'), { comment, status: status as any, paidDate }))
   } catch (err) { return handleError(err, c) }
 })
 

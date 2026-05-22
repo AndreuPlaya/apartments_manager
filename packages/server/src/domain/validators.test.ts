@@ -17,7 +17,7 @@ const makeBooking = (id: string, apartmentId: string, from: string, to: string):
   toDate: to,
   adultCount: 1,
   childrenCount: 0,
-  status: 'NotPaid',
+  status: 'Active',
   totalAmountDue: 100,
   createdAt: '2025-01-01T00:00:00.000Z',
 })

@@ -53,7 +53,9 @@ function toggleSort(field: 'client' | 'fromDate' | 'toDate') {
 const filteredBookings = computed(() => {
   let list = [...bookings.value]
   if (filterApartment.value) list = list.filter((b) => b.apartmentId === filterApartment.value)
-  if (filterStatus.value) list = list.filter((b) => b.status === filterStatus.value)
+  if (filterStatus.value === 'unpaid') list = list.filter((b) => !b.paidDate && b.status !== 'Cancelled')
+  else if (filterStatus.value === 'paid') list = list.filter((b) => !!b.paidDate)
+  else if (filterStatus.value) list = list.filter((b) => b.status === filterStatus.value)
   if (filterFrom.value) list = list.filter((b) => b.toDate > filterFrom.value)
   if (filterTo.value) list = list.filter((b) => b.fromDate < filterTo.value)
   list.sort((a, b) => {
@@ -134,7 +136,7 @@ async function updateBookingDates(id: string, changes: { fromDate?: string; toDa
   if (res !== undefined) { await load(); success('Booking updated') }
 }
 
-async function onPatch(id: string, changes: { comment?: string; status?: BookingStatus }) {
+async function onPatch(id: string, changes: { comment?: string; status?: BookingStatus; paidDate?: string }) {
   const res = await run(() => api.bookings.patch(id, changes))
   if (res !== undefined) {
     bookings.value = bookings.value.map((b) => b.id === id ? res : b)
@@ -227,8 +229,8 @@ function nights(from: string, to: string) {
         </select>
         <select v-model="filterStatus">
           <option value="">All statuses</option>
-          <option value="NotPaid">Not paid</option>
-          <option value="Paid">Paid</option>
+          <option value="unpaid">Not paid</option>
+          <option value="paid">Paid</option>
           <option value="Cancelled">Cancelled</option>
         </select>
         <input v-model="filterFrom" type="date" title="From date" />
@@ -286,8 +288,17 @@ function nights(from: string, to: string) {
               <td>{{ b.adultCount + b.childrenCount }}</td>
               <td>
                 <span
-                  :class="['badge', b.status === 'Paid' ? 'badge--paid' : b.status === 'NotPaid' ? 'badge--notpaid' : 'badge--cancelled']"
-                >{{ b.status === 'NotPaid' ? 'Not paid' : b.status }}</span>
+                  v-if="b.status === 'Cancelled'"
+                  class="badge badge--cancelled"
+                >Cancelled</span>
+                <span
+                  v-else-if="b.paidDate"
+                  class="badge badge--paid"
+                >Paid {{ formatDate(b.paidDate) }}</span>
+                <span
+                  v-else
+                  class="badge badge--notpaid"
+                >Not paid</span>
               </td>
               <td>€{{ b.totalAmountDue.toFixed(2) }}</td>
               <td>{{ channelMap[b.channelId]?.name ?? '—' }}</td>

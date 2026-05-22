@@ -88,7 +88,7 @@ describe('deleteChannel', () => {
     const booking: Booking = {
       id: 'b1', apartmentId: 'apt1', clientId: 'cli1', channelId: 'ch1',
       fromDate: '2025-06-01', toDate: '2025-06-05', adultCount: 1, childrenCount: 0,
-      status: 'NotPaid', totalAmountDue: 0, createdAt: '',
+      status: 'Active', totalAmountDue: 0, createdAt: '',
     }
     vi.mocked(loadBookings).mockReturnValue([booking])
     expect(() => deleteChannel('ch1')).toThrow('existing bookings')

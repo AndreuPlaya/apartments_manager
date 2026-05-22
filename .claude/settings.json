@@ -58,7 +58,9 @@
       "Bash(pnpm dev:client)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)",
       "Bash(pkill -f \"vite\")",
-      "Bash(pnpm -F server exec tsc --noEmit)"
+      "Bash(pnpm -F server exec tsc --noEmit)",
+      "Bash(pnpm -F server test --coverage)",
+      "Bash(pnpm -F client test --coverage)"
     ],
     "additionalDirectories": [
       "/tmp",

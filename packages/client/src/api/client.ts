@@ -1,4 +1,4 @@
-export type BookingStatus = 'NotPaid' | 'Paid' | 'Cancelled'
+export type BookingStatus = 'Active' | 'Cancelled'
 
 export interface Apartment {
   id: string
@@ -25,6 +25,7 @@ export interface Booking {
   adultCount: number
   childrenCount: number
   status: BookingStatus
+  paidDate?: string
   totalAmountDue: number
   comment?: string
   createdAt: string
@@ -147,7 +148,7 @@ export const api = {
       json<Booking>('/api/admin/bookings', 'POST', body),
     update: (id: string, body: Partial<Omit<Booking, 'id' | 'createdAt'>>) =>
       json<Booking>(`/api/admin/bookings/${id}`, 'PATCH', body),
-    patch: (id: string, body: { comment?: string; status?: BookingStatus }) =>
+    patch: (id: string, body: { comment?: string; status?: BookingStatus; paidDate?: string }) =>
       json<Booking>(`/api/bookings/${id}`, 'PATCH', body),
     delete: (id: string) => request<void>(`/api/admin/bookings/${id}`, { method: 'DELETE' }),
   },

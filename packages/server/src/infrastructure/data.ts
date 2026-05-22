@@ -33,7 +33,12 @@ export function saveProperties(properties: Property[]): void {
 // ── Bookings ──────────────────────────────────────────────────────────────
 
 export function loadBookings(): Booking[] {
-  return readJson<Booking[]>(PATHS.bookingsJson, [])
+  const raw = readJson<any[]>(PATHS.bookingsJson, [])
+  return raw.map((b): Booking => {
+    if (b.status === 'NotPaid') return { ...b, status: 'Active' }
+    if (b.status === 'Paid') return { ...b, status: 'Active', paidDate: b.paidDate ?? b.createdAt.split('T')[0] }
+    return b as Booking
+  })
 }
 
 export function saveBookings(bookings: Booking[]): void {

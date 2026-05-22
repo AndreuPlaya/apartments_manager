@@ -16,18 +16,18 @@ const emit = defineEmits<{
   close: []
   edit: []
   delete: []
-  patch: [changes: { comment?: string; status?: BookingStatus }]
+  patch: [changes: { comment?: string; status?: BookingStatus; paidDate?: string }]
 }>()
 
 const localComment = ref(props.booking.comment ?? '')
+const localPaidDate = ref(props.booking.paidDate ?? '')
 const localStatus = ref<BookingStatus>(props.booking.status)
 
 watch(() => props.booking, (b) => {
   localComment.value = b.comment ?? ''
+  localPaidDate.value = b.paidDate ?? ''
   localStatus.value = b.status
 })
-
-const commentDirty = computed(() => localComment.value !== (props.booking.comment ?? ''))
 
 function formatDate(d: string) {
   return new Date(d + 'T00:00:00').toLocaleDateString(undefined, {
@@ -44,34 +44,38 @@ const popupStyle = computed(() => ({
   top: Math.min(props.pos.y + 12, window.innerHeight - 400) + 'px',
 }))
 
+function handleClose() {
+  const changes: { comment?: string; paidDate?: string } = {}
+  if (localComment.value !== (props.booking.comment ?? '')) changes.comment = localComment.value
+  if (localPaidDate.value !== (props.booking.paidDate ?? '')) changes.paidDate = localPaidDate.value
+  if (Object.keys(changes).length > 0) emit('patch', changes)
+  emit('close')
+}
+
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') emit('close')
+  if (e.key === 'Escape') handleClose()
 }
 
 onMounted(() => document.addEventListener('keydown', onKeydown))
 onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 
-function setStatus(s: BookingStatus) {
-  if (s === localStatus.value) return
-  localStatus.value = s
-  emit('patch', { status: s })
-}
-
-function saveComment() {
-  emit('patch', { comment: localComment.value })
+function toggleCancelled() {
+  const next: BookingStatus = localStatus.value === 'Cancelled' ? 'Active' : 'Cancelled'
+  localStatus.value = next
+  emit('patch', { status: next })
 }
 </script>
 
 <template>
   <Teleport to="body">
-    <div class="booking-popup-overlay" @click="emit('close')" />
+    <div class="booking-popup-overlay" @click="handleClose" />
 
     <div
       class="booking-popup"
       :style="popupStyle"
       @click.stop
     >
-      <button class="booking-popup__close" @click="emit('close')"><AppIcon name="x" :size="14" /></button>
+      <button class="booking-popup__close" @click="handleClose"><AppIcon name="x" :size="14" /></button>
 
       <div class="booking-popup__client">{{ clientName }}</div>
       <div class="booking-popup__sub">{{ aptName }} · {{ channelName }}</div>
@@ -109,11 +113,18 @@ function saveComment() {
 
       <div class="booking-popup__status-pills">
         <button
-          v-for="s in (['NotPaid', 'Paid', 'Cancelled'] as BookingStatus[])"
-          :key="s"
-          :class="['status-pill', { 'status-pill--active': localStatus === s }]"
-          @click="setStatus(s)"
-        >{{ s === 'NotPaid' ? 'Not paid' : s }}</button>
+          :class="['status-pill', { 'status-pill--active': localStatus === 'Cancelled' }]"
+          @click="toggleCancelled"
+        >Cancelled</button>
+      </div>
+
+      <div class="booking-popup__field">
+        <label class="booking-popup__field-label">Paid date</label>
+        <input
+          v-model="localPaidDate"
+          type="date"
+          class="booking-popup__paid-date"
+        />
       </div>
 
       <div class="booking-popup__comment-field">
@@ -123,11 +134,6 @@ function saveComment() {
           placeholder="Add a comment…"
           rows="2"
         />
-        <button
-          v-if="commentDirty"
-          class="btn btn--primary btn--sm booking-popup__comment-save"
-          @click="saveComment"
-        >Save</button>
       </div>
 
       <div v-if="isAdmin" class="booking-popup__actions">

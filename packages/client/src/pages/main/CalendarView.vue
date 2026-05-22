@@ -17,7 +17,7 @@ const emit = defineEmits<{
   edit: [booking: Booking]
   delete: [booking: Booking]
   update: [id: string, changes: { fromDate?: string; toDate?: string }]
-  patch: [id: string, changes: { comment?: string; status?: BookingStatus }]
+  patch: [id: string, changes: { comment?: string; status?: BookingStatus; paidDate?: string }]
 }>()
 
 // ── Month navigation ──────────────────────────────────────────────────────────

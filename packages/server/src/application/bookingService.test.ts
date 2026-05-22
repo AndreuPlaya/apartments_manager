@@ -11,7 +11,7 @@ import {
   saveBookings,
 } from '../infrastructure/data.js'
 
-import { createBooking, deleteBooking, listBookings, updateBooking } from './bookingService.js'
+import { createBooking, deleteBooking, listBookings, patchBookingFields, updateBooking } from './bookingService.js'
 
 const apt: Apartment = {
   id: 'apt1',
@@ -47,7 +47,7 @@ const validReq = {
   toDate: '2025-06-05',
   adultCount: 2,
   childrenCount: 0,
-  status: 'NotPaid' as const,
+  status: 'Active' as const,
   totalAmountDue: 400,
 }
 
@@ -65,7 +65,7 @@ describe('listBookings', () => {
     const b: Booking = {
       id: 'b1', apartmentId: 'apt1', clientId: 'cli1', channelId: 'ch1',
       fromDate: '2025-06-01', toDate: '2025-06-05', adultCount: 1, childrenCount: 0,
-      status: 'NotPaid', totalAmountDue: 400, createdAt: '2025-01-01T00:00:00Z',
+      status: 'Active', totalAmountDue: 400, createdAt: '2025-01-01T00:00:00Z',
     }
     vi.mocked(queryBookings).mockReturnValue([b])
     const result = listBookings({ apartmentId: 'apt1' })
@@ -133,7 +133,7 @@ describe('createBooking', () => {
       toDate: '2025-06-08',
       adultCount: 1,
       childrenCount: 0,
-      status: 'NotPaid',
+      status: 'Active',
       totalAmountDue: 500,
       createdAt: '2025-01-01T00:00:00Z',
     }
@@ -151,7 +151,7 @@ describe('createBooking', () => {
       toDate: '2025-06-01',
       adultCount: 1,
       childrenCount: 0,
-      status: 'NotPaid',
+      status: 'Active',
       totalAmountDue: 300,
       createdAt: '2025-01-01T00:00:00Z',
     }
@@ -170,7 +170,7 @@ describe('updateBooking', () => {
     toDate: '2025-06-05',
     adultCount: 2,
     childrenCount: 0,
-    status: 'NotPaid',
+    status: 'Active',
     totalAmountDue: 400,
     createdAt: '2025-01-01T00:00:00Z',
   }
@@ -244,7 +244,7 @@ describe('deleteBooking', () => {
     const b: Booking = {
       id: 'b1', apartmentId: 'apt1', clientId: 'cli1', channelId: 'ch1',
       fromDate: '2025-06-01', toDate: '2025-06-05', adultCount: 1, childrenCount: 0,
-      status: 'NotPaid', totalAmountDue: 0, createdAt: '',
+      status: 'Active', totalAmountDue: 0, createdAt: '',
     }
     vi.mocked(loadBookings).mockReturnValue([b])
     deleteBooking('b1')
@@ -254,5 +254,47 @@ describe('deleteBooking', () => {
   it('throws NotFoundError for unknown id', () => {
     vi.mocked(loadBookings).mockReturnValue([])
     expect(() => deleteBooking('ghost')).toThrow('not found')
+  })
+})
+
+describe('patchBookingFields', () => {
+  const existing: Booking = {
+    id: 'b1', apartmentId: 'apt1', clientId: 'cli1', channelId: 'ch1',
+    fromDate: '2025-06-01', toDate: '2025-06-05', adultCount: 1, childrenCount: 0,
+    status: 'Active', totalAmountDue: 0, createdAt: '',
+  }
+
+  beforeEach(() => {
+    vi.mocked(loadBookings).mockReturnValue([existing])
+  })
+
+  it('patches comment only', () => {
+    const result = patchBookingFields('b1', { comment: 'hello' })
+    expect(result.comment).toBe('hello')
+    expect(result.status).toBe('Active')
+    expect(saveBookings).toHaveBeenCalled()
+  })
+
+  it('patches status only', () => {
+    const result = patchBookingFields('b1', { status: 'Cancelled' })
+    expect(result.status).toBe('Cancelled')
+    expect(result.comment).toBeUndefined()
+  })
+
+  it('patches paidDate only', () => {
+    const result = patchBookingFields('b1', { paidDate: '2025-06-02' })
+    expect(result.paidDate).toBe('2025-06-02')
+  })
+
+  it('patches multiple fields at once', () => {
+    const result = patchBookingFields('b1', { comment: 'hi', paidDate: '2025-06-03', status: 'Cancelled' })
+    expect(result.comment).toBe('hi')
+    expect(result.paidDate).toBe('2025-06-03')
+    expect(result.status).toBe('Cancelled')
+  })
+
+  it('throws NotFoundError for unknown id', () => {
+    vi.mocked(loadBookings).mockReturnValue([])
+    expect(() => patchBookingFields('ghost', { comment: 'x' })).toThrow('not found')
   })
 })

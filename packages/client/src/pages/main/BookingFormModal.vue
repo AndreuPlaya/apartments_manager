@@ -28,7 +28,8 @@ const form = ref({
   toDate: '',
   adultCount: 1,
   childrenCount: 0,
-  status: 'NotPaid' as 'NotPaid' | 'Paid' | 'Cancelled',
+  status: 'Active' as 'Active' | 'Cancelled',
+  paidDate: '',
   totalAmountDue: 0,
   comment: '',
   newClientData: null as NewClientData | null,
@@ -47,6 +48,7 @@ watch(
         adultCount: b.adultCount,
         childrenCount: b.childrenCount,
         status: b.status,
+        paidDate: b.paidDate ?? '',
         totalAmountDue: b.totalAmountDue,
         comment: b.comment ?? '',
         newClientData: null,
@@ -82,6 +84,7 @@ async function save() {
     adultCount: Number(form.value.adultCount),
     childrenCount: Number(form.value.childrenCount),
     status: form.value.status,
+    paidDate: form.value.paidDate || undefined,
     totalAmountDue: Number(form.value.totalAmountDue),
     comment: form.value.comment || undefined,
   }
@@ -156,10 +159,13 @@ const activeChannels = props.channels.filter((c) => c.isActive)
               <div class="form-group">
                 <label>Status</label>
                 <select v-model="form.status">
-                  <option value="NotPaid">Not paid</option>
-                  <option value="Paid">Paid</option>
+                  <option value="Active">Active</option>
                   <option value="Cancelled">Cancelled</option>
                 </select>
+              </div>
+              <div class="form-group">
+                <label>Paid date</label>
+                <input v-model="form.paidDate" type="date" />
               </div>
             </div>
             <div class="form-group">

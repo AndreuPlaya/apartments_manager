@@ -176,7 +176,7 @@ describe('api.apartments.*', () => {
 })
 
 describe('api.bookings.*', () => {
-  const bookingBody = { apartmentId: 'apt1', clientId: 'cli1', channelId: 'ch1', fromDate: '2025-06-01', toDate: '2025-06-05', adultCount: 2, childrenCount: 0, status: 'NotPaid' as const, totalAmountDue: 400 }
+  const bookingBody = { apartmentId: 'apt1', clientId: 'cli1', channelId: 'ch1', fromDate: '2025-06-01', toDate: '2025-06-05', adultCount: 2, childrenCount: 0, status: 'Active' as const, totalAmountDue: 400 }
   const booking = { id: 'b1', ...bookingBody, createdAt: '2025-01-01T00:00:00Z' }
   it('create posts to /api/admin/bookings', async () => {
     vi.stubGlobal('fetch', mockFetch(201, booking))
@@ -185,6 +185,10 @@ describe('api.bookings.*', () => {
   it('update patches /api/admin/bookings/:id', async () => {
     vi.stubGlobal('fetch', mockFetch(200, booking))
     expect(await api.bookings.update('b1', { totalAmountDue: 500 })).toEqual(booking)
+  })
+  it('patch sends PATCH to /api/bookings/:id', async () => {
+    vi.stubGlobal('fetch', mockFetch(200, booking))
+    expect(await api.bookings.patch('b1', { comment: 'hi', paidDate: '2025-06-02' })).toEqual(booking)
   })
   it('delete sends DELETE to /api/admin/bookings/:id', async () => {
     vi.stubGlobal('fetch', mockFetch(200, '', 'text/plain'))
