@@ -146,10 +146,6 @@ async function handleCancel() {
         @click.stop="expanded = !expanded">
         <AppIcon name="chevron-right" :size="14" :class="['arrow', expanded && 'arrow--open']" />
       </button>
-      <button v-if="isAdmin" class="btn btn--ghost btn--sm btn--icon text-danger delete-btn"
-        :disabled="loading" title="Cancel booking" @click.stop="handleCancel">
-        <TrashIcon :size="13" />
-      </button>
     </td>
   </tr>
 
@@ -161,6 +157,10 @@ async function handleCancel() {
 
           <div class="details-panel">
             <span class="panel-label">Booking details</span>
+            <button v-if="isAdmin" class="btn btn--ghost btn--sm btn--icon text-danger delete-btn"
+              :disabled="loading" title="Cancel booking" @click.stop="handleCancel">
+              <TrashIcon :size="13" />
+            </button>
             <div class="details-grid">
 
               <!-- Apartment -->
@@ -289,18 +289,10 @@ async function handleCancel() {
 /* ── Expand cell ───────────────────────────────────────────── */
 
 .expand-cell {
-  position: relative;
   width: 4rem;
   padding-left: 0 !important;
-  padding-bottom: 1.6rem !important;
   text-align: right;
   white-space: nowrap;
-}
-
-.delete-btn {
-  position: absolute;
-  bottom: 0.15rem;
-  right: 0.3rem;
 }
 
 .status-icon {
@@ -359,9 +351,16 @@ async function handleCancel() {
 /* ── Panel structure ────────────────────────────────────────── */
 
 .details-panel {
+  position: relative;
   padding: 0.875rem 0.875rem 0.75rem;
   background: var(--bg);
   border-left: 3px solid var(--accent);
+}
+
+.delete-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.3rem;
 }
 
 
