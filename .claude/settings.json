@@ -60,7 +60,8 @@
       "Bash(pkill -f \"vite\")",
       "Bash(pnpm -F server exec tsc --noEmit)",
       "Bash(pnpm -F server test --coverage)",
-      "Bash(pnpm -F client test --coverage)"
+      "Bash(pnpm -F client test --coverage)",
+      "Bash(git stash *)"
     ],
     "additionalDirectories": [
       "/tmp",
