@@ -59,11 +59,6 @@ function onKeydown(e: KeyboardEvent) {
 onMounted(() => document.addEventListener('keydown', onKeydown))
 onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 
-function toggleCancelled() {
-  const next: BookingStatus = localStatus.value === 'Cancelled' ? 'Active' : 'Cancelled'
-  localStatus.value = next
-  emit('patch', { status: next })
-}
 </script>
 
 <template>
@@ -109,13 +104,6 @@ function toggleCancelled() {
 
       <div class="booking-popup__row">
         <span class="booking-popup__amount">€{{ booking.totalAmountDue.toFixed(2) }}</span>
-      </div>
-
-      <div class="booking-popup__status-pills">
-        <button
-          :class="['status-pill', { 'status-pill--active': localStatus === 'Cancelled' }]"
-          @click="toggleCancelled"
-        >Cancelled</button>
       </div>
 
       <div class="booking-popup__field">
