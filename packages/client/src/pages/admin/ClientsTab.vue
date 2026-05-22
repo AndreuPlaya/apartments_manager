@@ -6,6 +6,7 @@ import { useAsyncOp } from '../../composables/useAsyncOp'
 import { useToast } from '../../composables/useToast'
 import { useConfirm } from '../../composables/useConfirm'
 import ClientItem from '../../components/ClientItem.vue'
+import BaseList from '../../components/BaseList.vue'
 import BookingFormModal from '../main/BookingFormModal.vue'
 import AppIcon from '../../components/AppIcon.vue'
 
@@ -86,14 +87,6 @@ async function onBookingSaved() {
   await load()
 }
 
-const searchRaw = ref('')
-const search = ref('')
-let _searchTimer: ReturnType<typeof setTimeout> | undefined
-watch(searchRaw, (val) => {
-  clearTimeout(_searchTimer)
-  _searchTimer = setTimeout(() => { search.value = val }, 150)
-})
-
 const clientBookingMap = computed(() => {
   const map: Record<string, Booking[]> = {}
   for (const b of allBookings.value) {
@@ -102,32 +95,27 @@ const clientBookingMap = computed(() => {
   return map
 })
 
-const sortKey = ref<keyof Client>('name')
-const sortDir = ref<'asc' | 'desc'>('asc')
+const LETTERS = ['A','B','C','D','E','F','G','H','I','J','K','L','M',
+                 'N','O','P','Q','R','S','T','U','V','W','X','Y','Z','#']
+const selectedLetter = ref('A')
+const visibleCount = ref(100)
 
-function toggleSort(key: keyof Client) {
-  if (sortKey.value === key) {
-    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
-  } else {
-    sortKey.value = key
-    sortDir.value = 'asc'
-  }
-}
+watch(selectedLetter, () => { visibleCount.value = 100 })
 
-const filtered = computed(() => {
-  const q = search.value.toLowerCase()
-  if (!q) return clients.value
-  return clients.value.filter((c) => c.name.toLowerCase().includes(q) || (c.email ?? '').toLowerCase().includes(q))
-})
+const filtered = computed(() =>
+  clients.value.filter(c => {
+    const first = c.name?.[0]?.toUpperCase() ?? ''
+    if (selectedLetter.value === '#') return !/^[A-Z]/.test(first)
+    return first === selectedLetter.value
+  })
+)
 
-const sorted = computed(() => {
-  const list = filtered.value.slice()
-  const key = sortKey.value
-  const dir = sortDir.value
-  return list.sort((a, b) =>
-    String(a[key] ?? '').localeCompare(String(b[key] ?? '')) * (dir === 'asc' ? 1 : -1)
-  )
-})
+const sorted = computed(() =>
+  filtered.value.slice().sort((a, b) => a.name.localeCompare(b.name))
+)
+
+const visible = computed(() => sorted.value.slice(0, visibleCount.value))
+const hasMore = computed(() => visibleCount.value < sorted.value.length)
 </script>
 
 <template>
@@ -135,37 +123,30 @@ const sorted = computed(() => {
     <div class="page-header">
       <h3>Clients</h3>
       <div class="page-header__spacer" />
-      <input v-model="searchRaw" type="text" placeholder="Search…" style="max-width: 200px" />
       <button class="btn btn--primary btn--sm" @click="openCreate">+ Add client</button>
     </div>
 
-    <div v-if="sorted.length === 0 && !loading" class="empty-state"><p>No clients found.</p></div>
-    <div v-else class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th class="sortable-th" @click="toggleSort('name')">
-              Name
-              <AppIcon :name="sortKey === 'name' ? (sortDir === 'asc' ? 'chevron-up' : 'chevron-down') : 'chevron-up-down'" :size="10" class="sort-icon" :class="{ 'sort-icon--active': sortKey === 'name' }" />
-            </th>
-            <th class="sortable-th" @click="toggleSort('identityDocument')">
-              ID document
-              <AppIcon :name="sortKey === 'identityDocument' ? (sortDir === 'asc' ? 'chevron-up' : 'chevron-down') : 'chevron-up-down'" :size="10" class="sort-icon" :class="{ 'sort-icon--active': sortKey === 'identityDocument' }" />
-            </th>
-            <th class="sortable-th" @click="toggleSort('email')">
-              Email
-              <AppIcon :name="sortKey === 'email' ? (sortDir === 'asc' ? 'chevron-up' : 'chevron-down') : 'chevron-up-down'" :size="10" class="sort-icon" :class="{ 'sort-icon--active': sortKey === 'email' }" />
-            </th>
-            <th class="sortable-th" @click="toggleSort('phoneNumber')">
-              Phone
-              <AppIcon :name="sortKey === 'phoneNumber' ? (sortDir === 'asc' ? 'chevron-up' : 'chevron-down') : 'chevron-up-down'" :size="10" class="sort-icon" :class="{ 'sort-icon--active': sortKey === 'phoneNumber' }" />
-            </th>
+    <div class="clients-layout">
+      <nav class="alpha-sidebar">
+        <button
+          v-for="l in LETTERS"
+          :key="l"
+          :class="['alpha-btn', selectedLetter === l && 'alpha-btn--active']"
+          @click="selectedLetter = l"
+        >{{ l }}</button>
+      </nav>
+
+      <div class="clients-main">
+        <BaseList :is-empty="sorted.length === 0 && !loading" empty-message="No clients found for this letter.">
+          <template #header>
+            <th>Name</th>
+            <th>ID document</th>
+            <th>Email</th>
+            <th>Phone</th>
             <th />
-          </tr>
-        </thead>
-        <tbody>
+          </template>
           <ClientItem
-            v-for="c in sorted"
+            v-for="c in visible"
             :key="c.id"
             v-memo="[c, clientBookingMap[c.id], apartments, channels, deletingId === c.id]"
             :client="c"
@@ -177,8 +158,14 @@ const sorted = computed(() => {
             @delete="del"
             @edit-booking="openBookingEdit"
           />
-        </tbody>
-      </table>
+        </BaseList>
+
+        <div v-if="hasMore" class="load-more-wrap">
+          <button class="btn btn--secondary btn--sm" @click="visibleCount += 100">
+            Load more ({{ sorted.length - visibleCount }} remaining)
+          </button>
+        </div>
+      </div>
     </div>
 
     <BookingFormModal
@@ -257,3 +244,55 @@ const sorted = computed(() => {
     </Teleport>
   </div>
 </template>
+
+<style scoped>
+.clients-layout {
+  display: flex;
+  gap: 0;
+  align-items: flex-start;
+}
+
+.alpha-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0.25rem 0.5rem 0.25rem 0;
+  flex-shrink: 0;
+  position: sticky;
+  top: 1rem;
+}
+
+.alpha-btn {
+  width: 1.75rem;
+  height: 1.6rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+
+.alpha-btn:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.alpha-btn--active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.clients-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.load-more-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0;
+}
+</style>

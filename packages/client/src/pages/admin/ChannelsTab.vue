@@ -5,8 +5,9 @@ import { api } from '../../api/client'
 import { useAsyncOp } from '../../composables/useAsyncOp'
 import { useToast } from '../../composables/useToast'
 import { useConfirm } from '../../composables/useConfirm'
+import ChannelItem from '../../components/ChannelItem.vue'
+import BaseList from '../../components/BaseList.vue'
 import AppIcon from '../../components/AppIcon.vue'
-import TrashIcon from '../../components/TrashIcon.vue'
 
 const { loading, run } = useAsyncOp()
 const { success } = useToast()
@@ -14,7 +15,6 @@ const { confirm } = useConfirm()
 
 const channels = ref<Channel[]>([])
 const showForm = ref(false)
-const editing = ref<Channel | null>(null)
 
 const blank = (): Omit<Channel, 'id'> => ({ name: '', commissionRate: 0, isActive: true })
 const form = ref(blank())
@@ -26,18 +26,20 @@ async function load() {
 
 onMounted(load)
 
-function openCreate() { editing.value = null; form.value = blank(); showForm.value = true }
-function openEdit(c: Channel) { editing.value = c; form.value = { ...c }; showForm.value = true }
+function openCreate() { form.value = blank(); showForm.value = true }
 
 async function save() {
   const payload = { ...form.value, commissionRate: Number(form.value.commissionRate) }
-  let res: unknown
-  if (editing.value) {
-    res = await run(() => api.channels.update(editing.value!.id, payload))
-  } else {
-    res = await run(() => api.channels.create(payload))
+  const res = await run(() => api.channels.create(payload))
+  if (res !== undefined) { showForm.value = false; await load(); success('Channel created') }
+}
+
+async function updateField(channel: Channel, patch: Partial<Omit<Channel, 'id'>>) {
+  const res = await run(() => api.channels.update(channel.id, patch))
+  if (res !== undefined) {
+    const idx = channels.value.findIndex(c => c.id === channel.id)
+    if (idx !== -1) channels.value[idx] = { ...channels.value[idx], ...patch }
   }
-  if (res !== undefined) { showForm.value = false; await load(); success(editing.value ? 'Channel updated' : 'Channel created') }
 }
 
 async function del(c: Channel) {
@@ -55,37 +57,28 @@ async function del(c: Channel) {
       <button class="btn btn--primary btn--sm" @click="openCreate">+ Add channel</button>
     </div>
 
-    <div v-if="channels.length === 0 && !loading" class="empty-state"><p>No channels yet.</p></div>
-    <div v-else class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Name</th><th>Commission rate</th><th>Status</th><th /></tr>
-        </thead>
-        <tbody>
-          <tr v-for="c in channels" :key="c.id">
-            <td>{{ c.name }}</td>
-            <td>{{ c.commissionRate }}%</td>
-            <td>
-              <span :class="['badge', c.isActive ? 'badge--active' : 'badge--inactive']">
-                {{ c.isActive ? 'Active' : 'Inactive' }}
-              </span>
-            </td>
-            <td>
-              <div class="action-btns">
-                <button class="btn btn--ghost btn--sm" @click="openEdit(c)">Edit</button>
-                <button class="btn btn--ghost btn--sm btn--icon text-danger" title="Delete" @click="del(c)"><TrashIcon /></button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <BaseList :is-empty="channels.length === 0 && !loading" empty-message="No channels yet.">
+      <template #header>
+        <th>Name</th>
+        <th>Commission</th>
+        <th>Status</th>
+        <th />
+      </template>
+      <ChannelItem
+        v-for="c in channels"
+        :key="c.id"
+        :channel="c"
+        :loading="loading"
+        @update="updateField"
+        @delete="del"
+      />
+    </BaseList>
 
     <Teleport to="body">
       <div v-if="showForm" class="modal-backdrop" @click.self="showForm = false">
         <div class="modal modal--sm">
           <div class="modal__header">
-            <h3>{{ editing ? 'Edit channel' : 'New channel' }}</h3>
+            <h3>New channel</h3>
             <button class="btn btn--ghost btn--sm" @click="showForm = false"><AppIcon name="x" /></button>
           </div>
           <form @submit.prevent="save">
