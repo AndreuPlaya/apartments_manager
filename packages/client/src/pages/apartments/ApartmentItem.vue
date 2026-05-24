@@ -1,17 +1,23 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { Apartment } from '../../api/client'
+import type { Apartment, CalendarLink, Channel } from '../../api/client'
 import { useInlineEdit } from '../../composables/useInlineEdit'
 import BaseItem from '../../shared/BaseItem.vue'
+import CalendarLinksPanel from '../../shared/CalendarLinksPanel.vue'
 
 const props = defineProps<{
   apartment: Apartment
+  calendarLinks: CalendarLink[]
+  channels: Channel[]
   loading?: boolean
+  isAdmin?: boolean
 }>()
 
 const emit = defineEmits<{
   update: [apartment: Apartment, patch: Partial<Omit<Apartment, 'id'>>]
   delete: [apartment: Apartment]
+  saveCalendarLink: [channelId: string, apartmentId: string, url: string]
+  deleteCalendarLink: [id: string]
 }>()
 
 type ApartmentField = keyof Omit<Apartment, 'id'>
@@ -44,13 +50,15 @@ function commitEdit() {
 function toggleAvailable() {
   emit('update', props.apartment, { isAvailable: !props.apartment.isAvailable })
 }
+
+const apartmentLinks = () => props.calendarLinks.filter(l => l.apartmentId === props.apartment.id)
 </script>
 
 <template>
   <BaseItem
     :col-span="6"
     :loading="loading"
-    :can-delete="true"
+    :can-delete="isAdmin ?? false"
     @delete="emit('delete', apartment)"
   >
     <template #summary>
@@ -71,7 +79,7 @@ function toggleAvailable() {
         <div class="details-grid">
 
           <div :class="['detail-field', editingField === 'name' && 'detail-field--editing']"
-            @click="startEdit('name', apartment.name)">
+            @click="(isAdmin ?? false) && startEdit('name', apartment.name)">
             <span class="detail-field__label">Name</span>
             <span v-if="editingField !== 'name'" class="detail-field__val">{{ apartment.name || '—' }}</span>
             <input v-else ref="inputRef" v-model="editingValue" placeholder="Name"
@@ -79,7 +87,7 @@ function toggleAvailable() {
           </div>
 
           <div :class="['detail-field', editingField === 'address' && 'detail-field--editing']"
-            @click="startEdit('address', apartment.address)">
+            @click="(isAdmin ?? false) && startEdit('address', apartment.address)">
             <span class="detail-field__label">Address</span>
             <span v-if="editingField !== 'address'" class="detail-field__val">{{ apartment.address || '—' }}</span>
             <input v-else ref="inputRef" v-model="editingValue" placeholder="Address"
@@ -87,7 +95,7 @@ function toggleAvailable() {
           </div>
 
           <div :class="['detail-field', editingField === 'floor' && 'detail-field--editing']"
-            @click="startEdit('floor', apartment.floor)">
+            @click="(isAdmin ?? false) && startEdit('floor', apartment.floor)">
             <span class="detail-field__label">Floor</span>
             <span v-if="editingField !== 'floor'" class="detail-field__val">{{ apartment.floor }}</span>
             <input v-else ref="inputRef" v-model="editingValue" type="number"
@@ -95,7 +103,7 @@ function toggleAvailable() {
           </div>
 
           <div :class="['detail-field', editingField === 'door' && 'detail-field--editing']"
-            @click="startEdit('door', apartment.door)">
+            @click="(isAdmin ?? false) && startEdit('door', apartment.door)">
             <span class="detail-field__label">Door</span>
             <span v-if="editingField !== 'door'" class="detail-field__val">{{ apartment.door || '—' }}</span>
             <input v-else ref="inputRef" v-model="editingValue" placeholder="Door"
@@ -103,7 +111,7 @@ function toggleAvailable() {
           </div>
 
           <div :class="['detail-field', editingField === 'price' && 'detail-field--editing']"
-            @click="startEdit('price', apartment.price)">
+            @click="(isAdmin ?? false) && startEdit('price', apartment.price)">
             <span class="detail-field__label">Price / night (€)</span>
             <span v-if="editingField !== 'price'" class="detail-field__val">{{ apartment.price }}</span>
             <input v-else ref="inputRef" v-model="editingValue" type="number" min="0" step="0.01"
@@ -111,7 +119,7 @@ function toggleAvailable() {
           </div>
 
           <div :class="['detail-field', editingField === 'minNights' && 'detail-field--editing']"
-            @click="startEdit('minNights', apartment.minNights)">
+            @click="(isAdmin ?? false) && startEdit('minNights', apartment.minNights)">
             <span class="detail-field__label">Min nights</span>
             <span v-if="editingField !== 'minNights'" class="detail-field__val">{{ apartment.minNights }}</span>
             <input v-else ref="inputRef" v-model="editingValue" type="number" min="1"
@@ -119,7 +127,7 @@ function toggleAvailable() {
           </div>
 
           <div :class="['detail-field', editingField === 'maxGuests' && 'detail-field--editing']"
-            @click="startEdit('maxGuests', apartment.maxGuests)">
+            @click="(isAdmin ?? false) && startEdit('maxGuests', apartment.maxGuests)">
             <span class="detail-field__label">Max guests</span>
             <span v-if="editingField !== 'maxGuests'" class="detail-field__val">{{ apartment.maxGuests }}</span>
             <input v-else ref="inputRef" v-model="editingValue" type="number" min="1"
@@ -127,7 +135,7 @@ function toggleAvailable() {
           </div>
 
           <div :class="['detail-field', editingField === 'rooms' && 'detail-field--editing']"
-            @click="startEdit('rooms', apartment.rooms)">
+            @click="(isAdmin ?? false) && startEdit('rooms', apartment.rooms)">
             <span class="detail-field__label">Rooms</span>
             <span v-if="editingField !== 'rooms'" class="detail-field__val">{{ apartment.rooms }}</span>
             <input v-else ref="inputRef" v-model="editingValue" type="number" min="1"
@@ -135,20 +143,20 @@ function toggleAvailable() {
           </div>
 
           <div :class="['detail-field', editingField === 'bathrooms' && 'detail-field--editing']"
-            @click="startEdit('bathrooms', apartment.bathrooms)">
+            @click="(isAdmin ?? false) && startEdit('bathrooms', apartment.bathrooms)">
             <span class="detail-field__label">Bathrooms</span>
             <span v-if="editingField !== 'bathrooms'" class="detail-field__val">{{ apartment.bathrooms }}</span>
             <input v-else ref="inputRef" v-model="editingValue" type="number" min="1"
               @blur="commitEdit" @keydown.enter.prevent="commitEdit" @keydown.escape.prevent="cancelEdit" @click.stop />
           </div>
 
-          <div class="detail-field detail-field--checkbox" @click.stop="toggleAvailable">
-            <input type="checkbox" :checked="apartment.isAvailable" @change.stop="toggleAvailable" @click.stop />
+          <div class="detail-field detail-field--checkbox" @click.stop="(isAdmin ?? false) && toggleAvailable()">
+            <input type="checkbox" :checked="apartment.isAvailable" :disabled="!(isAdmin ?? false)" @change.stop="toggleAvailable" @click.stop />
             <span class="detail-field__label" style="margin-bottom:0">Available for booking</span>
           </div>
 
           <div :class="['detail-field', 'detail-field--wide', editingField === 'description' && 'detail-field--editing']"
-            @click="startEdit('description', apartment.description ?? '')">
+            @click="(isAdmin ?? false) && startEdit('description', apartment.description ?? '')">
             <span class="detail-field__label">Description</span>
             <span v-if="editingField !== 'description'" class="detail-field__val detail-field__val--pre">{{ apartment.description || '—' }}</span>
             <textarea v-else ref="inputRef" v-model="editingValue" rows="2" placeholder="Description"
@@ -157,6 +165,17 @@ function toggleAvailable() {
 
         </div>
       </div>
+
+      <CalendarLinksPanel
+        :links="apartmentLinks()"
+        :apartments="[]"
+        :channels="channels"
+        :is-admin="isAdmin ?? false"
+        mode="by-channel"
+        :context-id="apartment.id"
+        @save="(ch, ap, url) => emit('saveCalendarLink', ch, ap, url)"
+        @delete="id => emit('deleteCalendarLink', id)"
+      />
     </template>
   </BaseItem>
 </template>

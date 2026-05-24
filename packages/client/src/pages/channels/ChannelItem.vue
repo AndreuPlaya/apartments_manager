@@ -1,17 +1,23 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { Channel } from '../../api/client'
+import type { Channel, CalendarLink, Apartment } from '../../api/client'
 import { useInlineEdit } from '../../composables/useInlineEdit'
 import BaseItem from '../../shared/BaseItem.vue'
+import CalendarLinksPanel from '../../shared/CalendarLinksPanel.vue'
 
 const props = defineProps<{
   channel: Channel
+  calendarLinks: CalendarLink[]
+  apartments: Apartment[]
   loading?: boolean
+  isAdmin?: boolean
 }>()
 
 const emit = defineEmits<{
   update: [channel: Channel, patch: Partial<Omit<Channel, 'id'>>]
   delete: [channel: Channel]
+  saveCalendarLink: [channelId: string, apartmentId: string, url: string]
+  deleteCalendarLink: [id: string]
 }>()
 
 type ChannelField = keyof Omit<Channel, 'id'>
@@ -42,13 +48,15 @@ function commitEdit() {
 function toggleActive() {
   emit('update', props.channel, { isActive: !props.channel.isActive })
 }
+
+const channelLinks = () => props.calendarLinks.filter(l => l.channelId === props.channel.id)
 </script>
 
 <template>
   <BaseItem
     :col-span="4"
     :loading="loading"
-    :can-delete="true"
+    :can-delete="isAdmin ?? false"
     @delete="emit('delete', channel)"
   >
     <template #summary>
@@ -67,7 +75,7 @@ function toggleActive() {
         <div class="details-grid details-grid--3col">
 
           <div :class="['detail-field', editingField === 'name' && 'detail-field--editing']"
-            @click="startEdit('name', channel.name)">
+            @click="(isAdmin ?? false) && startEdit('name', channel.name)">
             <span class="detail-field__label">Name</span>
             <span v-if="editingField !== 'name'" class="detail-field__val">{{ channel.name }}</span>
             <input v-else ref="inputRef" v-model="editingValue" placeholder="Name"
@@ -75,20 +83,31 @@ function toggleActive() {
           </div>
 
           <div :class="['detail-field', editingField === 'commissionRate' && 'detail-field--editing']"
-            @click="startEdit('commissionRate', channel.commissionRate)">
+            @click="(isAdmin ?? false) && startEdit('commissionRate', channel.commissionRate)">
             <span class="detail-field__label">Commission rate (%)</span>
             <span v-if="editingField !== 'commissionRate'" class="detail-field__val">{{ channel.commissionRate }}%</span>
             <input v-else ref="inputRef" v-model="editingValue" type="number" min="0" max="100" step="0.1"
               @blur="commitEdit" @keydown.enter.prevent="commitEdit" @keydown.escape.prevent="cancelEdit" @click.stop />
           </div>
 
-          <div class="detail-field detail-field--checkbox" @click.stop="toggleActive">
-            <input type="checkbox" :checked="channel.isActive" @change.stop="toggleActive" @click.stop />
+          <div class="detail-field detail-field--checkbox" @click.stop="(isAdmin ?? false) && toggleActive()">
+            <input type="checkbox" :checked="channel.isActive" :disabled="!(isAdmin ?? false)" @change.stop="toggleActive" @click.stop />
             <span class="detail-field__label" style="margin-bottom:0">Active</span>
           </div>
 
         </div>
       </div>
+
+      <CalendarLinksPanel
+        :links="channelLinks()"
+        :apartments="apartments"
+        :channels="[]"
+        :is-admin="isAdmin ?? false"
+        mode="by-apartment"
+        :context-id="channel.id"
+        @save="(ch, ap, url) => emit('saveCalendarLink', ch, ap, url)"
+        @delete="id => emit('deleteCalendarLink', id)"
+      />
     </template>
   </BaseItem>
 </template>

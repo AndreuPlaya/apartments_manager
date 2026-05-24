@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { listApartments } from '../application/apartmentService.js'
 import { listBookings, patchBookingFields } from '../application/bookingService.js'
+import { listCalendarLinks } from '../application/calendarLinkService.js'
 import { listChannels } from '../application/channelService.js'
 import { listClients } from '../application/clientService.js'
 import { listProperties } from '../application/propertyService.js'
@@ -38,6 +39,10 @@ editorRoutes.get('/api/clients', (c) => {
 
 editorRoutes.get('/api/channels', (c) => {
   return c.json(listChannels())
+})
+
+editorRoutes.get('/api/calendar-links', (c) => {
+  return c.json(listCalendarLinks())
 })
 
 editorRoutes.patch('/api/bookings/:id', async (c) => {

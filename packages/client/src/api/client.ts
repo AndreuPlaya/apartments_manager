@@ -51,6 +51,13 @@ export interface Channel {
   isActive: boolean
 }
 
+export interface CalendarLink {
+  id: string
+  channelId: string
+  apartmentId: string
+  url: string
+}
+
 export interface UserItem {
   id: string
   username: string
@@ -169,6 +176,14 @@ export const api = {
     update: (id: string, body: Partial<Omit<Channel, 'id'>>) =>
       json<Channel>(`/api/admin/channels/${id}`, 'PATCH', body),
     delete: (id: string) => request<void>(`/api/admin/channels/${id}`, { method: 'DELETE' }),
+  },
+
+  calendarLinks: {
+    list: () => request<CalendarLink[]>('/api/calendar-links'),
+    upsert: (body: Omit<CalendarLink, 'id'>) =>
+      json<CalendarLink>('/api/admin/calendar-links', 'POST', body),
+    delete: (id: string) =>
+      request<void>(`/api/admin/calendar-links/${id}`, { method: 'DELETE' }),
   },
 
   users: {

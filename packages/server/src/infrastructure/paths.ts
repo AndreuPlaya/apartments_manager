@@ -9,4 +9,5 @@ export const PATHS = {
   bookingsJson: join(DATA_DIR, 'database', 'bookings.json'),
   clientsJson: join(DATA_DIR, 'database', 'clients.json'),
   channelsJson: join(DATA_DIR, 'database', 'channels.json'),
+  calendarLinksJson: join(DATA_DIR, 'database', 'calendarLinks.json'),
 }

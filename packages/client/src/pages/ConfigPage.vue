@@ -46,8 +46,8 @@ function setTab(tab: Tab) {
         {{ t }}
       </button>
     </div>
-    <ApartmentsTab v-if="activeTab === 'Apartments'" />
-    <ChannelsTab v-else-if="activeTab === 'Channels'" />
+    <ApartmentsTab v-if="activeTab === 'Apartments'" :is-admin="true" />
+    <ChannelsTab v-else-if="activeTab === 'Channels'" :is-admin="true" />
     <UsersTab v-else-if="activeTab === 'Users'" />
   </div>
 </template>

@@ -63,6 +63,13 @@ export interface Channel {
   isActive: boolean
 }
 
+export interface CalendarLink {
+  id: string
+  channelId: string
+  apartmentId: string
+  url: string
+}
+
 export interface AdminRecord {
   password_hash: string
   full_name: string
@@ -118,6 +125,8 @@ export type UpdateClientRequest = Partial<Omit<Client, 'id'>>
 
 export type CreateChannelRequest = Omit<Channel, 'id'>
 export type UpdateChannelRequest = Partial<Omit<Channel, 'id'>>
+
+export type CreateCalendarLinkRequest = Omit<CalendarLink, 'id'>
 
 export interface CreateUserRequest {
   username: string

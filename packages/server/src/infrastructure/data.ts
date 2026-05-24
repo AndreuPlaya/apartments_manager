@@ -2,6 +2,7 @@ import type {
   Apartment,
   Booking,
   BookingFilters,
+  CalendarLink,
   Channel,
   Client,
   Property,
@@ -81,4 +82,14 @@ export function loadChannels(): Channel[] {
 
 export function saveChannels(channels: Channel[]): void {
   writeJson(PATHS.channelsJson, channels)
+}
+
+// ── Calendar Links ────────────────────────────────────────────────────────
+
+export function loadCalendarLinks(): CalendarLink[] {
+  return readJson<CalendarLink[]>(PATHS.calendarLinksJson, [])
+}
+
+export function saveCalendarLinks(links: CalendarLink[]): void {
+  writeJson(PATHS.calendarLinksJson, links)
 }

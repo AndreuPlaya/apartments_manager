@@ -12,6 +12,10 @@ import {
   updateBooking,
 } from '../application/bookingService.js'
 import {
+  deleteCalendarLink,
+  upsertCalendarLink,
+} from '../application/calendarLinkService.js'
+import {
   createChannel,
   deleteChannel,
   updateChannel,
@@ -38,6 +42,7 @@ import { authMiddleware } from '../middleware/auth.js'
 import type {
   CreateApartmentRequest,
   CreateBookingRequest,
+  CreateCalendarLinkRequest,
   CreateChannelRequest,
   CreateClientRequest,
   CreatePropertyRequest,
@@ -197,6 +202,22 @@ adminRoutes.patch('/api/admin/users/:id', async (c) => {
 adminRoutes.delete('/api/admin/users/:id', (c) => {
   try {
     deleteUser(c.req.param('id'))
+    return c.json({ ok: true })
+  } catch (err) { return handleError(err, c) }
+})
+
+// ── Calendar Links ─────────────────────────────────────────────────────────
+
+adminRoutes.post('/api/admin/calendar-links', async (c) => {
+  try {
+    const body = await c.req.json<CreateCalendarLinkRequest>()
+    return c.json(upsertCalendarLink(body), 200)
+  } catch (err) { return handleError(err, c) }
+})
+
+adminRoutes.delete('/api/admin/calendar-links/:id', (c) => {
+  try {
+    deleteCalendarLink(c.req.param('id'))
     return c.json({ ok: true })
   } catch (err) { return handleError(err, c) }
 })

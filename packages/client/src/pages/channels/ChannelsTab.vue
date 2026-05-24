@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import type { Channel } from '../../api/client'
+import type { Channel, Apartment, CalendarLink } from '../../api/client'
 import { api } from '../../api/client'
 import { useAsyncOp } from '../../composables/useAsyncOp'
 import { useToast } from '../../composables/useToast'
@@ -9,19 +9,29 @@ import ChannelItem from './ChannelItem.vue'
 import BaseList from '../../shared/BaseList.vue'
 import AppIcon from '../../shared/AppIcon.vue'
 
+const props = defineProps<{ isAdmin?: boolean }>()
+
 const { loading, run } = useAsyncOp()
 const { success } = useToast()
 const { confirm } = useConfirm()
 
 const channels = ref<Channel[]>([])
+const apartments = ref<Apartment[]>([])
+const calendarLinks = ref<CalendarLink[]>([])
 const showForm = ref(false)
 
 const blank = (): Omit<Channel, 'id'> => ({ name: '', commissionRate: 0, isActive: true })
 const form = ref(blank())
 
 async function load() {
-  const res = await run(() => api.channels.list())
-  if (res) channels.value = res
+  const [ch, apt, links] = await Promise.all([
+    run(() => api.channels.list()),
+    run(() => api.apartments.list()),
+    run(() => api.calendarLinks.list()),
+  ])
+  if (ch) channels.value = ch
+  if (apt) apartments.value = apt
+  if (links) calendarLinks.value = links
 }
 
 onMounted(load)
@@ -47,6 +57,27 @@ async function del(c: Channel) {
   const res = await run(() => api.channels.delete(c.id))
   if (res !== undefined) { await load(); success('Channel deleted') }
 }
+
+async function saveCalendarLink(channelId: string, apartmentId: string, url: string) {
+  const res = await run(() => api.calendarLinks.upsert({ channelId, apartmentId, url }))
+  if (res !== undefined) {
+    const idx = calendarLinks.value.findIndex(
+      l => l.channelId === channelId && l.apartmentId === apartmentId
+    )
+    if (idx !== -1) {
+      calendarLinks.value[idx] = res
+    } else {
+      calendarLinks.value = [...calendarLinks.value, res]
+    }
+  }
+}
+
+async function deleteCalendarLink(id: string) {
+  const res = await run(() => api.calendarLinks.delete(id))
+  if (res !== undefined) {
+    calendarLinks.value = calendarLinks.value.filter(l => l.id !== id)
+  }
+}
 </script>
 
 <template>
@@ -68,9 +99,14 @@ async function del(c: Channel) {
         v-for="c in channels"
         :key="c.id"
         :channel="c"
+        :calendar-links="calendarLinks"
+        :apartments="apartments"
         :loading="loading"
+        :is-admin="props.isAdmin"
         @update="updateField"
         @delete="del"
+        @save-calendar-link="saveCalendarLink"
+        @delete-calendar-link="deleteCalendarLink"
       />
     </BaseList>
 
