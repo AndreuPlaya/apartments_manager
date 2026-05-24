@@ -28,15 +28,6 @@ const expanded = ref(false)
       <div class="action-btns">
         <slot name="extra-actions" />
         <button
-          v-if="canDelete"
-          class="btn btn--ghost btn--sm btn--icon text-danger"
-          :disabled="loading"
-          title="Delete"
-          @click.stop="emit('delete')"
-        >
-          <TrashIcon :size="13" />
-        </button>
-        <button
           class="btn btn--ghost btn--sm expand-btn"
           :title="expanded ? 'Collapse' : 'Expand'"
           @click.stop="expanded = !expanded"
@@ -51,6 +42,15 @@ const expanded = ref(false)
     <td :colspan="colSpan" class="drawer-cell">
       <div class="drawer" :class="{ 'drawer--open': expanded }">
         <div class="drawer__inner">
+          <button
+            v-if="canDelete"
+            class="btn btn--ghost btn--sm btn--icon drawer-delete-btn"
+            :disabled="loading"
+            title="Delete"
+            @click.stop="emit('delete')"
+          >
+            <TrashIcon :size="13" />
+          </button>
           <slot name="drawer" />
         </div>
       </div>
@@ -105,6 +105,7 @@ const expanded = ref(false)
 }
 
 .drawer__inner {
+  position: relative;
   overflow: hidden;
   border-top: 0;
   transition: border-top-color 0.22s;
@@ -112,6 +113,19 @@ const expanded = ref(false)
 
 .drawer--open .drawer__inner {
   border-top: 1px solid var(--border);
+}
+
+.drawer-delete-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.875rem;
+  z-index: 1;
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+
+.drawer-delete-btn:hover {
+  color: var(--danger);
 }
 </style>
 
