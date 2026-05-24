@@ -43,6 +43,18 @@ const statusIcon = computed(() => {
   return null
 })
 
+const daysUntilArrival = computed(() => {
+  const from = new Date(props.booking.fromDate + 'T00:00:00')
+  const tod  = new Date(props.today + 'T00:00:00')
+  return Math.round((from.getTime() - tod.getTime()) / 86400000)
+})
+
+const isUpcoming = computed(() =>
+  props.booking.status !== 'Cancelled' &&
+  daysUntilArrival.value > 0 &&
+  daysUntilArrival.value <= 7
+)
+
 const guestString = computed(() => {
   const adults = props.booking.adultCount
   const children = props.booking.childrenCount
@@ -113,7 +125,7 @@ async function handleCancel() {
 
 <template>
   <BaseItem
-    :col-span="6"
+    :col-span="7"
     :loading="loading"
     :can-delete="isAdmin"
     :class="{
@@ -127,9 +139,15 @@ async function handleCancel() {
       <td>{{ client?.name ?? '—' }}</td>
       <td>{{ formatDate(booking.fromDate) }}</td>
       <td>{{ formatDate(booking.toDate) }}</td>
-      <td class="guests-cell">
-        <AppIcon v-if="statusIcon" :name="statusIcon" :size="14" class="status-icon" />
-        {{ guestString }}
+      <td class="guests-cell">{{ guestString }}</td>
+      <td class="status-cell">
+        <template v-if="isArriving || isDeparting || isStaying">
+          <AppIcon :name="(statusIcon as string)" :size="14" class="status-icon" />
+        </template>
+        <template v-else-if="isUpcoming">
+          <AppIcon name="log-in" :size="14" class="status-icon status-icon--upcoming" />
+          <span class="day-badge">{{ daysUntilArrival }}d</span>
+        </template>
       </td>
     </template>
 
@@ -262,9 +280,21 @@ async function handleCancel() {
   white-space: nowrap;
 }
 
+.status-cell {
+  width: 2rem;
+  white-space: nowrap;
+  text-align: center;
+}
+
 .status-icon {
   color: var(--text-muted);
-  margin-right: 0.25rem;
+  vertical-align: middle;
+}
+
+.day-badge {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-left: 0.15rem;
   vertical-align: middle;
 }
 

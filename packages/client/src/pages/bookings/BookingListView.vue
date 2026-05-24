@@ -129,6 +129,7 @@ function clearFilters() {
             </th>
             <th>Guests</th>
             <th style="width: 2rem" />
+            <th />
           </tr>
         </thead>
         <tbody>

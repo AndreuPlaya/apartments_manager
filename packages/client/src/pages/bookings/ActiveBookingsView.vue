@@ -39,6 +39,7 @@ const allBookings = computed(() => [
           <th>Check-in</th>
           <th>Check-out</th>
           <th>Guests</th>
+          <th style="width: 2rem"></th>
           <th></th>
         </tr>
       </thead>
