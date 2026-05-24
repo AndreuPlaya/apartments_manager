@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { api } from '../api/client'
-import { setCachedConfig } from '../router'
-import { useToast } from '../composables/useToast'
+import { api } from '../../api/client'
+import { setCachedConfig } from '../../router'
+import { useToast } from '../../composables/useToast'
 
 const router = useRouter()
 const { error } = useToast()

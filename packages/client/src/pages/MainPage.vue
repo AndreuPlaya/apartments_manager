@@ -4,13 +4,10 @@ import { api } from '../api/client'
 import type { Apartment, Booking, Client, Channel } from '../api/client'
 import { useToast } from '../composables/useToast'
 import { useAsyncOp } from '../composables/useAsyncOp'
-import BookingFormModal from './main/BookingFormModal.vue'
-import BookingListView from './main/BookingListView.vue'
-import ClientEditModal from './main/ClientEditModal.vue'
-import CalendarView from './main/CalendarView.vue'
-import TodaySummary from './main/TodaySummary.vue'
-import ActiveBookingsView from './main/ActiveBookingsView.vue'
-import AppIcon from '../components/AppIcon.vue'
+import BookingFormModal from './bookings/BookingFormModal.vue'
+import ClientEditModal from './clients/ClientEditModal.vue'
+import TodaySummary from './bookings/TodaySummary.vue'
+import ActiveBookingsView from './bookings/ActiveBookingsView.vue'
 import type { BookingStatus } from '../api/client'
 
 const { success, error } = useToast()
@@ -24,7 +21,6 @@ const clients = ref<Client[]>([])
 const channels = ref<Channel[]>([])
 const isAdmin = ref(false)
 const pageLoading = ref(true)
-const loadingMore = ref(false)
 
 // ── Booking window ────────────────────────────────────────────────────────────
 
@@ -48,6 +44,20 @@ const departureBookings = computed(() =>
 )
 const occupiedBookings = computed(() =>
   bookings.value.filter((b) => b.fromDate < today && b.toDate > today && b.status !== 'Cancelled'),
+)
+
+// ── Upcoming bookings (next 7 days, excluding today) ─────────────────────────
+
+const weekLater = computed(() => {
+  const d = new Date()
+  d.setDate(d.getDate() + 7)
+  return d.toISOString().split('T')[0]!
+})
+
+const upcomingBookings = computed(() =>
+  bookings.value
+    .filter((b) => b.fromDate > today && b.fromDate <= weekLater.value && b.status !== 'Cancelled')
+    .sort((a, b) => a.fromDate.localeCompare(b.fromDate)),
 )
 
 // ── Load ──────────────────────────────────────────────────────────────────────
@@ -87,20 +97,10 @@ function openCreate() {
   showForm.value = true
 }
 
-function openEdit(b: Booking) {
-  editingBooking.value = b
-  showForm.value = true
-}
-
 async function onFormSave() {
   showForm.value = false
   await load()
   success(editingBooking.value ? 'Booking updated' : 'Booking created')
-}
-
-async function updateBookingDates(id: string, changes: { fromDate?: string; toDate?: string }) {
-  const res = await run(() => api.bookings.update(id, changes))
-  if (res !== undefined) { await load(); success('Booking updated') }
 }
 
 async function onPatch(id: string, changes: { comment?: string; status?: BookingStatus; paidDate?: string }) {
@@ -127,27 +127,6 @@ async function handleCancel(b: Booking) {
   }
 }
 
-async function handleLoadMore() {
-  loadingMore.value = true
-  try {
-    loadFromDate.value = monthsAgo(loadFromDate.value, 1)
-    const bks = await api.bookings.list({ from: loadFromDate.value })
-    bookings.value = bks
-  } catch (e) {
-    if (e instanceof Error) error(e.message)
-  } finally {
-    loadingMore.value = false
-  }
-}
-
-async function deleteBooking(b: Booking) {
-  const res = await run(() => api.bookings.delete(b.id))
-  if (res !== undefined) {
-    await load()
-    success('Booking deleted')
-  }
-}
-
 // ── Client edit ────────────────────────────────────────────────────────────────
 
 const clientEditTarget = ref<Client | null>(null)
@@ -165,9 +144,21 @@ async function handleClientSave(client: Client, patch: Partial<Omit<Client, 'id'
   }
 }
 
-// ── View mode ─────────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-const viewMode = ref<'list' | 'calendar'>('calendar')
+function clientName(clientId: string) {
+  return clients.value.find(c => c.id === clientId)?.name ?? '—'
+}
+
+function apartmentName(apartmentId: string) {
+  return apartments.value.find(a => a.id === apartmentId)?.name ?? '—'
+}
+
+function nightCount(fromDate: string, toDate: string) {
+  const from = new Date(fromDate + 'T00:00:00')
+  const to = new Date(toDate + 'T00:00:00')
+  return Math.round((to.getTime() - from.getTime()) / 86400000)
+}
 </script>
 
 <template>
@@ -179,7 +170,7 @@ const viewMode = ref<'list' | 'calendar'>('calendar')
       :occupied-count="occupiedBookings.length"
     />
 
-    <!-- Active bookings -->
+    <!-- Active bookings (today) -->
     <ActiveBookingsView
       :arrival-bookings="arrivalBookings"
       :departure-bookings="departureBookings"
@@ -196,55 +187,49 @@ const viewMode = ref<'list' | 'calendar'>('calendar')
       @open-client="openClient"
     />
 
-    <!-- Header -->
-    <div class="page-header">
-      <h2>Bookings</h2>
-      <div class="view-toggle">
-        <button :class="['view-toggle__btn', { active: viewMode === 'list' }]" @click="viewMode = 'list'" title="List view">
-          <AppIcon name="list" />
-          List
-        </button>
-        <button :class="['view-toggle__btn', { active: viewMode === 'calendar' }]" @click="viewMode = 'calendar'" title="Calendar view">
-          <AppIcon name="calendar" />
-          Calendar
-        </button>
+    <!-- Upcoming bookings -->
+    <div class="upcoming-section">
+      <div class="page-header">
+        <h2>Upcoming <span class="upcoming-section__subtitle">next 7 days</span></h2>
+        <div class="page-header__spacer" />
+        <button v-if="isAdmin" class="btn btn--primary btn--sm" @click="openCreate">+ New booking</button>
       </div>
-      <div class="page-header__spacer" />
-      <button v-if="isAdmin" class="btn btn--primary btn--sm" @click="openCreate">+ New booking</button>
+
+      <div v-if="pageLoading" class="upcoming-skeleton">
+        <div v-for="i in 3" :key="i" class="skeleton-row" />
+      </div>
+
+      <div v-else-if="upcomingBookings.length === 0" class="upcoming-empty">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="18" rx="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        No arrivals in the next 7 days
+      </div>
+
+      <table v-else class="upcoming-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Apartment</th>
+            <th>Guest</th>
+            <th>Nights</th>
+            <th>Guests</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="b in upcomingBookings" :key="b.id" class="upcoming-row">
+            <td class="upcoming-date">{{ b.fromDate }}</td>
+            <td>{{ apartmentName(b.apartmentId) }}</td>
+            <td>{{ clientName(b.clientId) }}</td>
+            <td>{{ nightCount(b.fromDate, b.toDate) }}</td>
+            <td>{{ b.adultCount + (b.childrenCount ?? 0) }}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-
-    <!-- List view -->
-    <BookingListView
-      v-if="viewMode === 'list'"
-      :bookings="bookings"
-      :apartments="apartments"
-      :clients="clients"
-      :channels="channels"
-      :is-admin="isAdmin"
-      :loading="pageLoading"
-      :loading-more="loadingMore"
-      :today="today"
-      @update="handleUpdate"
-      @patch="onPatch"
-      @cancel="handleCancel"
-      @open-client="openClient"
-      @load-more="handleLoadMore"
-    />
-
-    <!-- Calendar view -->
-    <CalendarView
-      v-else
-      :bookings="bookings"
-      :apartments="apartments"
-      :clients="clients"
-      :channels="channels"
-      :is-admin="isAdmin"
-      :loading="pageLoading"
-      @edit="openEdit"
-      @delete="deleteBooking"
-      @update="updateBookingDates"
-      @patch="onPatch"
-    />
   </div>
 
   <!-- Booking form modal -->
@@ -267,3 +252,90 @@ const viewMode = ref<'list' | 'calendar'>('calendar')
     @close="clientEditTarget = null"
   />
 </template>
+
+<style scoped>
+.upcoming-section {
+  margin-top: 2rem;
+}
+
+.upcoming-section__subtitle {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-left: 0.375rem;
+  text-transform: lowercase;
+}
+
+.upcoming-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  font-size: 0.875rem;
+}
+
+.upcoming-table thead th {
+  padding: 0.65rem 0.875rem;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.upcoming-table tbody td {
+  padding: 0.65rem 0.875rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.upcoming-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.upcoming-row:hover td {
+  background: var(--accent-light);
+}
+
+.upcoming-date {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.upcoming-empty {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 1.5rem 1rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.upcoming-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.skeleton-row {
+  height: 44px;
+  background: linear-gradient(90deg, var(--border) 25%, var(--bg) 50%, var(--border) 75%);
+  background-size: 200% 100%;
+  border-radius: var(--radius-sm);
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+</style>

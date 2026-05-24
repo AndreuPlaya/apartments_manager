@@ -3,8 +3,8 @@ import { ref, computed } from 'vue'
 import type { Booking, Apartment, Client, Channel } from '../../api/client'
 import { useInlineEdit } from '../../composables/useInlineEdit'
 import { useConfirm } from '../../composables/useConfirm'
-import BaseItem from '../../components/BaseItem.vue'
-import AppIcon from '../../components/AppIcon.vue'
+import BaseItem from '../../shared/BaseItem.vue'
+import AppIcon from '../../shared/AppIcon.vue'
 
 const props = defineProps<{
   booking: Booking

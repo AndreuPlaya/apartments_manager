@@ -2,12 +2,10 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ApartmentsTab from './apartments/ApartmentsTab.vue'
-import ClientsTab from './clients/ClientsTab.vue'
 import ChannelsTab from './channels/ChannelsTab.vue'
 import UsersTab from './users/UsersTab.vue'
-import MetricsTab from './metrics/MetricsTab.vue'
 
-const tabs = ['Apartments', 'Clients', 'Channels', 'Users', 'Metrics'] as const
+const tabs = ['Apartments', 'Channels', 'Users'] as const
 type Tab = (typeof tabs)[number]
 
 const route = useRoute()
@@ -15,18 +13,14 @@ const router = useRouter()
 
 const tabParamMap: Record<string, Tab> = {
   apartments: 'Apartments',
-  clients:    'Clients',
   channels:   'Channels',
   users:      'Users',
-  metrics:    'Metrics',
 }
 
 const tabValueMap: Record<Tab, string> = {
   Apartments: 'apartments',
-  Clients:    'clients',
   Channels:   'channels',
   Users:      'users',
-  Metrics:    'metrics',
 }
 
 const activeTab = computed<Tab>(() => {
@@ -41,7 +35,7 @@ function setTab(tab: Tab) {
 
 <template>
   <div class="page-container">
-    <h2 style="margin-bottom: 1rem">Administration</h2>
+    <h2 style="margin-bottom: 1rem">Configuration</h2>
     <div class="tabs">
       <button
         v-for="t in tabs"
@@ -53,9 +47,7 @@ function setTab(tab: Tab) {
       </button>
     </div>
     <ApartmentsTab v-if="activeTab === 'Apartments'" />
-    <ClientsTab v-else-if="activeTab === 'Clients'" :is-admin="true" />
     <ChannelsTab v-else-if="activeTab === 'Channels'" />
     <UsersTab v-else-if="activeTab === 'Users'" />
-    <MetricsTab v-else-if="activeTab === 'Metrics'" />
   </div>
 </template>

@@ -5,11 +5,12 @@ import { api } from '../../api/client'
 import { useAsyncOp } from '../../composables/useAsyncOp'
 import { useToast } from '../../composables/useToast'
 import { useConfirm } from '../../composables/useConfirm'
-import ClientItem from '../../components/ClientItem.vue'
-import BaseList from '../../components/BaseList.vue'
-import BookingFormModal from '../main/BookingFormModal.vue'
-import AppIcon from '../../components/AppIcon.vue'
+import ClientItem from './ClientItem.vue'
+import BaseList from '../../shared/BaseList.vue'
+import BookingFormModal from '../bookings/BookingFormModal.vue'
+import AppIcon from '../../shared/AppIcon.vue'
 
+const props = defineProps<{ isAdmin?: boolean }>()
 const { loading, run } = useAsyncOp()
 const { success } = useToast()
 const { confirm } = useConfirm()
@@ -65,6 +66,7 @@ async function save() {
 const deletingId = ref<string | null>(null)
 
 async function del(c: Client) {
+  if (!props.isAdmin) return
   if (!(await confirm(`Delete client "${c.name}"?`))) return
   deletingId.value = c.id
   const res = await run(() => api.clients.delete(c.id))
@@ -123,7 +125,7 @@ const hasMore = computed(() => visibleCount.value < sorted.value.length)
     <div class="page-header">
       <h3>Clients</h3>
       <div class="page-header__spacer" />
-      <button class="btn btn--primary btn--sm" @click="openCreate">+ Add client</button>
+      <button v-if="props.isAdmin" class="btn btn--primary btn--sm" @click="openCreate">+ Add client</button>
     </div>
 
     <div class="clients-layout">
@@ -148,12 +150,13 @@ const hasMore = computed(() => visibleCount.value < sorted.value.length)
           <ClientItem
             v-for="c in visible"
             :key="c.id"
-            v-memo="[c, clientBookingMap[c.id], apartments, channels, deletingId === c.id]"
+            v-memo="[c, clientBookingMap[c.id], apartments, channels, deletingId === c.id, props.isAdmin]"
             :client="c"
             :bookings="clientBookingMap[c.id] ?? []"
             :apartments="apartments"
             :channels="channels"
             :loading="deletingId === c.id"
+            :is-admin="props.isAdmin ?? false"
             @update="updateField"
             @delete="del"
             @edit-booking="openBookingEdit"

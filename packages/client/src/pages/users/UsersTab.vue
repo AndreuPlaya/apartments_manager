@@ -5,9 +5,9 @@ import { api } from '../../api/client'
 import { useAsyncOp } from '../../composables/useAsyncOp'
 import { useToast } from '../../composables/useToast'
 import { useConfirm } from '../../composables/useConfirm'
-import UserItemComponent from '../../components/UserItem.vue'
-import BaseList from '../../components/BaseList.vue'
-import AppIcon from '../../components/AppIcon.vue'
+import UserItemComponent from './UserItem.vue'
+import BaseList from '../../shared/BaseList.vue'
+import AppIcon from '../../shared/AppIcon.vue'
 
 const { loading, run } = useAsyncOp()
 const { success } = useToast()

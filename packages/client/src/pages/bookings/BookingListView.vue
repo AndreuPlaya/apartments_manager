@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { Booking, Apartment, Client, Channel } from '../../api/client'
-import AppIcon from '../../components/AppIcon.vue'
+import AppIcon from '../../shared/AppIcon.vue'
 import BookingItem from './BookingItem.vue'
 
 const props = defineProps<{

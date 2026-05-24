@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import type { Booking, BookingStatus } from '../../api/client'
-import AppIcon from '../../components/AppIcon.vue'
+import AppIcon from '../../shared/AppIcon.vue'
 
 const props = defineProps<{
   booking: Booking

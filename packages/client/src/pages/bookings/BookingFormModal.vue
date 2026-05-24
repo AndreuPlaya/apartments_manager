@@ -3,8 +3,8 @@ import { ref, watch } from 'vue'
 import type { Booking, Apartment, Client, Channel } from '../../api/client'
 import { api } from '../../api/client'
 import { useAsyncOp } from '../../composables/useAsyncOp'
-import ClientSearchInput, { type NewClientData } from '../../components/ClientSearchInput.vue'
-import AppIcon from '../../components/AppIcon.vue'
+import ClientSearchInput, { type NewClientData } from '../clients/ClientSearchInput.vue'
+import AppIcon from '../../shared/AppIcon.vue'
 
 const props = defineProps<{
   booking: Booking | null

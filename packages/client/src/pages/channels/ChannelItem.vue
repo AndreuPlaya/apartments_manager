@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { Channel } from '../api/client'
-import { useInlineEdit } from '../composables/useInlineEdit'
-import BaseItem from './BaseItem.vue'
+import type { Channel } from '../../api/client'
+import { useInlineEdit } from '../../composables/useInlineEdit'
+import BaseItem from '../../shared/BaseItem.vue'
 
 const props = defineProps<{
   channel: Channel

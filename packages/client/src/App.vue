@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import AppNav from './components/AppNav.vue'
-import ToastContainer from './components/ToastContainer.vue'
-import ConfirmModal from './components/ConfirmModal.vue'
+import AppNav from './shared/AppNav.vue'
+import ToastContainer from './shared/ToastContainer.vue'
+import ConfirmModal from './shared/ConfirmModal.vue'
 import { api } from './api/client'
 
 const route = useRoute()

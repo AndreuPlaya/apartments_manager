@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { Client, Booking, Apartment, Channel } from '../api/client'
-import { useInlineEdit } from '../composables/useInlineEdit'
-import BaseItem from './BaseItem.vue'
+import type { Client, Booking, Apartment, Channel } from '../../api/client'
+import { useInlineEdit } from '../../composables/useInlineEdit'
+import BaseItem from '../../shared/BaseItem.vue'
 
 
 const props = defineProps<{
@@ -11,6 +11,7 @@ const props = defineProps<{
   apartments: Apartment[]
   channels: Channel[]
   loading: boolean
+  isAdmin?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -53,7 +54,7 @@ const statusLabel: Record<string, string> = {
   <BaseItem
     :col-span="5"
     :loading="loading"
-    :can-delete="bookings.length === 0"
+    :can-delete="(props.isAdmin ?? false) && bookings.length === 0"
     @delete="emit('delete', client)"
   >
     <template #summary>
@@ -69,7 +70,7 @@ const statusLabel: Record<string, string> = {
         <div class="details-grid">
 
           <div :class="['detail-field', editingField === 'name' && 'detail-field--editing']"
-            @click="startEdit('name', client.name)">
+            @click="props.isAdmin && startEdit('name', client.name)">
             <span class="detail-field__label">Full name</span>
             <span v-if="editingField !== 'name'" class="detail-field__val">{{ client.name || '—' }}</span>
             <input v-else ref="inputRef" v-model="editingValue" placeholder="Full name"
@@ -77,7 +78,7 @@ const statusLabel: Record<string, string> = {
           </div>
 
           <div :class="['detail-field', editingField === 'identityDocument' && 'detail-field--editing']"
-            @click="startEdit('identityDocument', client.identityDocument ?? '')">
+            @click="props.isAdmin && startEdit('identityDocument', client.identityDocument ?? '')">
             <span class="detail-field__label">ID document</span>
             <span v-if="editingField !== 'identityDocument'" class="detail-field__val">{{ client.identityDocument || '—' }}</span>
             <input v-else ref="inputRef" v-model="editingValue" placeholder="ID document"
@@ -85,7 +86,7 @@ const statusLabel: Record<string, string> = {
           </div>
 
           <div :class="['detail-field', editingField === 'email' && 'detail-field--editing']"
-            @click="startEdit('email', client.email ?? '')">
+            @click="props.isAdmin && startEdit('email', client.email ?? '')">
             <span class="detail-field__label">Email</span>
             <span v-if="editingField !== 'email'" class="detail-field__val">{{ client.email || '—' }}</span>
             <input v-else ref="inputRef" v-model="editingValue" type="email" placeholder="Email"
@@ -93,7 +94,7 @@ const statusLabel: Record<string, string> = {
           </div>
 
           <div :class="['detail-field', editingField === 'phoneNumber' && 'detail-field--editing']"
-            @click="startEdit('phoneNumber', client.phoneNumber ?? '')">
+            @click="props.isAdmin && startEdit('phoneNumber', client.phoneNumber ?? '')">
             <span class="detail-field__label">Phone</span>
             <span v-if="editingField !== 'phoneNumber'" class="detail-field__val">{{ client.phoneNumber || '—' }}</span>
             <input v-else ref="inputRef" v-model="editingValue" placeholder="Phone"
@@ -101,7 +102,7 @@ const statusLabel: Record<string, string> = {
           </div>
 
           <div :class="['detail-field', editingField === 'city' && 'detail-field--editing']"
-            @click="startEdit('city', client.city ?? '')">
+            @click="props.isAdmin && startEdit('city', client.city ?? '')">
             <span class="detail-field__label">City</span>
             <span v-if="editingField !== 'city'" class="detail-field__val">{{ client.city || '—' }}</span>
             <input v-else ref="inputRef" v-model="editingValue" placeholder="City"
@@ -109,7 +110,7 @@ const statusLabel: Record<string, string> = {
           </div>
 
           <div :class="['detail-field', editingField === 'country' && 'detail-field--editing']"
-            @click="startEdit('country', client.country ?? '')">
+            @click="props.isAdmin && startEdit('country', client.country ?? '')">
             <span class="detail-field__label">Country</span>
             <span v-if="editingField !== 'country'" class="detail-field__val">{{ client.country || '—' }}</span>
             <input v-else ref="inputRef" v-model="editingValue" placeholder="Country"
@@ -117,7 +118,7 @@ const statusLabel: Record<string, string> = {
           </div>
 
           <div :class="['detail-field', editingField === 'zipCode' && 'detail-field--editing']"
-            @click="startEdit('zipCode', client.zipCode ?? '')">
+            @click="props.isAdmin && startEdit('zipCode', client.zipCode ?? '')">
             <span class="detail-field__label">ZIP code</span>
             <span v-if="editingField !== 'zipCode'" class="detail-field__val">{{ client.zipCode || '—' }}</span>
             <input v-else ref="inputRef" v-model="editingValue" placeholder="ZIP"
@@ -125,7 +126,7 @@ const statusLabel: Record<string, string> = {
           </div>
 
           <div :class="['detail-field', editingField === 'street' && 'detail-field--editing']"
-            @click="startEdit('street', client.street ?? '')">
+            @click="props.isAdmin && startEdit('street', client.street ?? '')">
             <span class="detail-field__label">Street</span>
             <span v-if="editingField !== 'street'" class="detail-field__val">{{ client.street || '—' }}</span>
             <input v-else ref="inputRef" v-model="editingValue" placeholder="Street"
@@ -133,7 +134,7 @@ const statusLabel: Record<string, string> = {
           </div>
 
           <div :class="['detail-field', 'detail-field--wide', editingField === 'comment' && 'detail-field--editing']"
-            @click="startEdit('comment', client.comment ?? '')">
+            @click="props.isAdmin && startEdit('comment', client.comment ?? '')">
             <span class="detail-field__label">Comment</span>
             <span v-if="editingField !== 'comment'" class="detail-field__val detail-field__val--pre">{{ client.comment || '—' }}</span>
             <textarea v-else ref="inputRef" v-model="editingValue" rows="2" placeholder="Comment"
@@ -152,7 +153,7 @@ const statusLabel: Record<string, string> = {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="b in bookings" :key="b.id" class="booking-row" @click="emit('editBooking', b)">
+            <tr v-for="b in bookings" :key="b.id" class="booking-row" :class="{ 'booking-row--readonly': !props.isAdmin }" @click="props.isAdmin && emit('editBooking', b)">
               <td>{{ b.fromDate }}</td>
               <td>{{ b.toDate }}</td>
               <td>{{ apartmentName(b.apartmentId) }}</td>
@@ -202,4 +203,6 @@ const statusLabel: Record<string, string> = {
 
 .booking-row { cursor: pointer; }
 .booking-row:hover td { background: var(--accent-light) !important; }
+.booking-row--readonly { cursor: default; }
+.booking-row--readonly:hover td { background: transparent !important; }
 </style>

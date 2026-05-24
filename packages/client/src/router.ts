@@ -15,18 +15,39 @@ export function setCachedConfig(cfg: AuthConfig & { ok: true }) {
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/login', component: () => import('./pages/LoginPage.vue') },
-    { path: '/setup', component: () => import('./pages/SetupPage.vue') },
+    { path: '/login', component: () => import('./pages/auth/LoginPage.vue') },
+    { path: '/setup', component: () => import('./pages/auth/SetupPage.vue') },
     {
       path: '/',
       component: () => import('./pages/MainPage.vue'),
       meta: { requiresAuth: true },
     },
     {
-      path: '/admin',
-      component: () => import('./pages/AdminPage.vue'),
+      path: '/calendar',
+      component: () => import('./pages/bookings/CalendarPage.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/bookings',
+      component: () => import('./pages/bookings/BookingsPage.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/clients',
+      component: () => import('./pages/clients/ClientsPage.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/config',
+      component: () => import('./pages/ConfigPage.vue'),
       meta: { requiresAuth: true, adminOnly: true },
     },
+    {
+      path: '/metrics',
+      component: () => import('./pages/metrics/MetricsPage.vue'),
+      meta: { requiresAuth: true, adminOnly: true },
+    },
+    { path: '/admin', redirect: '/config' },
   ],
 })
 

@@ -2,7 +2,7 @@
 import { ref, computed, onUnmounted } from 'vue'
 import type { Booking, Apartment, Client, Channel, BookingStatus } from '../../api/client'
 import BookingInfoPopup from './BookingInfoPopup.vue'
-import AppIcon from '../../components/AppIcon.vue'
+import AppIcon from '../../shared/AppIcon.vue'
 
 const props = defineProps<{
   bookings: Booking[]

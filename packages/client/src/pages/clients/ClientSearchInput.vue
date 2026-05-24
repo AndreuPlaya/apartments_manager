@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import type { Client } from '../api/client'
-import AppIcon from './AppIcon.vue'
+import type { Client } from '../../api/client'
+import AppIcon from '../../shared/AppIcon.vue'
 
 export interface NewClientData {
   name: string

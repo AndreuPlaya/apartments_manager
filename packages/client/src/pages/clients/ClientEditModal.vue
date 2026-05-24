@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import type { Client } from '../../api/client'
-import AppIcon from '../../components/AppIcon.vue'
+import AppIcon from '../../shared/AppIcon.vue'
 
 const props = defineProps<{
   client: Client

@@ -33,7 +33,7 @@ describe('clearCachedConfig', () => {
 describe('setCachedConfig', () => {
   it('stores config so the guard skips fetching', async () => {
     setCachedConfig({ ok: true, is_admin: true, username: 'admin' })
-    await router.push('/admin')
+    await router.push('/config')
     expect(api.auth.config).not.toHaveBeenCalled()
   })
 })
@@ -71,22 +71,64 @@ describe('router beforeEach guard', () => {
     expect(router.currentRoute.value.path).toBe('/')
   })
 
+  it('allows a non-admin to access /calendar', async () => {
+    vi.mocked(api.auth.config).mockResolvedValue({ ok: true, is_admin: false, username: 'alice' })
+    await router.push('/calendar')
+    expect(router.currentRoute.value.path).toBe('/calendar')
+  })
+
+  it('allows a non-admin to access /bookings', async () => {
+    vi.mocked(api.auth.config).mockResolvedValue({ ok: true, is_admin: false, username: 'alice' })
+    await router.push('/bookings')
+    expect(router.currentRoute.value.path).toBe('/bookings')
+  })
+
+  it('allows a non-admin to access /clients', async () => {
+    vi.mocked(api.auth.config).mockResolvedValue({ ok: true, is_admin: false, username: 'alice' })
+    await router.push('/clients')
+    expect(router.currentRoute.value.path).toBe('/clients')
+  })
+
+  it('redirects non-admin away from /config to /', async () => {
+    vi.mocked(api.auth.config).mockResolvedValue({ ok: true, is_admin: false, username: 'alice' })
+    await router.push('/config')
+    expect(router.currentRoute.value.path).toBe('/')
+  })
+
+  it('redirects non-admin away from /metrics to /', async () => {
+    vi.mocked(api.auth.config).mockResolvedValue({ ok: true, is_admin: false, username: 'alice' })
+    await router.push('/metrics')
+    expect(router.currentRoute.value.path).toBe('/')
+  })
+
   it('redirects non-admin away from /admin to /', async () => {
     vi.mocked(api.auth.config).mockResolvedValue({ ok: true, is_admin: false, username: 'alice' })
     await router.push('/admin')
     expect(router.currentRoute.value.path).toBe('/')
   })
 
-  it('allows admin to access /admin', async () => {
+  it('allows admin to access /config', async () => {
+    vi.mocked(api.auth.config).mockResolvedValue({ ok: true, is_admin: true, username: 'admin' })
+    await router.push('/config')
+    expect(router.currentRoute.value.path).toBe('/config')
+  })
+
+  it('allows admin to access /metrics', async () => {
+    vi.mocked(api.auth.config).mockResolvedValue({ ok: true, is_admin: true, username: 'admin' })
+    await router.push('/metrics')
+    expect(router.currentRoute.value.path).toBe('/metrics')
+  })
+
+  it('redirects /admin to /config for admin users', async () => {
     vi.mocked(api.auth.config).mockResolvedValue({ ok: true, is_admin: true, username: 'admin' })
     await router.push('/admin')
-    expect(router.currentRoute.value.path).toBe('/admin')
+    expect(router.currentRoute.value.path).toBe('/config')
   })
 
   it('uses cached config on subsequent navigations', async () => {
     vi.mocked(api.auth.config).mockResolvedValue({ ok: true, is_admin: true, username: 'admin' })
     await router.push('/')
-    await router.push('/admin')
+    await router.push('/config')
     expect(api.auth.config).toHaveBeenCalledTimes(1)
   })
 })
