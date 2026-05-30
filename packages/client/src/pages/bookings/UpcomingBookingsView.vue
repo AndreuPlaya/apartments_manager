@@ -2,6 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import type { Booking, Apartment, Client, Channel, BookingStatus } from '../../api/client'
 import BookingItem from './BookingItem.vue'
+import AppIcon from '../../shared/AppIcon.vue'
 
 const { t } = useI18n()
 
@@ -34,12 +35,7 @@ const emit = defineEmits<{
     </div>
 
     <div v-else-if="bookings.length === 0" class="upcoming-empty">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
-        <rect x="3" y="4" width="18" height="18" rx="2"/>
-        <line x1="16" y1="2" x2="16" y2="6"/>
-        <line x1="8" y1="2" x2="8" y2="6"/>
-        <line x1="3" y1="10" x2="21" y2="10"/>
-      </svg>
+      <AppIcon name="calendar" :size="20" :stroke-width="1.5" />
       {{ t('dashboard.noUpcoming') }}
     </div>
 
