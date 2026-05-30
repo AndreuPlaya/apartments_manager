@@ -14,17 +14,3 @@ const T = 'opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1)'
     <AppIcon name="trash-open" :size="props.size" :style="{ opacity: open ? 1 : 0, transition: T }" class="trash-icon__open" />
   </span>
 </template>
-
-<style scoped>
-.trash-icon {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-}
-
-.trash-icon__open {
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-</style>

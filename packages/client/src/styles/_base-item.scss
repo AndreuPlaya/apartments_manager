@@ -1,0 +1,64 @@
+.base-item-row--expanded td {
+  background: rgba(37, 99, 235, 0.03);
+}
+
+.actions-cell {
+  width: 5rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.expand-btn {
+  min-width: 1.75rem;
+  padding: 0.15rem 0.4rem;
+
+  &:hover .arrow { color: var(--text); }
+}
+
+.arrow {
+  display: inline-block;
+  color: var(--text-muted);
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s;
+
+  &--open { transform: rotate(90deg); }
+}
+
+.drawer-row td {
+  padding: 0 !important;
+  border-bottom: none;
+}
+
+.drawer-cell {
+  padding: 0 !important;
+  border-bottom: none;
+}
+
+.drawer {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &--open {
+    grid-template-rows: 1fr;
+
+    .drawer__inner { border-top: 1px solid var(--border); }
+  }
+}
+
+.drawer__inner {
+  position: relative;
+  overflow: hidden;
+  border-top: 0;
+  transition: border-top-color 0.22s;
+}
+
+.drawer-delete-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.875rem;
+  z-index: 1;
+  color: var(--text-muted);
+  transition: color 0.2s;
+
+  &:hover { color: var(--danger); }
+}

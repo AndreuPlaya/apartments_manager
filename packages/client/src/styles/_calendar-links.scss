@@ -1,0 +1,122 @@
+.calendar-panel {
+  padding: 0.75rem 0.875rem;
+  background: var(--card);
+  border-left: 3px solid var(--border-dark);
+
+  .panel-label {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .panel-icon { opacity: 0.7; }
+
+  .sub-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+
+    th,
+    td {
+      padding: 0.4rem 0.5rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    thead th {
+      font-weight: 700;
+      color: var(--text-muted);
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+  }
+
+  .cal-row {
+    &__name {
+      white-space: nowrap;
+      min-width: 8rem;
+      max-width: 14rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    &__url {
+      width: 100%;
+
+      &--editable { cursor: text; }
+    }
+
+    &__actions {
+      width: 4rem;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    &:hover td { background: var(--accent-light); }
+    &:hover .icon-btn { opacity: 1; }
+  }
+
+  .url-val {
+    display: block;
+    font-family: var(--font-mono, ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace);
+    font-size: 0.75rem;
+    max-width: 42ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .url-placeholder {
+    color: var(--text-muted);
+    opacity: 0.5;
+  }
+
+  .url-input {
+    width: 100%;
+    font-family: var(--font-mono, ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace);
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
+    border: 1.5px solid var(--accent, #3b82f6);
+    border-radius: 3px;
+    background: var(--input-bg, var(--card));
+    color: var(--text);
+    outline: none;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, #3b82f6) 20%, transparent);
+  }
+
+  .icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.2rem 0.3rem;
+    border-radius: 3px;
+    color: var(--text-muted);
+    line-height: 1;
+    transition: color 0.15s, background 0.15s;
+    vertical-align: middle;
+    opacity: 0;
+
+    &--danger:hover {
+      color: var(--danger, #ef4444);
+      background: color-mix(in srgb, var(--danger, #ef4444) 10%, transparent);
+    }
+  }
+
+  .cal-empty {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    padding: 0.5rem 0.25rem;
+    border: 1px dashed var(--border);
+    border-radius: 4px;
+    text-align: center;
+  }
+}

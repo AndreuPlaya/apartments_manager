@@ -1,0 +1,11 @@
+.trash-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+
+  &__open {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+}
