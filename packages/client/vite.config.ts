@@ -15,4 +15,7 @@ export default defineConfig({
       '/api': 'http://localhost:5000',
     },
   },
+  test: {
+    environment: 'happy-dom',
+  },
 })

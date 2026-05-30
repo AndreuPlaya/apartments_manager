@@ -5,6 +5,11 @@ import { api } from '../../api/client'
 import { useAsyncOp } from '../../composables/useAsyncOp'
 import ClientSearchInput, { type NewClientData } from '../clients/ClientSearchInput.vue'
 import AppIcon from '../../shared/AppIcon.vue'
+import SelectInput from '../../shared/fields/SelectInput.vue'
+import DateInput from '../../shared/fields/DateInput.vue'
+import NumberInput from '../../shared/fields/NumberInput.vue'
+import CheckboxInput from '../../shared/fields/CheckboxInput.vue'
+import TextareaInput from '../../shared/fields/TextareaInput.vue'
 
 const props = defineProps<{
   booking: Booking | null
@@ -101,7 +106,12 @@ async function save() {
   if (res !== undefined) emit('save')
 }
 
-const activeChannels = props.channels.filter((c) => c.isActive)
+const apartmentOptions = props.apartments.map(a => ({ value: a.id, label: a.name }))
+const activeChannelOptions = props.channels.filter(c => c.isActive).map(c => ({ value: c.id, label: c.name }))
+const statusOptions = [
+  { value: 'Active', label: 'Active' },
+  { value: 'Cancelled', label: 'Cancelled' },
+]
 </script>
 
 <template>
@@ -115,13 +125,7 @@ const activeChannels = props.channels.filter((c) => c.isActive)
         <form @submit.prevent="save">
           <div class="modal__body">
             <div class="form-row">
-              <div class="form-group">
-                <label>Apartment *</label>
-                <select v-model="form.apartmentId" required>
-                  <option value="">Select…</option>
-                  <option v-for="a in apartments" :key="a.id" :value="a.id">{{ a.name }}</option>
-                </select>
-              </div>
+              <SelectInput mode="form" text="Apartment *" v-model="form.apartmentId" :options="apartmentOptions" placeholder="Select…" required />
               <div class="form-group">
                 <label>Client *</label>
                 <ClientSearchInput
@@ -132,61 +136,23 @@ const activeChannels = props.channels.filter((c) => c.isActive)
               </div>
             </div>
             <div class="form-row">
-              <div class="form-group">
-                <label>Check-in *</label>
-                <input v-model="form.fromDate" type="date" required />
-              </div>
-              <div class="form-group">
-                <label>Check-out *</label>
-                <input v-model="form.toDate" type="date" required />
-              </div>
+              <DateInput mode="form" text="Check-in *" v-model="form.fromDate" required />
+              <DateInput mode="form" text="Check-out *" v-model="form.toDate" required />
             </div>
             <div class="form-row">
-              <div class="form-group">
-                <label>Adults *</label>
-                <input v-model="form.adultCount" type="number" min="1" required />
-              </div>
-              <div class="form-group">
-                <label>Children</label>
-                <input v-model="form.childrenCount" type="number" min="0" />
-              </div>
+              <NumberInput mode="form" text="Adults *" v-model="form.adultCount" :min="1" required />
+              <NumberInput mode="form" text="Children" v-model="form.childrenCount" :min="0" />
             </div>
             <div v-if="Number(form.childrenCount) > 0" class="form-row">
-              <div class="form-group">
-                <label class="form-checkbox">
-                  <input type="checkbox" v-model="form.cribRequested" />
-                  Crib requested
-                </label>
-              </div>
+              <CheckboxInput mode="form" text="Crib requested" v-model="form.cribRequested" />
             </div>
             <div class="form-row">
-              <div class="form-group">
-                <label>Channel *</label>
-                <select v-model="form.channelId" required>
-                  <option value="">Select…</option>
-                  <option v-for="c in activeChannels" :key="c.id" :value="c.id">{{ c.name }}</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Status</label>
-                <select v-model="form.status">
-                  <option value="Active">Active</option>
-                  <option value="Cancelled">Cancelled</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Paid date</label>
-                <input v-model="form.paidDate" type="date" />
-              </div>
+              <SelectInput mode="form" text="Channel *" v-model="form.channelId" :options="activeChannelOptions" placeholder="Select…" required />
+              <SelectInput mode="form" text="Status" v-model="form.status" :options="statusOptions" />
+              <DateInput mode="form" text="Paid date" v-model="form.paidDate" />
             </div>
-            <div class="form-group">
-              <label>Total amount due (€) *</label>
-              <input v-model="form.totalAmountDue" type="number" min="0" step="0.01" required />
-            </div>
-            <div class="form-group">
-              <label>Comment</label>
-              <textarea v-model="form.comment" rows="2" />
-            </div>
+            <NumberInput mode="form" text="Total amount due (€) *" v-model="form.totalAmountDue" :min="0" :step="0.01" required />
+            <TextareaInput mode="form" text="Comment" v-model="form.comment" />
           </div>
           <div class="modal__footer">
             <button type="button" class="btn btn--secondary" @click="emit('close')">Cancel</button>

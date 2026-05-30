@@ -8,6 +8,9 @@ import { useConfirm } from '../../composables/useConfirm'
 import ChannelItem from './ChannelItem.vue'
 import BaseList from '../../shared/BaseList.vue'
 import AppIcon from '../../shared/AppIcon.vue'
+import TextInput from '../../shared/fields/TextInput.vue'
+import NumberInput from '../../shared/fields/NumberInput.vue'
+import CheckboxInput from '../../shared/fields/CheckboxInput.vue'
 
 const props = defineProps<{ isAdmin?: boolean }>()
 
@@ -119,18 +122,9 @@ async function deleteCalendarLink(id: string) {
           </div>
           <form @submit.prevent="save">
             <div class="modal__body">
-              <div class="form-group">
-                <label>Name *</label>
-                <input v-model="form.name" type="text" required />
-              </div>
-              <div class="form-group">
-                <label>Commission rate (%)</label>
-                <input v-model="form.commissionRate" type="number" min="0" max="100" step="0.1" />
-              </div>
-              <label class="checkbox-row">
-                <input v-model="form.isActive" type="checkbox" />
-                Active
-              </label>
+              <TextInput mode="form" text="Name *" v-model="form.name" required />
+              <NumberInput mode="form" text="Commission rate (%)" v-model="form.commissionRate" :min="0" :max="100" :step="0.1" />
+              <CheckboxInput mode="form" text="Active" v-model="form.isActive" />
             </div>
             <div class="modal__footer">
               <button type="button" class="btn btn--secondary" @click="showForm = false">Cancel</button>

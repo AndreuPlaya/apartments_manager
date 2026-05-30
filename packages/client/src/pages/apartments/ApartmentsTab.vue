@@ -8,6 +8,10 @@ import { useConfirm } from '../../composables/useConfirm'
 import ApartmentItem from './ApartmentItem.vue'
 import BaseList from '../../shared/BaseList.vue'
 import AppIcon from '../../shared/AppIcon.vue'
+import TextInput from '../../shared/fields/TextInput.vue'
+import NumberInput from '../../shared/fields/NumberInput.vue'
+import CheckboxInput from '../../shared/fields/CheckboxInput.vue'
+import TextareaInput from '../../shared/fields/TextareaInput.vue'
 
 const props = defineProps<{ isAdmin?: boolean }>()
 
@@ -140,58 +144,25 @@ async function deleteCalendarLink(id: string) {
           </div>
           <form @submit.prevent="save">
             <div class="modal__body">
-              <div class="form-group">
-                <label>Name *</label>
-                <input v-model="form.name" type="text" required />
-              </div>
-              <div class="form-group">
-                <label>Address *</label>
-                <input v-model="form.address" type="text" required />
+              <TextInput mode="form" text="Name *" v-model="form.name" required />
+              <TextInput mode="form" text="Address *" v-model="form.address" required />
+              <div class="form-row">
+                <NumberInput mode="form" text="Floor" v-model="form.floor" />
+                <TextInput mode="form" text="Door *" v-model="form.door" required />
               </div>
               <div class="form-row">
-                <div class="form-group">
-                  <label>Floor</label>
-                  <input v-model="form.floor" type="number" />
-                </div>
-                <div class="form-group">
-                  <label>Door *</label>
-                  <input v-model="form.door" type="text" required />
-                </div>
+                <NumberInput mode="form" text="Price / night (€) *" v-model="form.price" :min="0" :step="0.01" required />
+                <NumberInput mode="form" text="Min nights" v-model="form.minNights" :min="1" />
               </div>
               <div class="form-row">
-                <div class="form-group">
-                  <label>Price / night (€) *</label>
-                  <input v-model="form.price" type="number" min="0" step="0.01" required />
-                </div>
-                <div class="form-group">
-                  <label>Min nights</label>
-                  <input v-model="form.minNights" type="number" min="1" />
-                </div>
+                <NumberInput mode="form" text="Max guests" v-model="form.maxGuests" :min="1" />
+                <NumberInput mode="form" text="Rooms" v-model="form.rooms" :min="1" />
               </div>
               <div class="form-row">
-                <div class="form-group">
-                  <label>Max guests</label>
-                  <input v-model="form.maxGuests" type="number" min="1" />
-                </div>
-                <div class="form-group">
-                  <label>Rooms</label>
-                  <input v-model="form.rooms" type="number" min="1" />
-                </div>
+                <NumberInput mode="form" text="Bathrooms" v-model="form.bathrooms" :min="1" />
               </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Bathrooms</label>
-                  <input v-model="form.bathrooms" type="number" min="1" />
-                </div>
-              </div>
-              <label class="checkbox-row">
-                <input v-model="form.isAvailable" type="checkbox" />
-                Available for booking
-              </label>
-              <div class="form-group">
-                <label>Description</label>
-                <textarea v-model="form.description" rows="2" />
-              </div>
+              <CheckboxInput mode="form" text="Available for booking" v-model="form.isAvailable" />
+              <TextareaInput mode="form" text="Description" v-model="form.description" />
             </div>
             <div class="modal__footer">
               <button type="button" class="btn btn--secondary" @click="showForm = false">Cancel</button>

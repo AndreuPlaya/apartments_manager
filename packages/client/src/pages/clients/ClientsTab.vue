@@ -9,6 +9,8 @@ import ClientItem from './ClientItem.vue'
 import BaseList from '../../shared/BaseList.vue'
 import BookingFormModal from '../bookings/BookingFormModal.vue'
 import AppIcon from '../../shared/AppIcon.vue'
+import TextInput from '../../shared/fields/TextInput.vue'
+import TextareaInput from '../../shared/fields/TextareaInput.vue'
 
 const props = defineProps<{ isAdmin?: boolean }>()
 const { loading, run } = useAsyncOp()
@@ -190,50 +192,23 @@ const hasMore = computed(() => visibleCount.value < sorted.value.length)
           </div>
           <form @submit.prevent="save">
             <div class="modal__body">
-              <div class="form-group">
-                <label>Full name *</label>
-                <input v-model="form.name" type="text" required />
+              <TextInput mode="form" text="Full name *" v-model="form.name" required />
+              <div class="form-row">
+                <TextInput mode="form" text="ID document" v-model="form.identityDocument" />
+                <TextInput mode="form" text="Email" v-model="form.email" type="email" />
               </div>
               <div class="form-row">
-                <div class="form-group">
-                  <label>ID document</label>
-                  <input v-model="form.identityDocument" type="text" />
-                </div>
-                <div class="form-group">
-                  <label>Email</label>
-                  <input v-model="form.email" type="email" />
-                </div>
+                <TextInput mode="form" text="Phone" v-model="form.phoneNumber" />
+                <TextInput mode="form" text="Street" v-model="form.street" />
               </div>
               <div class="form-row">
-                <div class="form-group">
-                  <label>Phone</label>
-                  <input v-model="form.phoneNumber" type="text" />
-                </div>
-                <div class="form-group">
-                  <label>Street</label>
-                  <input v-model="form.street" type="text" />
-                </div>
+                <TextInput mode="form" text="City" v-model="form.city" />
+                <TextInput mode="form" text="Country" v-model="form.country" />
               </div>
               <div class="form-row">
-                <div class="form-group">
-                  <label>City</label>
-                  <input v-model="form.city" type="text" />
-                </div>
-                <div class="form-group">
-                  <label>Country</label>
-                  <input v-model="form.country" type="text" />
-                </div>
+                <TextInput mode="form" text="ZIP code" v-model="form.zipCode" />
               </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label>ZIP code</label>
-                  <input v-model="form.zipCode" type="text" />
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Comment</label>
-                <textarea v-model="form.comment" rows="2" />
-              </div>
+              <TextareaInput mode="form" text="Comment" v-model="form.comment" />
             </div>
             <div class="modal__footer">
               <button type="button" class="btn btn--secondary" @click="showForm = false">Cancel</button>

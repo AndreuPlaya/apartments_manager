@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import type { Client, Booking, Apartment, Channel } from '../../api/client'
-import { useInlineEdit } from '../../composables/useInlineEdit'
 import BaseItem from '../../shared/BaseItem.vue'
-
+import TextInput from '../../shared/fields/TextInput.vue'
+import TextareaInput from '../../shared/fields/TextareaInput.vue'
 
 const props = defineProps<{
   client: Client
@@ -20,19 +19,8 @@ const emit = defineEmits<{
   editBooking: [booking: Booking]
 }>()
 
-type ClientField = keyof Omit<Client, 'id'>
-
-const inputRef = ref<HTMLInputElement | HTMLTextAreaElement | null>(null)
-const { editingField, editingValue, startEdit, cancelEdit } = useInlineEdit<ClientField>(inputRef)
-
-function commitEdit() {
-  const field = editingField.value
-  if (!field) return
-  editingField.value = null
-  const val = editingValue.value.trim()
-  const current = String(props.client[field as keyof Client] ?? '')
-  if (val === current) return
-  emit('update', props.client, { [field]: val || undefined })
+function updateField(field: keyof Omit<Client, 'id'>, val: string | undefined) {
+  emit('update', props.client, { [field]: val })
 }
 
 function apartmentName(id: string) {
@@ -69,77 +57,77 @@ const statusLabel: Record<string, string> = {
         <span class="panel-label">Details</span>
         <div class="details-grid">
 
-          <div :class="['detail-field', editingField === 'name' && 'detail-field--editing']"
-            @click="props.isAdmin && startEdit('name', client.name)">
-            <span class="detail-field__label">Full name</span>
-            <span v-if="editingField !== 'name'" class="detail-field__val">{{ client.name || '—' }}</span>
-            <input v-else ref="inputRef" v-model="editingValue" placeholder="Full name"
-              @blur="commitEdit" @keydown.enter.prevent="commitEdit" @keydown.escape.prevent="cancelEdit" @click.stop />
-          </div>
+          <TextInput
+            text="Full name"
+            :model-value="client.name"
+            :rights="isAdmin"
+            placeholder="Full name"
+            @update:model-value="updateField('name', $event || undefined)"
+          />
 
-          <div :class="['detail-field', editingField === 'identityDocument' && 'detail-field--editing']"
-            @click="props.isAdmin && startEdit('identityDocument', client.identityDocument ?? '')">
-            <span class="detail-field__label">ID document</span>
-            <span v-if="editingField !== 'identityDocument'" class="detail-field__val">{{ client.identityDocument || '—' }}</span>
-            <input v-else ref="inputRef" v-model="editingValue" placeholder="ID document"
-              @blur="commitEdit" @keydown.enter.prevent="commitEdit" @keydown.escape.prevent="cancelEdit" @click.stop />
-          </div>
+          <TextInput
+            text="ID document"
+            :model-value="client.identityDocument ?? ''"
+            :rights="isAdmin"
+            placeholder="ID document"
+            @update:model-value="updateField('identityDocument', $event || undefined)"
+          />
 
-          <div :class="['detail-field', editingField === 'email' && 'detail-field--editing']"
-            @click="props.isAdmin && startEdit('email', client.email ?? '')">
-            <span class="detail-field__label">Email</span>
-            <span v-if="editingField !== 'email'" class="detail-field__val">{{ client.email || '—' }}</span>
-            <input v-else ref="inputRef" v-model="editingValue" type="email" placeholder="Email"
-              @blur="commitEdit" @keydown.enter.prevent="commitEdit" @keydown.escape.prevent="cancelEdit" @click.stop />
-          </div>
+          <TextInput
+            text="Email"
+            :model-value="client.email ?? ''"
+            :rights="isAdmin"
+            type="email"
+            placeholder="Email"
+            @update:model-value="updateField('email', $event || undefined)"
+          />
 
-          <div :class="['detail-field', editingField === 'phoneNumber' && 'detail-field--editing']"
-            @click="props.isAdmin && startEdit('phoneNumber', client.phoneNumber ?? '')">
-            <span class="detail-field__label">Phone</span>
-            <span v-if="editingField !== 'phoneNumber'" class="detail-field__val">{{ client.phoneNumber || '—' }}</span>
-            <input v-else ref="inputRef" v-model="editingValue" placeholder="Phone"
-              @blur="commitEdit" @keydown.enter.prevent="commitEdit" @keydown.escape.prevent="cancelEdit" @click.stop />
-          </div>
+          <TextInput
+            text="Phone"
+            :model-value="client.phoneNumber ?? ''"
+            :rights="isAdmin"
+            placeholder="Phone"
+            @update:model-value="updateField('phoneNumber', $event || undefined)"
+          />
 
-          <div :class="['detail-field', editingField === 'city' && 'detail-field--editing']"
-            @click="props.isAdmin && startEdit('city', client.city ?? '')">
-            <span class="detail-field__label">City</span>
-            <span v-if="editingField !== 'city'" class="detail-field__val">{{ client.city || '—' }}</span>
-            <input v-else ref="inputRef" v-model="editingValue" placeholder="City"
-              @blur="commitEdit" @keydown.enter.prevent="commitEdit" @keydown.escape.prevent="cancelEdit" @click.stop />
-          </div>
+          <TextInput
+            text="City"
+            :model-value="client.city ?? ''"
+            :rights="isAdmin"
+            placeholder="City"
+            @update:model-value="updateField('city', $event || undefined)"
+          />
 
-          <div :class="['detail-field', editingField === 'country' && 'detail-field--editing']"
-            @click="props.isAdmin && startEdit('country', client.country ?? '')">
-            <span class="detail-field__label">Country</span>
-            <span v-if="editingField !== 'country'" class="detail-field__val">{{ client.country || '—' }}</span>
-            <input v-else ref="inputRef" v-model="editingValue" placeholder="Country"
-              @blur="commitEdit" @keydown.enter.prevent="commitEdit" @keydown.escape.prevent="cancelEdit" @click.stop />
-          </div>
+          <TextInput
+            text="Country"
+            :model-value="client.country ?? ''"
+            :rights="isAdmin"
+            placeholder="Country"
+            @update:model-value="updateField('country', $event || undefined)"
+          />
 
-          <div :class="['detail-field', editingField === 'zipCode' && 'detail-field--editing']"
-            @click="props.isAdmin && startEdit('zipCode', client.zipCode ?? '')">
-            <span class="detail-field__label">ZIP code</span>
-            <span v-if="editingField !== 'zipCode'" class="detail-field__val">{{ client.zipCode || '—' }}</span>
-            <input v-else ref="inputRef" v-model="editingValue" placeholder="ZIP"
-              @blur="commitEdit" @keydown.enter.prevent="commitEdit" @keydown.escape.prevent="cancelEdit" @click.stop />
-          </div>
+          <TextInput
+            text="ZIP code"
+            :model-value="client.zipCode ?? ''"
+            :rights="isAdmin"
+            placeholder="ZIP"
+            @update:model-value="updateField('zipCode', $event || undefined)"
+          />
 
-          <div :class="['detail-field', editingField === 'street' && 'detail-field--editing']"
-            @click="props.isAdmin && startEdit('street', client.street ?? '')">
-            <span class="detail-field__label">Street</span>
-            <span v-if="editingField !== 'street'" class="detail-field__val">{{ client.street || '—' }}</span>
-            <input v-else ref="inputRef" v-model="editingValue" placeholder="Street"
-              @blur="commitEdit" @keydown.enter.prevent="commitEdit" @keydown.escape.prevent="cancelEdit" @click.stop />
-          </div>
+          <TextInput
+            text="Street"
+            :model-value="client.street ?? ''"
+            :rights="isAdmin"
+            placeholder="Street"
+            @update:model-value="updateField('street', $event || undefined)"
+          />
 
-          <div :class="['detail-field', 'detail-field--wide', editingField === 'comment' && 'detail-field--editing']"
-            @click="props.isAdmin && startEdit('comment', client.comment ?? '')">
-            <span class="detail-field__label">Comment</span>
-            <span v-if="editingField !== 'comment'" class="detail-field__val detail-field__val--pre">{{ client.comment || '—' }}</span>
-            <textarea v-else ref="inputRef" v-model="editingValue" rows="2" placeholder="Comment"
-              @blur="commitEdit" @keydown.escape.prevent="cancelEdit" @click.stop />
-          </div>
+          <TextareaInput
+            text="Comment"
+            :model-value="client.comment ?? ''"
+            :rights="isAdmin"
+            @update:model-value="updateField('comment', $event || undefined)"
+          />
 
         </div>
       </div>

@@ -2,6 +2,8 @@
 import { ref, watch } from 'vue'
 import type { Client } from '../../api/client'
 import AppIcon from '../../shared/AppIcon.vue'
+import TextInput from '../../shared/fields/TextInput.vue'
+import TextareaInput from '../../shared/fields/TextareaInput.vue'
 
 const props = defineProps<{
   client: Client
@@ -44,48 +46,21 @@ function save() {
         <!-- Admin: editable form -->
         <form v-if="isAdmin" @submit.prevent="save">
           <div class="modal__body">
-            <div class="form-group">
-              <label>Name *</label>
-              <input v-model="form.name" type="text" required />
+            <TextInput mode="form" text="Name *" v-model="form.name" required />
+            <div class="form-row">
+              <TextInput mode="form" text="Identity document" v-model="form.identityDocument" />
+              <TextInput mode="form" text="Email" v-model="form.email" type="email" />
             </div>
             <div class="form-row">
-              <div class="form-group">
-                <label>Identity document</label>
-                <input v-model="form.identityDocument" type="text" />
-              </div>
-              <div class="form-group">
-                <label>Email</label>
-                <input v-model="form.email" type="email" />
-              </div>
+              <TextInput mode="form" text="Phone" v-model="form.phoneNumber" />
+              <TextInput mode="form" text="City" v-model="form.city" />
             </div>
             <div class="form-row">
-              <div class="form-group">
-                <label>Phone</label>
-                <input v-model="form.phoneNumber" type="text" />
-              </div>
-              <div class="form-group">
-                <label>City</label>
-                <input v-model="form.city" type="text" />
-              </div>
+              <TextInput mode="form" text="Country" v-model="form.country" />
+              <TextInput mode="form" text="ZIP code" v-model="form.zipCode" />
             </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label>Country</label>
-                <input v-model="form.country" type="text" />
-              </div>
-              <div class="form-group">
-                <label>ZIP code</label>
-                <input v-model="form.zipCode" type="text" />
-              </div>
-            </div>
-            <div class="form-group">
-              <label>Street</label>
-              <input v-model="form.street" type="text" />
-            </div>
-            <div class="form-group">
-              <label>Comment</label>
-              <textarea v-model="form.comment" rows="2" />
-            </div>
+            <TextInput mode="form" text="Street" v-model="form.street" />
+            <TextareaInput mode="form" text="Comment" v-model="form.comment" />
           </div>
           <div class="modal__footer">
             <button type="button" class="btn btn--secondary" @click="emit('close')">Cancel</button>

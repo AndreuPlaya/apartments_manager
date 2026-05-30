@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import type { Channel, CalendarLink, Apartment } from '../../api/client'
-import { useInlineEdit } from '../../composables/useInlineEdit'
 import BaseItem from '../../shared/BaseItem.vue'
 import CalendarLinksPanel from '../../shared/CalendarLinksPanel.vue'
+import TextInput from '../../shared/fields/TextInput.vue'
+import NumberInput from '../../shared/fields/NumberInput.vue'
+import CheckboxInput from '../../shared/fields/CheckboxInput.vue'
 
 const props = defineProps<{
   channel: Channel
@@ -20,33 +21,8 @@ const emit = defineEmits<{
   deleteCalendarLink: [id: string]
 }>()
 
-type ChannelField = keyof Omit<Channel, 'id'>
-
-const inputRef = ref<HTMLInputElement | null>(null)
-const { editingField, editingValue, startEdit, cancelEdit } = useInlineEdit<ChannelField>(inputRef)
-
-function commitEdit() {
-  const field = editingField.value
-  if (!field) return
-  editingField.value = null
-
-  const raw = editingValue.value.trim()
-  let val: string | number | undefined = raw
-
-  if (field === 'commissionRate') {
-    val = Number(raw)
-  } else if (!val) {
-    val = undefined
-  }
-
-  const current = props.channel[field as keyof Channel]
-  if (val === current) return
-
+function updateField(field: keyof Omit<Channel, 'id'>, val: string | number | boolean | undefined) {
   emit('update', props.channel, { [field]: val })
-}
-
-function toggleActive() {
-  emit('update', props.channel, { isActive: !props.channel.isActive })
 }
 
 const channelLinks = () => props.calendarLinks.filter(l => l.channelId === props.channel.id)
@@ -74,26 +50,31 @@ const channelLinks = () => props.calendarLinks.filter(l => l.channelId === props
         <span class="panel-label">Channel details</span>
         <div class="details-grid details-grid--3col">
 
-          <div :class="['detail-field', editingField === 'name' && 'detail-field--editing']"
-            @click="(isAdmin ?? false) && startEdit('name', channel.name)">
-            <span class="detail-field__label">Name</span>
-            <span v-if="editingField !== 'name'" class="detail-field__val">{{ channel.name }}</span>
-            <input v-else ref="inputRef" v-model="editingValue" placeholder="Name"
-              @blur="commitEdit" @keydown.enter.prevent="commitEdit" @keydown.escape.prevent="cancelEdit" @click.stop />
-          </div>
+          <TextInput
+            text="Name"
+            :model-value="channel.name"
+            :rights="isAdmin ?? false"
+            placeholder="Name"
+            @update:model-value="updateField('name', $event || undefined)"
+          />
 
-          <div :class="['detail-field', editingField === 'commissionRate' && 'detail-field--editing']"
-            @click="(isAdmin ?? false) && startEdit('commissionRate', channel.commissionRate)">
-            <span class="detail-field__label">Commission rate (%)</span>
-            <span v-if="editingField !== 'commissionRate'" class="detail-field__val">{{ channel.commissionRate }}%</span>
-            <input v-else ref="inputRef" v-model="editingValue" type="number" min="0" max="100" step="0.1"
-              @blur="commitEdit" @keydown.enter.prevent="commitEdit" @keydown.escape.prevent="cancelEdit" @click.stop />
-          </div>
+          <NumberInput
+            text="Commission rate (%)"
+            :model-value="channel.commissionRate"
+            :min="0"
+            :max="100"
+            :step="0.1"
+            :display-fn="v => v + '%'"
+            :rights="isAdmin ?? false"
+            @update:model-value="updateField('commissionRate', $event)"
+          />
 
-          <div class="detail-field detail-field--checkbox" @click.stop="(isAdmin ?? false) && toggleActive()">
-            <input type="checkbox" :checked="channel.isActive" :disabled="!(isAdmin ?? false)" @change.stop="toggleActive" @click.stop />
-            <span class="detail-field__label" style="margin-bottom:0">Active</span>
-          </div>
+          <CheckboxInput
+            text="Active"
+            :model-value="channel.isActive"
+            :rights="isAdmin ?? false"
+            @update:model-value="updateField('isActive', $event)"
+          />
 
         </div>
       </div>

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, nextTick } from 'vue'
 import type { UserItem as UserData } from '../../api/client'
 import { useInlineEdit } from '../../composables/useInlineEdit'
 import BaseItem from '../../shared/BaseItem.vue'
-
+import TextInput from '../../shared/fields/TextInput.vue'
+import CheckboxInput from '../../shared/fields/CheckboxInput.vue'
 
 const props = defineProps<{
   user: UserData
@@ -15,33 +16,15 @@ const emit = defineEmits<{
   delete: [user: UserData]
 }>()
 
-type UserField = 'full_name' | 'username' | 'password'
+// Password field is kept raw: it shows '••••••••' as display and starts with an empty draft
+const passwordRef = ref<HTMLInputElement | null>(null)
+const { editingField: passwordEditing, editingValue: passwordDraft, startEdit: startPasswordEdit, cancelEdit: cancelPasswordEdit } = useInlineEdit<'password'>(passwordRef)
 
-const inputRef = ref<HTMLInputElement | null>(null)
-const { editingField, editingValue, startEdit, cancelEdit } = useInlineEdit<UserField>(inputRef)
-
-function commitEdit() {
-  const field = editingField.value
-  if (!field) return
-  editingField.value = null
-
-  const val = editingValue.value.trim()
-
-  if (field === 'password') {
-    if (!val) return
-    emit('update', props.user, { password: val })
-    return
-  }
-
+function commitPassword() {
+  passwordEditing.value = null
+  const val = passwordDraft.value.trim()
   if (!val) return
-  const current = String(props.user[field as keyof UserData] ?? '')
-  if (val === current) return
-
-  emit('update', props.user, { [field]: val })
-}
-
-function toggleEnabled() {
-  emit('update', props.user, { enabled: !props.user.enabled })
+  emit('update', props.user, { password: val })
 }
 </script>
 
@@ -72,35 +55,49 @@ function toggleEnabled() {
         <span class="panel-label">User details</span>
         <div class="details-grid">
 
-          <div :class="['detail-field', editingField === 'full_name' && 'detail-field--editing']"
-            @click="startEdit('full_name', user.full_name)">
-            <span class="detail-field__label">Full name</span>
-            <span v-if="editingField !== 'full_name'" class="detail-field__val">{{ user.full_name || '—' }}</span>
-            <input v-else ref="inputRef" v-model="editingValue" placeholder="Full name"
-              @blur="commitEdit" @keydown.enter.prevent="commitEdit" @keydown.escape.prevent="cancelEdit" @click.stop />
-          </div>
+          <TextInput
+            text="Full name"
+            :model-value="user.full_name"
+            placeholder="Full name"
+            @update:model-value="val => val && emit('update', user, { full_name: val })"
+          />
 
-          <div :class="['detail-field', editingField === 'username' && 'detail-field--editing']"
-            @click="startEdit('username', user.username)">
-            <span class="detail-field__label">Username</span>
-            <span v-if="editingField !== 'username'" class="detail-field__val">{{ user.username }}</span>
-            <input v-else ref="inputRef" v-model="editingValue" autocomplete="off" :placeholder="user.username"
-              @blur="commitEdit" @keydown.enter.prevent="commitEdit" @keydown.escape.prevent="cancelEdit" @click.stop />
-          </div>
+          <TextInput
+            text="Username"
+            :model-value="user.username"
+            :placeholder="user.username"
+            autocomplete="off"
+            @update:model-value="val => val && emit('update', user, { username: val })"
+          />
 
-          <div :class="['detail-field', editingField === 'password' && 'detail-field--editing']"
-            @click="startEdit('password', '')">
+          <!-- Password: kept raw — display is always '••••••••', draft always starts empty -->
+          <div
+            :class="['detail-field', passwordEditing === 'password' && 'detail-field--editing']"
+            @click="startPasswordEdit('password', '')"
+          >
             <span class="detail-field__label">Password</span>
-            <span v-if="editingField !== 'password'" class="detail-field__val text-muted">••••••••</span>
-            <input v-else ref="inputRef" v-model="editingValue" type="password" autocomplete="new-password"
-              placeholder="Leave blank to keep" minlength="8"
-              @blur="commitEdit" @keydown.enter.prevent="commitEdit" @keydown.escape.prevent="cancelEdit" @click.stop />
+            <span v-if="passwordEditing !== 'password'" class="detail-field__val text-muted">••••••••</span>
+            <input
+              v-else
+              ref="passwordRef"
+              v-model="passwordDraft"
+              type="password"
+              autocomplete="new-password"
+              placeholder="Leave blank to keep"
+              minlength="8"
+              @blur="commitPassword"
+              @keydown.enter.prevent="commitPassword"
+              @keydown.escape.prevent="cancelPasswordEdit"
+              @click.stop
+            />
           </div>
 
-          <div v-if="!user.isAdmin" class="detail-field detail-field--checkbox" @click.stop="toggleEnabled">
-            <input type="checkbox" :checked="user.enabled" @change.stop="toggleEnabled" @click.stop />
-            <span class="detail-field__label" style="margin-bottom:0">Enabled (can log in)</span>
-          </div>
+          <CheckboxInput
+            v-if="!user.isAdmin"
+            text="Enabled (can log in)"
+            :model-value="user.enabled"
+            @update:model-value="emit('update', user, { enabled: $event })"
+          />
 
         </div>
       </div>

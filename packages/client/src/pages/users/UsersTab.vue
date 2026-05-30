@@ -8,6 +8,8 @@ import { useConfirm } from '../../composables/useConfirm'
 import UserItemComponent from './UserItem.vue'
 import BaseList from '../../shared/BaseList.vue'
 import AppIcon from '../../shared/AppIcon.vue'
+import TextInput from '../../shared/fields/TextInput.vue'
+import CheckboxInput from '../../shared/fields/CheckboxInput.vue'
 
 const { loading, run } = useAsyncOp()
 const { success } = useToast()
@@ -86,23 +88,10 @@ async function del(u: UserData) {
           </div>
           <form @submit.prevent="create">
             <div class="modal__body">
-              <div class="form-group">
-                <label>Full name *</label>
-                <input v-model="createForm.full_name" type="text" required />
-              </div>
-              <div class="form-group">
-                <label>Username *</label>
-                <input v-model="createForm.username" type="text" autocomplete="off" required />
-              </div>
-              <div class="form-group">
-                <label>Password *</label>
-                <input v-model="createForm.password" type="password" autocomplete="new-password" required minlength="8" />
-                <span class="text-muted text-sm">Minimum 8 characters</span>
-              </div>
-              <label class="checkbox-row">
-                <input v-model="createForm.isAdmin" type="checkbox" />
-                Admin (full write access)
-              </label>
+              <TextInput mode="form" text="Full name *" v-model="createForm.full_name" required />
+              <TextInput mode="form" text="Username *" v-model="createForm.username" autocomplete="off" required />
+              <TextInput mode="form" text="Password *" v-model="createForm.password" type="password" autocomplete="new-password" :required="true" :minlength="8" hint="Minimum 8 characters" />
+              <CheckboxInput mode="form" text="Admin (full write access)" v-model="createForm.isAdmin" />
             </div>
             <div class="modal__footer">
               <button type="button" class="btn btn--secondary" @click="showForm = false">Cancel</button>
