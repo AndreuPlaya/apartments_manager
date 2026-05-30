@@ -1,6 +1,6 @@
 import { createI18n } from 'vue-i18n'
-import en from './locales/en'
-import es from './locales/es'
+import en from '../res/locales/en'
+import es from '../res/locales/es'
 
 const LOCALE_KEY = 'apt-mgr:locale'
 
