@@ -17,9 +17,6 @@ data/
 *.p12
 *.pfx
 
-# Database backups
-mongo_backup/
-
 # Logs
 *.log
 logs/

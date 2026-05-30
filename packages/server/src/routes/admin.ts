@@ -1,6 +1,4 @@
 import { Hono } from 'hono'
-import type { Context } from 'hono'
-import { AppError } from '../application/errors.js'
 import {
   createApartment,
   deleteApartment,
@@ -39,6 +37,7 @@ import {
 } from '../application/userService.js'
 import { adminMiddleware } from '../middleware/admin.js'
 import { authMiddleware } from '../middleware/auth.js'
+import { handleError } from './_utils.js'
 import type {
   CreateApartmentRequest,
   CreateBookingRequest,
@@ -58,11 +57,6 @@ import type {
 const adminRoutes = new Hono()
 
 adminRoutes.use('/api/admin/*', authMiddleware, adminMiddleware)
-
-function handleError(err: unknown, c: Context) {
-  if (err instanceof AppError) return c.json({ error: err.message }, err.statusCode as any)
-  throw err
-}
 
 // ── Apartments ─────────────────────────────────────────────────────────────
 

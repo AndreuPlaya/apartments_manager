@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **apartments_manager** is a self-hosted, multi-user apartment management application (IxaGrupPortal) being rebuilt from scratch. Its core purpose is to track a **calendar of apartment bookings** — who arrives, who leaves, how much to bill — across a portfolio of short-term and long-term rental properties.
 
-The `legacy/` directory contains the original React + Express + MongoDB app — use it **only as domain reference**. The new application follows the architecture in `docs/ARCHITECTURE_BLUEPRINT.md` exactly.
+The new application follows the architecture in `docs/ARCHITECTURE_BLUEPRINT.md` exactly.
 
 The public-facing (non-authenticated) homepage is **out of scope** — it will be a separate WordPress site. This application only serves authenticated users.
 
@@ -54,7 +54,6 @@ apartments_manager/
 │   └── config/              # settings.json (auto-created on first boot)
 ├── docs/
 │   └── ARCHITECTURE_BLUEPRINT.md
-├── legacy/                  # DOMAIN REFERENCE ONLY — do not modify
 ├── compose.yaml
 ├── Dockerfile
 └── pnpm-workspace.yaml

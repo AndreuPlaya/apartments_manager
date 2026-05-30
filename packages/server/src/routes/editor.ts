@@ -6,13 +6,7 @@ import { listChannels } from '../application/channelService.js'
 import { listClients } from '../application/clientService.js'
 import { listProperties } from '../application/propertyService.js'
 import { authMiddleware } from '../middleware/auth.js'
-import { AppError } from '../application/errors.js'
-import type { Context } from 'hono'
-
-function handleError(err: unknown, c: Context) {
-  if (err instanceof AppError) return c.json({ error: err.message }, err.statusCode as any)
-  throw err
-}
+import { handleError } from './_utils.js'
 
 const editorRoutes = new Hono()
 
