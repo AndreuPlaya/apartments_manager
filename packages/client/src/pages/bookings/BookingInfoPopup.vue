@@ -11,14 +11,11 @@ const props = defineProps<{
   aptName: string
   clientName: string
   channelName: string
-  isAdmin: boolean
   pos: { x: number; y: number }
 }>()
 
 const emit = defineEmits<{
   close: []
-  edit: []
-  delete: []
   patch: [changes: { comment?: string; status?: BookingStatus; paidDate?: string }]
 }>()
 
@@ -127,10 +124,6 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
         />
       </div>
 
-      <div v-if="isAdmin" class="booking-popup__actions">
-        <button class="btn btn--ghost btn--sm" @click="emit('edit')">{{ t('bookings.edit') }}</button>
-        <button class="btn btn--ghost btn--sm text-danger" @click="emit('delete')">{{ t('common.delete') }}</button>
-      </div>
     </div>
   </Teleport>
 </template>

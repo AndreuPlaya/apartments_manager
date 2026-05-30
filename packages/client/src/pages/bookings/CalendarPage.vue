@@ -66,10 +66,6 @@ function openCreate() {
   showForm.value = true
 }
 
-function openEdit(b: Booking) {
-  editingBooking.value = b
-  showForm.value = true
-}
 
 async function onFormSave() {
   showForm.value = false
@@ -106,10 +102,6 @@ async function handleCancel(b: Booking) {
   }
 }
 
-async function deleteBooking(b: Booking) {
-  const res = await run(() => api.bookings.delete(b.id))
-  if (res !== undefined) { await load(); success(t('bookings.deleted')) }
-}
 
 // ── Client edit ───────────────────────────────────────────────────────────────
 
@@ -144,8 +136,6 @@ async function handleClientSave(client: Client, patch: Partial<Omit<Client, 'id'
       :channels="channels"
       :is-admin="isAdmin"
       :loading="pageLoading"
-      @edit="openEdit"
-      @delete="deleteBooking"
       @update="updateBookingDates"
       @patch="onPatch"
     />

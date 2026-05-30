@@ -17,8 +17,6 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  edit: [booking: Booking]
-  delete: [booking: Booking]
   update: [id: string, changes: { fromDate?: string; toDate?: string }]
   patch: [id: string, changes: { comment?: string; status?: BookingStatus; paidDate?: string }]
 }>()
@@ -374,8 +372,7 @@ function openPopup(booking: Booking, event: MouseEvent) {
   popupPos.value = { x: event.clientX, y: event.clientY }
 }
 function closePopup() { popupBooking.value = null }
-function onEdit(b: Booking) { closePopup(); emit('edit', b) }
-function onDelete(b: Booking) { closePopup(); emit('delete', b) }
+
 </script>
 
 <template>
@@ -488,11 +485,8 @@ function onDelete(b: Booking) { closePopup(); emit('delete', b) }
     :apt-name="aptName(popupBooking.apartmentId)"
     :client-name="clientName(popupBooking.clientId)"
     :channel-name="channelName(popupBooking.channelId)"
-    :is-admin="isAdmin"
     :pos="popupPos"
     @close="closePopup"
-    @edit="onEdit(popupBooking)"
-    @delete="onDelete(popupBooking)"
     @patch="emit('patch', popupBooking.id, $event)"
   />
 </template>
