@@ -2,7 +2,7 @@ import type { Messages } from './en'
 
 const es: Messages = {
   nav: {
-    home: 'Inicio',
+    dashboard: 'Panel',
     calendar: 'Calendario',
     bookings: 'Reservas',
     clients: 'Clientes',

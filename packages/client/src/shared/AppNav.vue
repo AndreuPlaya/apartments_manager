@@ -56,7 +56,7 @@ async function logout() {
         <RouterLink to="/" class="app-nav__link" exact-active-class="app-nav__link--active">
           <!-- Home / dashboard icon -->
           <AppIcon name="home" :size="15" />
-          {{ t('nav.home') }}
+          {{ t('nav.dashboard') }}
         </RouterLink>
 
         <RouterLink to="/calendar" class="app-nav__link" active-class="app-nav__link--active">
@@ -122,7 +122,7 @@ async function logout() {
     <div :class="['app-nav__mobile-menu', { 'app-nav__mobile-menu--open': mobileOpen }]">
       <RouterLink to="/" class="app-nav__link" exact-active-class="app-nav__link--active" @click="mobileOpen = false">
         <AppIcon name="home" :size="15" />
-        {{ t('nav.home') }}
+        {{ t('nav.dashboard') }}
       </RouterLink>
       <RouterLink to="/calendar" class="app-nav__link" active-class="app-nav__link--active" @click="mobileOpen = false">
         <AppIcon name="calendar" :size="15" />

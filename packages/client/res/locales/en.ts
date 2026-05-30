@@ -1,6 +1,6 @@
 const en = {
   nav: {
-    home: 'Home',
+    dashboard: 'Dashboard',
     calendar: 'Calendar',
     bookings: 'Bookings',
     clients: 'Clients',

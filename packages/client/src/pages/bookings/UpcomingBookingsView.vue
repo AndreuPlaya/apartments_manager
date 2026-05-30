@@ -39,36 +39,38 @@ const emit = defineEmits<{
       {{ t('dashboard.noUpcoming') }}
     </div>
 
-    <table v-else class="bookings-table">
-      <thead>
-        <tr>
-          <th>{{ t('bookings.apartment') }}</th>
-          <th>{{ t('bookings.client') }}</th>
-          <th>{{ t('bookings.checkin') }}</th>
-          <th>{{ t('bookings.checkout') }}</th>
-          <th>{{ t('bookings.guests') }}</th>
-          <th style="width: 2rem"></th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <BookingItem
-          v-for="b in bookings"
-          :key="b.id"
-          :booking="b"
-          :apartments="apartments"
-          :clients="clients"
-          :channels="channels"
-          :is-admin="isAdmin"
-          :loading="loading"
-          :today="today"
-          @update="(id, payload) => emit('update', id, payload)"
-          @patch="(id, changes) => emit('patch', id, changes)"
-          @cancel="(booking) => emit('cancel', booking)"
-          @open-client="(client) => emit('openClient', client)"
-        />
-      </tbody>
-    </table>
+    <div v-else class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>{{ t('bookings.apartment') }}</th>
+            <th>{{ t('bookings.client') }}</th>
+            <th>{{ t('bookings.checkin') }}</th>
+            <th>{{ t('bookings.checkout') }}</th>
+            <th>{{ t('bookings.guests') }}</th>
+            <th style="width: 2rem"></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <BookingItem
+            v-for="b in bookings"
+            :key="b.id"
+            :booking="b"
+            :apartments="apartments"
+            :clients="clients"
+            :channels="channels"
+            :is-admin="isAdmin"
+            :loading="loading"
+            :today="today"
+            @update="(id, payload) => emit('update', id, payload)"
+            @patch="(id, changes) => emit('patch', id, changes)"
+            @cancel="(booking) => emit('cancel', booking)"
+            @open-client="(client) => emit('openClient', client)"
+          />
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 
