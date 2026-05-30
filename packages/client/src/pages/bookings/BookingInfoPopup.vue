@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Booking, BookingStatus } from '../../api/client'
 import AppIcon from '../../shared/AppIcon.vue'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   booking: Booking
@@ -77,12 +80,12 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 
       <div class="booking-popup__dates">
         <div class="booking-popup__date-block">
-          <div class="booking-popup__date-label">Check-in</div>
+          <div class="booking-popup__date-label">{{ t('bookings.checkin') }}</div>
           <div class="booking-popup__date-value">{{ formatDate(booking.fromDate) }}</div>
         </div>
         <div class="booking-popup__date-sep"><AppIcon name="arrow-right" :size="14" /></div>
         <div class="booking-popup__date-block">
-          <div class="booking-popup__date-label">Check-out</div>
+          <div class="booking-popup__date-label">{{ t('bookings.checkout') }}</div>
           <div class="booking-popup__date-value">{{ formatDate(booking.toDate) }}</div>
         </div>
       </div>
@@ -90,15 +93,15 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
       <div class="booking-popup__stats">
         <div class="booking-popup__stat">
           <div class="booking-popup__stat-value">{{ nights(booking.fromDate, booking.toDate) }}</div>
-          <div class="booking-popup__stat-label">nights</div>
+          <div class="booking-popup__stat-label">{{ t('bookings.nights') }}</div>
         </div>
         <div class="booking-popup__stat">
           <div class="booking-popup__stat-value">{{ booking.adultCount }}</div>
-          <div class="booking-popup__stat-label">adults</div>
+          <div class="booking-popup__stat-label">{{ t('bookings.adultsLabel') }}</div>
         </div>
         <div class="booking-popup__stat">
           <div class="booking-popup__stat-value">{{ booking.childrenCount }}</div>
-          <div class="booking-popup__stat-label">children</div>
+          <div class="booking-popup__stat-label">{{ t('bookings.childrenLabel') }}</div>
         </div>
       </div>
 
@@ -107,7 +110,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
       </div>
 
       <div class="booking-popup__field">
-        <label class="booking-popup__field-label">Paid date</label>
+        <label class="booking-popup__field-label">{{ t('bookings.paidDate') }}</label>
         <input
           v-model="localPaidDate"
           type="date"
@@ -119,14 +122,14 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
         <textarea
           v-model="localComment"
           class="booking-popup__comment-input"
-          placeholder="Add a comment…"
+          :placeholder="t('bookings.addComment')"
           rows="2"
         />
       </div>
 
       <div v-if="isAdmin" class="booking-popup__actions">
-        <button class="btn btn--ghost btn--sm" @click="emit('edit')">Edit</button>
-        <button class="btn btn--ghost btn--sm text-danger" @click="emit('delete')">Delete</button>
+        <button class="btn btn--ghost btn--sm" @click="emit('edit')">{{ t('bookings.edit') }}</button>
+        <button class="btn btn--ghost btn--sm text-danger" @click="emit('delete')">{{ t('common.delete') }}</button>
       </div>
     </div>
   </Teleport>

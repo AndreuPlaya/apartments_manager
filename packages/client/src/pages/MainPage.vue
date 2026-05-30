@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { api } from '../api/client'
 import type { Apartment, Booking, Client, Channel } from '../api/client'
 import { useToast } from '../composables/useToast'
@@ -10,6 +11,7 @@ import ActiveBookingsView from './bookings/ActiveBookingsView.vue'
 import UpcomingBookingsView from './bookings/UpcomingBookingsView.vue'
 import type { BookingStatus } from '../api/client'
 
+const { t } = useI18n()
 const { success, error } = useToast()
 const { run } = useAsyncOp()
 
@@ -93,7 +95,7 @@ async function onPatch(id: string, changes: { comment?: string; status?: Booking
   const res = await run(() => api.bookings.patch(id, changes))
   if (res !== undefined) {
     bookings.value = bookings.value.map((b) => b.id === id ? res : b)
-    success('Booking updated')
+    success(t('bookings.updated'))
   }
 }
 
@@ -101,7 +103,7 @@ async function handleUpdate(id: string, payload: Partial<Omit<Booking, 'id' | 'c
   const res = await run(() => api.bookings.update(id, payload))
   if (res !== undefined) {
     bookings.value = bookings.value.map((b) => b.id === id ? res : b)
-    success('Booking updated')
+    success(t('bookings.updated'))
   }
 }
 
@@ -109,7 +111,7 @@ async function handleCancel(b: Booking) {
   const res = await run(() => api.bookings.patch(b.id, { status: 'Cancelled' }))
   if (res !== undefined) {
     bookings.value = bookings.value.map((x) => x.id === b.id ? res : x)
-    success('Booking cancelled')
+    success(t('bookings.cancelled'))
   }
 }
 
@@ -126,7 +128,7 @@ async function handleClientSave(client: Client, patch: Partial<Omit<Client, 'id'
   if (res !== undefined) {
     clients.value = clients.value.map((c) => c.id === client.id ? res : c)
     clientEditTarget.value = null
-    success('Client updated')
+    success(t('bookings.clientUpdated'))
   }
 }
 
@@ -183,4 +185,3 @@ async function handleClientSave(client: Client, patch: Partial<Omit<Client, 'id'
     @close="clientEditTarget = null"
   />
 </template>
-

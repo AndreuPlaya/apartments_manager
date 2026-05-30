@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { api } from '../../api/client'
 import type { Apartment, Booking, Client, Channel } from '../../api/client'
 import { useToast } from '../../composables/useToast'
@@ -9,6 +10,7 @@ import BookingFormModal from './BookingFormModal.vue'
 import ClientEditModal from '../clients/ClientEditModal.vue'
 import type { BookingStatus } from '../../api/client'
 
+const { t } = useI18n()
 const { success, error } = useToast()
 const { run } = useAsyncOp()
 
@@ -72,19 +74,19 @@ function openEdit(b: Booking) {
 async function onFormSave() {
   showForm.value = false
   await load()
-  success(editingBooking.value ? 'Booking updated' : 'Booking created')
+  success(editingBooking.value ? t('bookings.updated') : t('bookings.created'))
 }
 
 async function updateBookingDates(id: string, changes: { fromDate?: string; toDate?: string }) {
   const res = await run(() => api.bookings.update(id, changes))
-  if (res !== undefined) { await load(); success('Booking updated') }
+  if (res !== undefined) { await load(); success(t('bookings.updated')) }
 }
 
 async function onPatch(id: string, changes: { comment?: string; status?: BookingStatus; paidDate?: string }) {
   const res = await run(() => api.bookings.patch(id, changes))
   if (res !== undefined) {
     bookings.value = bookings.value.map((b) => b.id === id ? res : b)
-    success('Booking updated')
+    success(t('bookings.updated'))
   }
 }
 
@@ -92,7 +94,7 @@ async function handleUpdate(id: string, payload: Partial<Omit<Booking, 'id' | 'c
   const res = await run(() => api.bookings.update(id, payload))
   if (res !== undefined) {
     bookings.value = bookings.value.map((b) => b.id === id ? res : b)
-    success('Booking updated')
+    success(t('bookings.updated'))
   }
 }
 
@@ -100,13 +102,13 @@ async function handleCancel(b: Booking) {
   const res = await run(() => api.bookings.patch(b.id, { status: 'Cancelled' }))
   if (res !== undefined) {
     bookings.value = bookings.value.map((x) => x.id === b.id ? res : x)
-    success('Booking cancelled')
+    success(t('bookings.cancelled'))
   }
 }
 
 async function deleteBooking(b: Booking) {
   const res = await run(() => api.bookings.delete(b.id))
-  if (res !== undefined) { await load(); success('Booking deleted') }
+  if (res !== undefined) { await load(); success(t('bookings.deleted')) }
 }
 
 // ── Client edit ───────────────────────────────────────────────────────────────
@@ -122,7 +124,7 @@ async function handleClientSave(client: Client, patch: Partial<Omit<Client, 'id'
   if (res !== undefined) {
     clients.value = clients.value.map((c) => c.id === client.id ? res : c)
     clientEditTarget.value = null
-    success('Client updated')
+    success(t('bookings.clientUpdated'))
   }
 }
 </script>
@@ -130,9 +132,9 @@ async function handleClientSave(client: Client, patch: Partial<Omit<Client, 'id'
 <template>
   <div class="page-container">
     <div class="page-header">
-      <h2>Calendar</h2>
+      <h2>{{ t('calendar.title') }}</h2>
       <div class="page-header__spacer" />
-      <button v-if="isAdmin" class="btn btn--primary btn--sm" @click="openCreate">+ New booking</button>
+      <button v-if="isAdmin" class="btn btn--primary btn--sm" @click="openCreate">{{ t('bookings.newBooking') }}</button>
     </div>
 
     <CalendarView

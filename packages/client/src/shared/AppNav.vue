@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { api } from '../api/client'
 import { clearCachedConfig } from '../router'
 import { useToast } from '../composables/useToast'
+import { useLocale } from '../composables/useLocale'
 
 const props = defineProps<{
   username: string
@@ -12,7 +14,9 @@ const props = defineProps<{
 
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
 const { error } = useToast()
+const { currentLocale, toggleLocale } = useLocale()
 
 const mobileOpen = ref(false)
 
@@ -31,7 +35,7 @@ async function logout() {
     clearCachedConfig()
     router.push('/login')
   } catch {
-    error('Logout failed')
+    error(t('auth.logoutFailed'))
   }
 }
 </script>
@@ -54,7 +58,7 @@ async function logout() {
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
             <polyline points="9 22 9 12 15 12 15 22"/>
           </svg>
-          Home
+          {{ t('nav.home') }}
         </RouterLink>
 
         <RouterLink to="/calendar" class="app-nav__link" active-class="app-nav__link--active">
@@ -65,7 +69,7 @@ async function logout() {
             <line x1="8" y1="2" x2="8" y2="6"/>
             <line x1="3" y1="10" x2="21" y2="10"/>
           </svg>
-          Calendar
+          {{ t('nav.calendar') }}
         </RouterLink>
 
         <RouterLink to="/bookings" class="app-nav__link" active-class="app-nav__link--active">
@@ -78,7 +82,7 @@ async function logout() {
             <line x1="3" y1="12" x2="3.01" y2="12"/>
             <line x1="3" y1="18" x2="3.01" y2="18"/>
           </svg>
-          Bookings
+          {{ t('nav.bookings') }}
         </RouterLink>
 
         <RouterLink to="/clients" class="app-nav__link" active-class="app-nav__link--active">
@@ -89,7 +93,7 @@ async function logout() {
             <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
             <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
           </svg>
-          Clients
+          {{ t('nav.clients') }}
         </RouterLink>
 
         <template v-if="props.isAdmin">
@@ -99,7 +103,7 @@ async function logout() {
               <circle cx="12" cy="12" r="3"/>
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
             </svg>
-            Config
+            {{ t('nav.config') }}
             <span class="app-nav__admin-dot" aria-label="Admin only" />
           </RouterLink>
 
@@ -110,7 +114,7 @@ async function logout() {
               <line x1="12" y1="20" x2="12" y2="4"/>
               <line x1="6" y1="20" x2="6" y2="14"/>
             </svg>
-            Metrics
+            {{ t('nav.metrics') }}
             <span class="app-nav__admin-dot" aria-label="Admin only" />
           </RouterLink>
         </template>
@@ -120,7 +124,15 @@ async function logout() {
       <div class="app-nav__user">
         <div class="app-nav__avatar" :title="props.username">{{ initials }}</div>
         <span class="app-nav__username">{{ props.username }}</span>
-        <button class="app-nav__logout" @click="logout" aria-label="Sign out" title="Sign out">
+        <button
+          class="app-nav__locale-toggle"
+          :aria-label="currentLocale === 'en' ? 'Switch to Spanish' : 'Switch to English'"
+          :title="currentLocale === 'en' ? 'Español' : 'English'"
+          @click="toggleLocale"
+        >
+          {{ currentLocale === 'en' ? 'ES' : 'EN' }}
+        </button>
+        <button class="app-nav__logout" @click="logout" :aria-label="t('nav.signOut')" :title="t('nav.signOut')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
             <polyline points="16 17 21 12 16 7"/>
@@ -133,7 +145,7 @@ async function logout() {
       <button
         class="app-nav__hamburger"
         :aria-expanded="mobileOpen"
-        aria-label="Toggle navigation"
+        :aria-label="t('nav.toggleNav')"
         @click="mobileOpen = !mobileOpen"
       >
         <svg v-if="!mobileOpen" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -155,7 +167,7 @@ async function logout() {
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
           <polyline points="9 22 9 12 15 12 15 22"/>
         </svg>
-        Home
+        {{ t('nav.home') }}
       </RouterLink>
       <RouterLink to="/calendar" class="app-nav__link" active-class="app-nav__link--active" @click="mobileOpen = false">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -164,7 +176,7 @@ async function logout() {
           <line x1="8" y1="2" x2="8" y2="6"/>
           <line x1="3" y1="10" x2="21" y2="10"/>
         </svg>
-        Calendar
+        {{ t('nav.calendar') }}
       </RouterLink>
       <RouterLink to="/bookings" class="app-nav__link" active-class="app-nav__link--active" @click="mobileOpen = false">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -175,7 +187,7 @@ async function logout() {
           <line x1="3" y1="12" x2="3.01" y2="12"/>
           <line x1="3" y1="18" x2="3.01" y2="18"/>
         </svg>
-        Bookings
+        {{ t('nav.bookings') }}
       </RouterLink>
       <RouterLink to="/clients" class="app-nav__link" active-class="app-nav__link--active" @click="mobileOpen = false">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -184,7 +196,7 @@ async function logout() {
           <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
           <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
         </svg>
-        Clients
+        {{ t('nav.clients') }}
       </RouterLink>
 
       <template v-if="props.isAdmin">
@@ -193,7 +205,7 @@ async function logout() {
             <circle cx="12" cy="12" r="3"/>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
           </svg>
-          Config
+          {{ t('nav.config') }}
           <span class="app-nav__admin-dot" />
         </RouterLink>
         <RouterLink to="/metrics" class="app-nav__link app-nav__link--admin" active-class="app-nav__link--active" @click="mobileOpen = false">
@@ -202,7 +214,7 @@ async function logout() {
             <line x1="12" y1="20" x2="12" y2="4"/>
             <line x1="6" y1="20" x2="6" y2="14"/>
           </svg>
-          Metrics
+          {{ t('nav.metrics') }}
           <span class="app-nav__admin-dot" />
         </RouterLink>
       </template>
@@ -210,7 +222,14 @@ async function logout() {
       <div class="app-nav__mobile-user">
         <div class="app-nav__avatar">{{ initials }}</div>
         <span class="app-nav__username">{{ props.username }}</span>
-        <button class="app-nav__mobile-logout" @click="logout">Sign out</button>
+        <button
+          class="app-nav__locale-toggle app-nav__locale-toggle--mobile"
+          :title="currentLocale === 'en' ? 'Español' : 'English'"
+          @click="toggleLocale"
+        >
+          {{ currentLocale === 'en' ? 'ES' : 'EN' }}
+        </button>
+        <button class="app-nav__mobile-logout" @click="logout">{{ t('nav.signOut') }}</button>
       </div>
     </div>
   </nav>
@@ -349,6 +368,35 @@ async function logout() {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.app-nav__locale-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: var(--nav-text);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--nav-text-bright);
+  }
+
+  &--mobile {
+    width: auto;
+    padding: 0 0.5rem;
+    border-color: rgba(255, 255, 255, 0.15);
+  }
 }
 
 .app-nav__logout {

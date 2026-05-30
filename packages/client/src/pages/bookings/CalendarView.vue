@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Booking, Apartment, Client, Channel, BookingStatus } from '../../api/client'
 import BookingInfoPopup from './BookingInfoPopup.vue'
 import AppIcon from '../../shared/AppIcon.vue'
+
+const { t, locale } = useI18n()
 
 const props = defineProps<{
   bookings: Booking[]
@@ -63,10 +66,7 @@ const filterMode = ref<'bookings' | 'free'>('bookings')
 
 // ── Color palette ─────────────────────────────────────────────────────────────
 
-const COLORS = [
-  '#3b82f6', '#f59e0b', '#10b981', '#ef4444',
-  '#8b5cf6', '#06b6d4', '#f97316', '#84cc16',
-]
+const CALENDAR_COLOR_COUNT = 8
 
 const sortedApartments = computed(() =>
   [...props.apartments].sort((a, b) => a.name.localeCompare(b.name))
@@ -74,7 +74,7 @@ const sortedApartments = computed(() =>
 
 function aptColor(aptId: string): string {
   const idx = sortedApartments.value.findIndex((a) => a.id === aptId)
-  return COLORS[idx % COLORS.length] ?? COLORS[0]!
+  return `var(--cal-color-${idx % CALENDAR_COLOR_COUNT})`
 }
 
 const visibleApartments = computed(() =>
@@ -85,7 +85,12 @@ const visibleApartments = computed(() =>
 
 // ── Calendar grid ─────────────────────────────────────────────────────────────
 
-const DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+// Jan 1, 2024 is a Monday — use it as a fixed anchor to generate locale-aware short weekday names
+const DOW_LABELS = computed(() =>
+  Array.from({ length: 7 }, (_, i) =>
+    new Date(2024, 0, i + 1).toLocaleDateString(locale.value, { weekday: 'short' })
+  )
+)
 
 interface DayCell {
   date: string
@@ -380,7 +385,7 @@ function onDelete(b: Booking) { closePopup(); emit('delete', b) }
     <div class="booking-calendar__nav">
       <button class="btn btn--ghost btn--sm" @click="prevMonth"><AppIcon name="chevron-left" /></button>
       <span class="booking-calendar__month-label">{{ monthLabel }}</span>
-      <button class="btn btn--ghost btn--sm" @click="goToday">Today</button>
+      <button class="btn btn--ghost btn--sm" @click="goToday">{{ t('calendar.today') }}</button>
       <button class="btn btn--ghost btn--sm" @click="nextMonth"><AppIcon name="chevron-right" /></button>
     </div>
 
@@ -389,11 +394,11 @@ function onDelete(b: Booking) { closePopup(); emit('delete', b) }
       <button
         :class="['legend-item', { active: filterMode === 'bookings' && filterApt === '' }]"
         @click="filterMode = 'bookings'; filterApt = ''"
-      >All apartments</button>
+      >{{ t('calendar.allApartments') }}</button>
       <button
         :class="['legend-item', { active: filterMode === 'free' }]"
         @click="filterMode = 'free'; filterApt = ''"
-      >Free apartments</button>
+      >{{ t('calendar.freeApartments') }}</button>
       <button
         v-for="apt in sortedApartments"
         :key="apt.id"
@@ -405,7 +410,7 @@ function onDelete(b: Booking) { closePopup(); emit('delete', b) }
       </button>
     </div>
 
-    <div v-if="loading" class="empty-state"><p>Loading…</p></div>
+    <div v-if="loading" class="empty-state"><p>{{ t('common.loading') }}</p></div>
 
     <template v-else>
       <!-- DOW header -->

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Client, Booking, Apartment, Channel } from '../../api/client'
 import { api } from '../../api/client'
 import { useAsyncOp } from '../../composables/useAsyncOp'
@@ -12,6 +13,7 @@ import AppIcon from '../../shared/AppIcon.vue'
 import TextInput from '../../shared/fields/TextInput.vue'
 import TextareaInput from '../../shared/fields/TextareaInput.vue'
 
+const { t } = useI18n()
 const props = defineProps<{ isAdmin?: boolean }>()
 const { loading, run } = useAsyncOp()
 const { success } = useToast()
@@ -62,18 +64,18 @@ async function save() {
     comment: form.value.comment || undefined,
   }
   const res = await run(() => api.clients.create(payload))
-  if (res !== undefined) { showForm.value = false; await load(); success('Client created') }
+  if (res !== undefined) { showForm.value = false; await load(); success(t('clients.created')) }
 }
 
 const deletingId = ref<string | null>(null)
 
 async function del(c: Client) {
   if (!props.isAdmin) return
-  if (!(await confirm(`Delete client "${c.name}"?`))) return
+  if (!(await confirm(t('clients.deleteConfirm', { name: c.name })))) return
   deletingId.value = c.id
   const res = await run(() => api.clients.delete(c.id))
   deletingId.value = null
-  if (res !== undefined) { await load(); success('Client deleted') }
+  if (res !== undefined) { await load(); success(t('clients.deleted')) }
 }
 
 async function updateField(c: Client, patch: Partial<Omit<Client, 'id'>>) {
@@ -125,9 +127,9 @@ const hasMore = computed(() => visibleCount.value < sorted.value.length)
 <template>
   <div>
     <div class="page-header">
-      <h3>Clients</h3>
+      <h3>{{ t('clients.title') }}</h3>
       <div class="page-header__spacer" />
-      <button v-if="props.isAdmin" class="btn btn--primary btn--sm" @click="openCreate">+ Add client</button>
+      <button v-if="props.isAdmin" class="btn btn--primary btn--sm" @click="openCreate">{{ t('clients.addClient') }}</button>
     </div>
 
     <div class="clients-layout">
@@ -141,12 +143,12 @@ const hasMore = computed(() => visibleCount.value < sorted.value.length)
       </nav>
 
       <div class="clients-main">
-        <BaseList :is-empty="sorted.length === 0 && !loading" empty-message="No clients found for this letter.">
+        <BaseList :is-empty="sorted.length === 0 && !loading" :empty-message="t('clients.noClientsForLetter')">
           <template #header>
-            <th>Name</th>
-            <th>ID document</th>
-            <th>Email</th>
-            <th>Phone</th>
+            <th>{{ t('clients.nameCol') }}</th>
+            <th>{{ t('clients.idDocCol') }}</th>
+            <th>{{ t('clients.emailCol') }}</th>
+            <th>{{ t('clients.phoneCol') }}</th>
             <th />
           </template>
           <ClientItem
@@ -167,7 +169,7 @@ const hasMore = computed(() => visibleCount.value < sorted.value.length)
 
         <div v-if="hasMore" class="load-more-wrap">
           <button class="btn btn--secondary btn--sm" @click="visibleCount += 100">
-            Load more ({{ sorted.length - visibleCount }} remaining)
+            {{ t('clients.loadMore', { count: sorted.length - visibleCount }) }}
           </button>
         </div>
       </div>
@@ -187,33 +189,33 @@ const hasMore = computed(() => visibleCount.value < sorted.value.length)
       <div v-if="showForm" class="modal-backdrop" @click.self="showForm = false">
         <div class="modal modal--lg">
           <div class="modal__header">
-            <h3>New client</h3>
+            <h3>{{ t('clients.newClient') }}</h3>
             <button class="btn btn--ghost btn--sm" @click="showForm = false"><AppIcon name="x" /></button>
           </div>
           <form @submit.prevent="save">
             <div class="modal__body">
-              <TextInput mode="form" text="Full name *" v-model="form.name" required />
+              <TextInput mode="form" :text="t('clients.fullName') + ' *'" v-model="form.name" required />
               <div class="form-row">
-                <TextInput mode="form" text="ID document" v-model="form.identityDocument" />
-                <TextInput mode="form" text="Email" v-model="form.email" type="email" />
+                <TextInput mode="form" :text="t('clients.idDocument')" v-model="form.identityDocument" />
+                <TextInput mode="form" :text="t('clients.email')" v-model="form.email" type="email" />
               </div>
               <div class="form-row">
-                <TextInput mode="form" text="Phone" v-model="form.phoneNumber" />
-                <TextInput mode="form" text="Street" v-model="form.street" />
+                <TextInput mode="form" :text="t('clients.phone')" v-model="form.phoneNumber" />
+                <TextInput mode="form" :text="t('clients.street')" v-model="form.street" />
               </div>
               <div class="form-row">
-                <TextInput mode="form" text="City" v-model="form.city" />
-                <TextInput mode="form" text="Country" v-model="form.country" />
+                <TextInput mode="form" :text="t('clients.city')" v-model="form.city" />
+                <TextInput mode="form" :text="t('clients.country')" v-model="form.country" />
               </div>
               <div class="form-row">
-                <TextInput mode="form" text="ZIP code" v-model="form.zipCode" />
+                <TextInput mode="form" :text="t('clients.zipCode')" v-model="form.zipCode" />
               </div>
-              <TextareaInput mode="form" text="Comment" v-model="form.comment" />
+              <TextareaInput mode="form" :text="t('clients.comment')" v-model="form.comment" />
             </div>
             <div class="modal__footer">
-              <button type="button" class="btn btn--secondary" @click="showForm = false">Cancel</button>
+              <button type="button" class="btn btn--secondary" @click="showForm = false">{{ t('common.cancel') }}</button>
               <button type="submit" class="btn btn--primary" :disabled="loading">
-                {{ loading ? 'Saving…' : 'Save' }}
+                {{ loading ? t('common.saving') : t('common.save') }}
               </button>
             </div>
           </form>

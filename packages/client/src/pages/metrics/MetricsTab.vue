@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { MetricsData } from '../../api/client'
 import { api } from '../../api/client'
 import { useAsyncOp } from '../../composables/useAsyncOp'
 
+const { t, locale } = useI18n()
 const { loading, run } = useAsyncOp()
 const metrics = ref<MetricsData | null>(null)
 const selectedYear = ref(new Date().getFullYear())
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+function monthName(monthIndex: number): string {
+  return new Date(2024, monthIndex - 1).toLocaleDateString(locale.value, { month: 'short' })
+}
 
 async function load() {
   const res = await run(() => api.metrics.get())
@@ -43,73 +47,73 @@ const avgOccupancy = computed(() => {
 <template>
   <div>
     <div class="page-header">
-      <h3>Metrics</h3>
+      <h3>{{ t('metrics.title') }}</h3>
       <div class="page-header__spacer" />
       <select v-model="selectedYear" style="width: auto">
         <option v-for="y in availableYears" :key="y" :value="y">{{ y }}</option>
       </select>
     </div>
 
-    <div v-if="loading" class="empty-state"><p>Loading…</p></div>
-    <div v-else-if="!metrics" class="empty-state"><p>No metrics data.</p></div>
+    <div v-if="loading" class="empty-state"><p>{{ t('common.loading') }}</p></div>
+    <div v-else-if="!metrics" class="empty-state"><p>{{ t('metrics.noMetrics') }}</p></div>
     <div v-else>
       <!-- Year summary -->
       <div class="summary-strip" style="margin-bottom: 1.5rem">
         <div class="stat-card">
           <div class="stat-card__value">€{{ totalRevenue.toFixed(0) }}</div>
-          <div class="stat-card__label">Total revenue {{ selectedYear }}</div>
+          <div class="stat-card__label">{{ t('metrics.totalRevenue', { year: selectedYear }) }}</div>
         </div>
         <div class="stat-card">
           <div class="stat-card__value">{{ avgOccupancy.toFixed(1) }}%</div>
-          <div class="stat-card__label">Avg occupancy {{ selectedYear }}</div>
+          <div class="stat-card__label">{{ t('metrics.avgOccupancy', { year: selectedYear }) }}</div>
         </div>
       </div>
 
       <!-- Occupancy table -->
-      <h4 style="margin-bottom: 0.75rem">Occupancy</h4>
+      <h4 style="margin-bottom: 0.75rem">{{ t('metrics.occupancy') }}</h4>
       <div class="table-wrap" style="margin-bottom: 1.5rem">
         <table>
           <thead>
             <tr>
-              <th>Month</th>
-              <th>Booked nights</th>
-              <th>Total nights</th>
-              <th>Occupancy rate</th>
+              <th>{{ t('metrics.month') }}</th>
+              <th>{{ t('metrics.bookedNights') }}</th>
+              <th>{{ t('metrics.totalNights') }}</th>
+              <th>{{ t('metrics.occupancyRate') }}</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="o in occupancyForYear" :key="`${o.year}-${o.month}`">
-              <td>{{ MONTHS[o.month - 1] }}</td>
+              <td>{{ monthName(o.month) }}</td>
               <td>{{ o.bookedNights }}</td>
               <td>{{ o.totalNights }}</td>
               <td>{{ o.occupancyRate.toFixed(1) }}%</td>
             </tr>
             <tr v-if="occupancyForYear.length === 0">
-              <td colspan="4" class="text-muted" style="text-align: center">No data</td>
+              <td colspan="4" class="text-muted" style="text-align: center">{{ t('metrics.noData') }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <!-- Revenue table -->
-      <h4 style="margin-bottom: 0.75rem">Revenue</h4>
+      <h4 style="margin-bottom: 0.75rem">{{ t('metrics.revenue') }}</h4>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Month</th>
-              <th>Revenue</th>
-              <th>Cumulative</th>
+              <th>{{ t('metrics.month') }}</th>
+              <th>{{ t('metrics.revenue') }}</th>
+              <th>{{ t('metrics.cumulative') }}</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="r in revenueForYear" :key="`${r.year}-${r.month}`">
-              <td>{{ MONTHS[r.month - 1] }}</td>
+              <td>{{ monthName(r.month) }}</td>
               <td>€{{ r.revenue.toFixed(2) }}</td>
               <td>€{{ r.cumulativeRevenue.toFixed(2) }}</td>
             </tr>
             <tr v-if="revenueForYear.length === 0">
-              <td colspan="3" class="text-muted" style="text-align: center">No data</td>
+              <td colspan="3" class="text-muted" style="text-align: center">{{ t('metrics.noData') }}</td>
             </tr>
           </tbody>
         </table>

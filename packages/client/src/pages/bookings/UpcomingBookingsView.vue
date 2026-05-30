@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { Booking, Apartment, Client, Channel, BookingStatus } from '../../api/client'
 import BookingItem from './BookingItem.vue'
+
+const { t } = useI18n()
 
 defineProps<{
   bookings: Booking[]
@@ -23,7 +26,7 @@ const emit = defineEmits<{
 <template>
   <div class="upcoming-section">
     <div class="page-header">
-      <h2>Upcoming <span class="upcoming-section__subtitle">next 7 days</span></h2>
+      <h2>{{ t('dashboard.upcoming') }} <span class="upcoming-section__subtitle">{{ t('dashboard.upcomingSubtitle') }}</span></h2>
     </div>
 
     <div v-if="loading" class="upcoming-skeleton">
@@ -37,17 +40,17 @@ const emit = defineEmits<{
         <line x1="8" y1="2" x2="8" y2="6"/>
         <line x1="3" y1="10" x2="21" y2="10"/>
       </svg>
-      No arrivals in the next 7 days
+      {{ t('dashboard.noUpcoming') }}
     </div>
 
     <table v-else class="bookings-table">
       <thead>
         <tr>
-          <th>Apartment</th>
-          <th>Client</th>
-          <th>Check-in</th>
-          <th>Check-out</th>
-          <th>Guests</th>
+          <th>{{ t('bookings.apartment') }}</th>
+          <th>{{ t('bookings.client') }}</th>
+          <th>{{ t('bookings.checkin') }}</th>
+          <th>{{ t('bookings.checkout') }}</th>
+          <th>{{ t('bookings.guests') }}</th>
           <th style="width: 2rem"></th>
           <th></th>
         </tr>

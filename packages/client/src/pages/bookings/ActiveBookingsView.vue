@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Booking, Apartment, Client, Channel, BookingStatus } from '../../api/client'
 import BookingItem from './BookingItem.vue'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   arrivalBookings: Booking[]
@@ -34,11 +37,11 @@ const allBookings = computed(() => [
     <table class="bookings-table">
       <thead>
         <tr>
-          <th>Apartment</th>
-          <th>Client</th>
-          <th>Check-in</th>
-          <th>Check-out</th>
-          <th>Guests</th>
+          <th>{{ t('bookings.apartment') }}</th>
+          <th>{{ t('bookings.client') }}</th>
+          <th>{{ t('bookings.checkin') }}</th>
+          <th>{{ t('bookings.checkout') }}</th>
+          <th>{{ t('bookings.guests') }}</th>
           <th style="width: 2rem"></th>
           <th></th>
         </tr>

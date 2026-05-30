@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { Apartment, CalendarLink, Channel } from '../../api/client'
 import BaseItem from '../../shared/BaseItem.vue'
 import CalendarLinksPanel from '../../shared/CalendarLinksPanel.vue'
@@ -6,6 +7,8 @@ import TextInput from '../../shared/fields/TextInput.vue'
 import NumberInput from '../../shared/fields/NumberInput.vue'
 import CheckboxInput from '../../shared/fields/CheckboxInput.vue'
 import TextareaInput from '../../shared/fields/TextareaInput.vue'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   apartment: Apartment
@@ -43,49 +46,49 @@ const apartmentLinks = () => props.calendarLinks.filter(l => l.apartmentId === p
       <td>€{{ apartment.price }}</td>
       <td>
         <span :class="['badge', apartment.isAvailable ? 'badge--active' : 'badge--inactive']">
-          {{ apartment.isAvailable ? 'Yes' : 'No' }}
+          {{ apartment.isAvailable ? t('common.yes') : t('common.no') }}
         </span>
       </td>
     </template>
 
     <template #drawer>
       <div class="details-panel">
-        <span class="panel-label">Apartment details</span>
+        <span class="panel-label">{{ t('apartments.detailsPanel') }}</span>
         <div class="details-grid">
 
           <TextInput
-            text="Name"
+            :text="t('apartments.name')"
             :model-value="apartment.name"
             :rights="isAdmin ?? false"
-            placeholder="Name"
+            :placeholder="t('apartments.name')"
             @update:model-value="updateField('name', $event || undefined)"
           />
 
           <TextInput
-            text="Address"
+            :text="t('apartments.address')"
             :model-value="apartment.address"
             :rights="isAdmin ?? false"
-            placeholder="Address"
+            :placeholder="t('apartments.address')"
             @update:model-value="updateField('address', $event || undefined)"
           />
 
           <NumberInput
-            text="Floor"
+            :text="t('apartments.floor')"
             :model-value="apartment.floor"
             :rights="isAdmin ?? false"
             @update:model-value="updateField('floor', $event)"
           />
 
           <TextInput
-            text="Door"
+            :text="t('apartments.door')"
             :model-value="apartment.door"
             :rights="isAdmin ?? false"
-            placeholder="Door"
+            :placeholder="t('apartments.door')"
             @update:model-value="updateField('door', $event || undefined)"
           />
 
           <NumberInput
-            text="Price / night (€)"
+            :text="t('apartments.priceNight')"
             :model-value="apartment.price"
             :min="0"
             :step="0.01"
@@ -94,7 +97,7 @@ const apartmentLinks = () => props.calendarLinks.filter(l => l.apartmentId === p
           />
 
           <NumberInput
-            text="Min nights"
+            :text="t('apartments.minNights')"
             :model-value="apartment.minNights"
             :min="1"
             :rights="isAdmin ?? false"
@@ -102,7 +105,7 @@ const apartmentLinks = () => props.calendarLinks.filter(l => l.apartmentId === p
           />
 
           <NumberInput
-            text="Max guests"
+            :text="t('apartments.maxGuests')"
             :model-value="apartment.maxGuests"
             :min="1"
             :rights="isAdmin ?? false"
@@ -110,7 +113,7 @@ const apartmentLinks = () => props.calendarLinks.filter(l => l.apartmentId === p
           />
 
           <NumberInput
-            text="Rooms"
+            :text="t('apartments.rooms')"
             :model-value="apartment.rooms"
             :min="1"
             :rights="isAdmin ?? false"
@@ -118,7 +121,7 @@ const apartmentLinks = () => props.calendarLinks.filter(l => l.apartmentId === p
           />
 
           <NumberInput
-            text="Bathrooms"
+            :text="t('apartments.bathrooms')"
             :model-value="apartment.bathrooms"
             :min="1"
             :rights="isAdmin ?? false"
@@ -126,17 +129,17 @@ const apartmentLinks = () => props.calendarLinks.filter(l => l.apartmentId === p
           />
 
           <CheckboxInput
-            text="Available for booking"
+            :text="t('apartments.availableForBooking')"
             :model-value="apartment.isAvailable"
             :rights="isAdmin ?? false"
             @update:model-value="updateField('isAvailable', $event)"
           />
 
           <TextareaInput
-            text="Description"
+            :text="t('apartments.description')"
             :model-value="apartment.description ?? ''"
             :rights="isAdmin ?? false"
-            placeholder="Description"
+            :placeholder="t('apartments.description')"
             @update:model-value="updateField('description', $event || undefined)"
           />
 

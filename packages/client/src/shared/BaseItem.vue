@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import AppIcon from './AppIcon.vue'
 import TrashIcon from './TrashIcon.vue'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   colSpan: number
@@ -29,7 +32,7 @@ const expanded = ref(false)
         <slot name="extra-actions" />
         <button
           class="btn btn--ghost btn--sm expand-btn"
-          :title="expanded ? 'Collapse' : 'Expand'"
+          :title="expanded ? t('common.collapse') : t('common.expand')"
           @click.stop="expanded = !expanded"
         >
           <AppIcon name="chevron-right" :size="14" :class="['arrow', expanded && 'arrow--open']" />
@@ -46,7 +49,7 @@ const expanded = ref(false)
             v-if="canDelete"
             class="btn btn--ghost btn--sm btn--icon drawer-delete-btn"
             :disabled="loading"
-            title="Delete"
+            :title="t('common.delete')"
             @click.stop="emit('delete')"
           >
             <TrashIcon :size="13" />

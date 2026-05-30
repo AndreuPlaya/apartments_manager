@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Booking, Apartment, Client, Channel } from '../../api/client'
 import AppIcon from '../../shared/AppIcon.vue'
 import BookingItem from './BookingItem.vue'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   bookings: Booking[]
@@ -79,24 +82,24 @@ function clearFilters() {
   <!-- Filters -->
   <div class="filters">
     <select v-model="filterApartment">
-      <option value="">All apartments</option>
+      <option value="">{{ t('bookings.allApartments') }}</option>
       <option v-for="a in apartments" :key="a.id" :value="a.id">{{ a.name }}</option>
     </select>
     <select v-model="filterStatus">
-      <option value="">All statuses</option>
-      <option value="unpaid">Not paid</option>
-      <option value="paid">Paid</option>
-      <option value="Cancelled">Cancelled</option>
+      <option value="">{{ t('bookings.allStatuses') }}</option>
+      <option value="unpaid">{{ t('bookings.notPaid') }}</option>
+      <option value="paid">{{ t('bookings.paid') }}</option>
+      <option value="Cancelled">{{ t('bookings.statusCancelled') }}</option>
     </select>
-    <input v-model="filterFrom" type="date" title="From date" />
-    <input v-model="filterTo" type="date" title="To date" />
-    <button v-if="hasFilters" class="btn btn--ghost btn--sm" @click="clearFilters">Clear</button>
+    <input v-model="filterFrom" type="date" :title="t('bookings.filterFrom')" />
+    <input v-model="filterTo" type="date" :title="t('bookings.filterTo')" />
+    <button v-if="hasFilters" class="btn btn--ghost btn--sm" @click="clearFilters">{{ t('bookings.clearFilters') }}</button>
   </div>
 
   <!-- Loading / empty states -->
-  <div v-if="loading" class="empty-state"><p>Loading…</p></div>
+  <div v-if="loading" class="empty-state"><p>{{ t('common.loading') }}</p></div>
   <div v-else-if="filteredBookings.length === 0" class="empty-state">
-    <p>No bookings match the current filters.</p>
+    <p>{{ t('bookings.noMatch') }}</p>
   </div>
 
   <!-- Table -->
@@ -105,29 +108,29 @@ function clearFilters() {
       <table>
         <thead>
           <tr>
-            <th>Apartment</th>
+            <th>{{ t('bookings.apartment') }}</th>
             <th class="sortable-th" @click="toggleSort('client')">
-              Client
+              {{ t('bookings.client') }}
               <AppIcon
                 :name="sortField === 'client' ? (sortDir === 'asc' ? 'chevron-up' : 'chevron-down') : 'chevron-up-down'"
                 :size="10" class="sort-icon" :class="{ 'sort-icon--active': sortField === 'client' }"
               />
             </th>
             <th class="sortable-th" @click="toggleSort('fromDate')">
-              Check-in
+              {{ t('bookings.checkin') }}
               <AppIcon
                 :name="sortField === 'fromDate' ? (sortDir === 'asc' ? 'chevron-up' : 'chevron-down') : 'chevron-up-down'"
                 :size="10" class="sort-icon" :class="{ 'sort-icon--active': sortField === 'fromDate' }"
               />
             </th>
             <th class="sortable-th" @click="toggleSort('toDate')">
-              Check-out
+              {{ t('bookings.checkout') }}
               <AppIcon
                 :name="sortField === 'toDate' ? (sortDir === 'asc' ? 'chevron-up' : 'chevron-down') : 'chevron-up-down'"
                 :size="10" class="sort-icon" :class="{ 'sort-icon--active': sortField === 'toDate' }"
               />
             </th>
-            <th>Guests</th>
+            <th>{{ t('bookings.guests') }}</th>
             <th style="width: 2rem" />
             <th />
           </tr>
@@ -155,7 +158,7 @@ function clearFilters() {
     <!-- Load more -->
     <div class="load-more-row">
       <button class="btn btn--ghost btn--sm" :disabled="loadingMore" @click="emit('loadMore')">
-        {{ loadingMore ? 'Loading…' : 'Load more' }}
+        {{ loadingMore ? t('common.loading') : t('bookings.loadMore') }}
       </button>
     </div>
   </template>

@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Client } from '../../api/client'
 import AppIcon from '../../shared/AppIcon.vue'
+
+const { t } = useI18n()
 
 export interface NewClientData {
   name: string
@@ -143,7 +146,7 @@ function onClickOutside(e: MouseEvent) {
           ref="inputRef"
           type="text"
           v-model="query"
-          placeholder="Search clients…"
+          :placeholder="t('clients.searchPlaceholder')"
           autocomplete="off"
           @input="onInput"
           @focus="onFocus"
@@ -179,14 +182,14 @@ function onClickOutside(e: MouseEvent) {
           {{ c.name }}
         </li>
         <li v-if="filtered.length === 0 && !showNewOption" class="client-search__empty">
-          No clients found
+          {{ t('clients.noClientsFound') }}
         </li>
         <li
           v-if="showNewOption"
           class="client-search__option client-search__option--new"
           @mousedown.prevent="selectNew"
         >
-          + New client: <strong>{{ query.trim() }}</strong>
+          {{ t('clients.newClientPrefix') }}<strong>{{ query.trim() }}</strong>
         </li>
       </ul>
     </template>
@@ -194,25 +197,25 @@ function onClickOutside(e: MouseEvent) {
     <template v-else>
       <div class="client-search__new-panel">
         <div class="client-search__new-header">
-          <span class="client-search__new-label">New client</span>
-          <button type="button" class="btn btn--ghost btn--sm" @click="cancelNew"><AppIcon name="x" :size="12" /> Cancel</button>
+          <span class="client-search__new-label">{{ t('clients.newClientPanel') }}</span>
+          <button type="button" class="btn btn--ghost btn--sm" @click="cancelNew"><AppIcon name="x" :size="12" /> {{ t('common.cancel') }}</button>
         </div>
         <div class="form-group">
-          <label>Full name *</label>
+          <label>{{ t('clients.fullName') }} *</label>
           <input type="text" v-model="newName" required @input="onNewFieldChange" />
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Email</label>
+            <label>{{ t('clients.email') }}</label>
             <input type="email" v-model="newEmail" @input="onNewFieldChange" />
           </div>
           <div class="form-group">
-            <label>Phone</label>
+            <label>{{ t('clients.phone') }}</label>
             <input type="text" v-model="newPhone" @input="onNewFieldChange" />
           </div>
         </div>
         <div class="form-group">
-          <label>ID document</label>
+          <label>{{ t('clients.idDocument') }}</label>
           <input type="text" v-model="newIdDoc" @input="onNewFieldChange" />
         </div>
       </div>

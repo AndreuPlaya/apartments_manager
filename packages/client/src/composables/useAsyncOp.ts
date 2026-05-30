@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { ApiError } from '../api/client'
+import { i18n } from '../i18n'
 import { useToast } from './useToast'
 
 export function useAsyncOp() {
@@ -16,7 +17,7 @@ export function useAsyncOp() {
       } else if (e instanceof Error) {
         error(e.message)
       } else {
-        error('An unexpected error occurred')
+        error(i18n.global.t('errors.unexpectedError'))
       }
       return undefined
     /* c8 ignore next */

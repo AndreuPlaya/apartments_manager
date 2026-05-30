@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Client } from '../../api/client'
 import AppIcon from '../../shared/AppIcon.vue'
 import TextInput from '../../shared/fields/TextInput.vue'
 import TextareaInput from '../../shared/fields/TextareaInput.vue'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   client: Client
@@ -39,32 +42,32 @@ function save() {
     <div class="modal-backdrop" @click.self="emit('close')">
       <div class="modal modal--lg">
         <div class="modal__header">
-          <h3>{{ isAdmin ? 'Edit client' : 'Client info' }}</h3>
+          <h3>{{ isAdmin ? t('clients.editClient') : t('clients.clientInfo') }}</h3>
           <button class="btn btn--ghost btn--sm" @click="emit('close')"><AppIcon name="x" /></button>
         </div>
 
         <!-- Admin: editable form -->
         <form v-if="isAdmin" @submit.prevent="save">
           <div class="modal__body">
-            <TextInput mode="form" text="Name *" v-model="form.name" required />
+            <TextInput mode="form" :text="t('clients.name') + ' *'" v-model="form.name" required />
             <div class="form-row">
-              <TextInput mode="form" text="Identity document" v-model="form.identityDocument" />
-              <TextInput mode="form" text="Email" v-model="form.email" type="email" />
+              <TextInput mode="form" :text="t('clients.identityDocument')" v-model="form.identityDocument" />
+              <TextInput mode="form" :text="t('clients.email')" v-model="form.email" type="email" />
             </div>
             <div class="form-row">
-              <TextInput mode="form" text="Phone" v-model="form.phoneNumber" />
-              <TextInput mode="form" text="City" v-model="form.city" />
+              <TextInput mode="form" :text="t('clients.phone')" v-model="form.phoneNumber" />
+              <TextInput mode="form" :text="t('clients.city')" v-model="form.city" />
             </div>
             <div class="form-row">
-              <TextInput mode="form" text="Country" v-model="form.country" />
-              <TextInput mode="form" text="ZIP code" v-model="form.zipCode" />
+              <TextInput mode="form" :text="t('clients.country')" v-model="form.country" />
+              <TextInput mode="form" :text="t('clients.zipCode')" v-model="form.zipCode" />
             </div>
-            <TextInput mode="form" text="Street" v-model="form.street" />
-            <TextareaInput mode="form" text="Comment" v-model="form.comment" />
+            <TextInput mode="form" :text="t('clients.street')" v-model="form.street" />
+            <TextareaInput mode="form" :text="t('clients.comment')" v-model="form.comment" />
           </div>
           <div class="modal__footer">
-            <button type="button" class="btn btn--secondary" @click="emit('close')">Cancel</button>
-            <button type="submit" class="btn btn--primary">Save</button>
+            <button type="button" class="btn btn--secondary" @click="emit('close')">{{ t('common.cancel') }}</button>
+            <button type="submit" class="btn btn--primary">{{ t('common.save') }}</button>
           </div>
         </form>
 
@@ -73,45 +76,45 @@ function save() {
           <div class="modal__body">
             <div class="info-grid">
               <div class="info-field">
-                <span class="info-field__label">Name</span>
+                <span class="info-field__label">{{ t('clients.name') }}</span>
                 <span class="info-field__val">{{ client.name || '—' }}</span>
               </div>
               <div class="info-field">
-                <span class="info-field__label">Identity document</span>
+                <span class="info-field__label">{{ t('clients.identityDocument') }}</span>
                 <span class="info-field__val">{{ client.identityDocument || '—' }}</span>
               </div>
               <div class="info-field">
-                <span class="info-field__label">Email</span>
+                <span class="info-field__label">{{ t('clients.email') }}</span>
                 <span class="info-field__val">{{ client.email || '—' }}</span>
               </div>
               <div class="info-field">
-                <span class="info-field__label">Phone</span>
+                <span class="info-field__label">{{ t('clients.phone') }}</span>
                 <span class="info-field__val">{{ client.phoneNumber || '—' }}</span>
               </div>
               <div class="info-field">
-                <span class="info-field__label">City</span>
+                <span class="info-field__label">{{ t('clients.city') }}</span>
                 <span class="info-field__val">{{ client.city || '—' }}</span>
               </div>
               <div class="info-field">
-                <span class="info-field__label">Country</span>
+                <span class="info-field__label">{{ t('clients.country') }}</span>
                 <span class="info-field__val">{{ client.country || '—' }}</span>
               </div>
               <div class="info-field">
-                <span class="info-field__label">ZIP code</span>
+                <span class="info-field__label">{{ t('clients.zipCode') }}</span>
                 <span class="info-field__val">{{ client.zipCode || '—' }}</span>
               </div>
               <div class="info-field">
-                <span class="info-field__label">Street</span>
+                <span class="info-field__label">{{ t('clients.street') }}</span>
                 <span class="info-field__val">{{ client.street || '—' }}</span>
               </div>
               <div v-if="client.comment" class="info-field info-field--wide">
-                <span class="info-field__label">Comment</span>
+                <span class="info-field__label">{{ t('clients.comment') }}</span>
                 <span class="info-field__val info-field__val--pre">{{ client.comment }}</span>
               </div>
             </div>
           </div>
           <div class="modal__footer">
-            <button class="btn btn--secondary" @click="emit('close')">Close</button>
+            <button class="btn btn--secondary" @click="emit('close')">{{ t('common.close') }}</button>
           </div>
         </template>
       </div>

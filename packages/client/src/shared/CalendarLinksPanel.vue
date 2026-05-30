@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { CalendarLink, Apartment, Channel } from '../api/client'
 import AppIcon from './AppIcon.vue'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   /** Pre-filtered links for this channel or apartment */
@@ -84,14 +87,14 @@ function cancelEdit() {
   <div class="calendar-panel">
     <span class="panel-label">
       <AppIcon name="calendar" :size="13" :stroke-width="2" class="panel-icon" />
-      Calendar URLs
+      {{ t('calendar.calendarUrls') }}
     </span>
 
     <table v-if="rows.length > 0" class="sub-table">
       <thead>
         <tr>
-          <th>{{ mode === 'by-apartment' ? 'Apartment' : 'Channel' }}</th>
-          <th>Calendar URL</th>
+          <th>{{ mode === 'by-apartment' ? t('calendar.apartment') : t('calendar.channel') }}</th>
+          <th>{{ t('calendar.urlCol') }}</th>
           <th v-if="props.isAdmin" />
         </tr>
       </thead>
@@ -133,7 +136,7 @@ function cancelEdit() {
             <button
               v-if="row.link && editingEntityId !== row.entityId"
               class="icon-btn icon-btn--danger"
-              title="Remove URL"
+              :title="t('calendar.removeUrl')"
               @click.stop="emit('delete', row.link.id)"
             >
               <AppIcon name="trash" :size="13" />
@@ -144,7 +147,7 @@ function cancelEdit() {
     </table>
 
     <div v-else class="cal-empty">
-      No {{ mode === 'by-apartment' ? 'apartments' : 'channels' }} configured yet
+      {{ mode === 'by-apartment' ? t('calendar.noApartmentsConfig') : t('calendar.noChannelsConfig') }}
     </div>
   </div>
 </template>

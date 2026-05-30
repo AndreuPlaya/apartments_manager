@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Booking, Apartment, Client, Channel } from '../../api/client'
 import { useConfirm } from '../../composables/useConfirm'
 import BaseItem from '../../shared/BaseItem.vue'
@@ -9,6 +10,8 @@ import DateInput from '../../shared/fields/DateInput.vue'
 import SelectInput from '../../shared/fields/SelectInput.vue'
 import CheckboxInput from '../../shared/fields/CheckboxInput.vue'
 import TextareaInput from '../../shared/fields/TextareaInput.vue'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   booking: Booking
@@ -73,10 +76,10 @@ const apartmentOptions = computed(() =>
 const channelOptions = computed(() =>
   props.channels.map(c => ({ value: c.id, label: c.name }))
 )
-const statusOptions = [
-  { value: 'Active', label: 'Active' },
-  { value: 'Cancelled', label: 'Cancelled' },
-]
+const statusOptions = computed(() => [
+  { value: 'Active', label: t('bookings.statusActive') },
+  { value: 'Cancelled', label: t('bookings.statusCancelled') },
+])
 
 function updateAdminField(field: keyof Booking, val: string | number | boolean) {
   emit('update', props.booking.id, {
@@ -100,7 +103,7 @@ async function handleCancel() {
   const aptName = apartment.value?.name ?? '—'
   const clientName = client.value?.name ?? '—'
   const dates = `${formatDate(props.booking.fromDate)} → ${formatDate(props.booking.toDate)}`
-  const ok = await confirm(`Cancel booking?\n${aptName} · ${clientName}\n${dates}`)
+  const ok = await confirm(t('bookings.cancelConfirm', { apartment: aptName, client: clientName, dates }))
   if (ok) emit('cancel', props.booking)
 }
 </script>
@@ -143,11 +146,11 @@ async function handleCancel() {
 
     <template #drawer>
       <div class="details-panel">
-        <span class="panel-label">Booking details</span>
+        <span class="panel-label">{{ t('bookings.bookingDetails') }}</span>
         <div class="details-grid details-grid--3col">
 
           <SelectInput
-            text="Apartment"
+            :text="t('bookings.apartment')"
             :model-value="booking.apartmentId"
             :options="apartmentOptions"
             :rights="isAdmin"
@@ -156,14 +159,14 @@ async function handleCancel() {
 
           <!-- Client (read-only, clickable) -->
           <div class="detail-field detail-field--readonly detail-field--client">
-            <span class="detail-field__label">Client</span>
+            <span class="detail-field__label">{{ t('bookings.client') }}</span>
             <button class="detail-field__client-btn" @click.stop="client && emit('openClient', client)">
               {{ client?.name ?? '—' }}
             </button>
           </div>
 
           <SelectInput
-            text="Channel"
+            :text="t('bookings.channel')"
             :model-value="booking.channelId"
             :options="channelOptions"
             :rights="isAdmin"
@@ -171,27 +174,27 @@ async function handleCancel() {
           />
 
           <DateInput
-            text="Check-in"
+            :text="t('bookings.checkin')"
             :model-value="booking.fromDate"
             :rights="isAdmin"
             @update:model-value="updateAdminField('fromDate', $event)"
           />
 
           <DateInput
-            text="Check-out"
+            :text="t('bookings.checkout')"
             :model-value="booking.toDate"
             :rights="isAdmin"
             @update:model-value="updateAdminField('toDate', $event)"
           />
 
           <DateInput
-            text="Paid date"
+            :text="t('bookings.paidDate')"
             :model-value="booking.paidDate ?? ''"
             @update:model-value="emit('patch', booking.id, { paidDate: $event || undefined })"
           />
 
           <NumberInput
-            text="Adults"
+            :text="t('bookings.adults')"
             :model-value="booking.adultCount"
             :min="1"
             :rights="isAdmin"
@@ -199,7 +202,7 @@ async function handleCancel() {
           />
 
           <NumberInput
-            text="Children"
+            :text="t('bookings.children')"
             :model-value="booking.childrenCount"
             :min="0"
             :rights="isAdmin"
@@ -208,14 +211,14 @@ async function handleCancel() {
 
           <CheckboxInput
             v-if="isAdmin && booking.childrenCount > 0"
-            text="Crib"
+            :text="t('bookings.crib')"
             :model-value="!!booking.cribRequested"
             :rights="isAdmin"
             @update:model-value="updateAdminField('cribRequested', $event)"
           />
 
           <NumberInput
-            text="Amount (€)"
+            :text="t('bookings.amount')"
             :model-value="booking.totalAmountDue"
             :min="0"
             :step="0.01"
@@ -225,7 +228,7 @@ async function handleCancel() {
           />
 
           <SelectInput
-            text="Status"
+            :text="t('bookings.status')"
             :model-value="booking.status"
             :options="statusOptions"
             :rights="isAdmin"
@@ -233,7 +236,7 @@ async function handleCancel() {
           />
 
           <TextareaInput
-            text="Comment"
+            :text="t('bookings.comment')"
             :model-value="booking.comment ?? ''"
             @update:model-value="emit('patch', booking.id, { comment: $event || undefined })"
           />

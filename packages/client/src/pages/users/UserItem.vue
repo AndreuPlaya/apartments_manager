@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { UserItem as UserData } from '../../api/client'
 import { useInlineEdit } from '../../composables/useInlineEdit'
 import BaseItem from '../../shared/BaseItem.vue'
 import TextInput from '../../shared/fields/TextInput.vue'
 import CheckboxInput from '../../shared/fields/CheckboxInput.vue'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   user: UserData
@@ -40,30 +43,30 @@ function commitPassword() {
       <td>{{ user.full_name }}</td>
       <td>
         <span :class="['badge', user.isAdmin ? 'badge--admin' : '']">
-          {{ user.isAdmin ? 'Admin' : 'Employee' }}
+          {{ user.isAdmin ? t('users.adminRole') : t('users.employeeRole') }}
         </span>
       </td>
       <td>
         <span :class="['badge', user.enabled ? 'badge--enabled' : 'badge--disabled']">
-          {{ user.enabled ? 'Enabled' : 'Disabled' }}
+          {{ user.enabled ? t('users.enabledStatus') : t('users.disabledStatus') }}
         </span>
       </td>
     </template>
 
     <template #drawer>
       <div class="details-panel">
-        <span class="panel-label">User details</span>
+        <span class="panel-label">{{ t('users.detailsPanel') }}</span>
         <div class="details-grid">
 
           <TextInput
-            text="Full name"
+            :text="t('users.fullName')"
             :model-value="user.full_name"
-            placeholder="Full name"
+            :placeholder="t('users.fullName')"
             @update:model-value="val => val && emit('update', user, { full_name: val })"
           />
 
           <TextInput
-            text="Username"
+            :text="t('users.username')"
             :model-value="user.username"
             :placeholder="user.username"
             autocomplete="off"
@@ -75,7 +78,7 @@ function commitPassword() {
             :class="['detail-field', passwordEditing === 'password' && 'detail-field--editing']"
             @click="startPasswordEdit('password', '')"
           >
-            <span class="detail-field__label">Password</span>
+            <span class="detail-field__label">{{ t('users.password') }}</span>
             <span v-if="passwordEditing !== 'password'" class="detail-field__val text-muted">••••••••</span>
             <input
               v-else
@@ -83,7 +86,7 @@ function commitPassword() {
               v-model="passwordDraft"
               type="password"
               autocomplete="new-password"
-              placeholder="Leave blank to keep"
+              :placeholder="t('users.passwordPlaceholder')"
               minlength="8"
               @blur="commitPassword"
               @keydown.enter.prevent="commitPassword"
@@ -94,7 +97,7 @@ function commitPassword() {
 
           <CheckboxInput
             v-if="!user.isAdmin"
-            text="Enabled (can log in)"
+            :text="t('users.enabledLogin')"
             :model-value="user.enabled"
             @update:model-value="emit('update', user, { enabled: $event })"
           />

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { api } from '../../api/client'
 import { setCachedConfig } from '../../router'
-import { useToast } from '../../composables/useToast'
 
 const router = useRouter()
-const { error } = useToast()
+const { t } = useI18n()
 
 const username = ref('')
 const password = ref('')
@@ -22,7 +22,7 @@ async function login() {
     router.push('/')
   } catch (e: unknown) {
     if (e instanceof Error) errorMsg.value = e.message
-    else errorMsg.value = 'Login failed'
+    else errorMsg.value = t('auth.loginFailed')
   } finally {
     loading.value = false
   }
@@ -32,20 +32,20 @@ async function login() {
 <template>
   <div class="auth-page">
     <div class="auth-page__card">
-      <h1 class="auth-page__title">Sign in</h1>
-      <p class="auth-page__subtitle">Apartments Manager</p>
+      <h1 class="auth-page__title">{{ t('auth.signIn') }}</h1>
+      <p class="auth-page__subtitle">{{ t('auth.appName') }}</p>
       <form @submit.prevent="login">
         <div class="form-group">
-          <label>Username</label>
+          <label>{{ t('auth.username') }}</label>
           <input v-model="username" type="text" autocomplete="username" required autofocus />
         </div>
         <div class="form-group">
-          <label>Password</label>
+          <label>{{ t('auth.password') }}</label>
           <input v-model="password" type="password" autocomplete="current-password" required />
         </div>
         <p v-if="errorMsg" class="text-danger text-sm" style="margin: 0 0 0.75rem">{{ errorMsg }}</p>
         <button class="btn btn--primary btn--full btn--lg" type="submit" :disabled="loading">
-          {{ loading ? 'Signing in…' : 'Sign in' }}
+          {{ loading ? t('auth.signingIn') : t('auth.signIn') }}
         </button>
       </form>
     </div>

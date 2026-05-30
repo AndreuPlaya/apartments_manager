@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Channel, Apartment, CalendarLink } from '../../api/client'
 import { api } from '../../api/client'
 import { useAsyncOp } from '../../composables/useAsyncOp'
@@ -12,6 +13,7 @@ import TextInput from '../../shared/fields/TextInput.vue'
 import NumberInput from '../../shared/fields/NumberInput.vue'
 import CheckboxInput from '../../shared/fields/CheckboxInput.vue'
 
+const { t } = useI18n()
 const props = defineProps<{ isAdmin?: boolean }>()
 
 const { loading, run } = useAsyncOp()
@@ -44,7 +46,7 @@ function openCreate() { form.value = blank(); showForm.value = true }
 async function save() {
   const payload = { ...form.value, commissionRate: Number(form.value.commissionRate) }
   const res = await run(() => api.channels.create(payload))
-  if (res !== undefined) { showForm.value = false; await load(); success('Channel created') }
+  if (res !== undefined) { showForm.value = false; await load(); success(t('channels.created')) }
 }
 
 async function updateField(channel: Channel, patch: Partial<Omit<Channel, 'id'>>) {
@@ -56,9 +58,9 @@ async function updateField(channel: Channel, patch: Partial<Omit<Channel, 'id'>>
 }
 
 async function del(c: Channel) {
-  if (!(await confirm(`Delete channel "${c.name}"?`))) return
+  if (!(await confirm(t('channels.deleteConfirm', { name: c.name })))) return
   const res = await run(() => api.channels.delete(c.id))
-  if (res !== undefined) { await load(); success('Channel deleted') }
+  if (res !== undefined) { await load(); success(t('channels.deleted')) }
 }
 
 async function saveCalendarLink(channelId: string, apartmentId: string, url: string) {
@@ -86,16 +88,16 @@ async function deleteCalendarLink(id: string) {
 <template>
   <div>
     <div class="page-header">
-      <h3>Channels</h3>
+      <h3>{{ t('channels.title') }}</h3>
       <div class="page-header__spacer" />
-      <button class="btn btn--primary btn--sm" @click="openCreate">+ Add channel</button>
+      <button class="btn btn--primary btn--sm" @click="openCreate">{{ t('channels.addChannel') }}</button>
     </div>
 
-    <BaseList :is-empty="channels.length === 0 && !loading" empty-message="No channels yet.">
+    <BaseList :is-empty="channels.length === 0 && !loading" :empty-message="t('channels.noChannels')">
       <template #header>
-        <th>Name</th>
-        <th>Commission</th>
-        <th>Status</th>
+        <th>{{ t('channels.nameCol') }}</th>
+        <th>{{ t('channels.commissionCol') }}</th>
+        <th>{{ t('channels.statusCol') }}</th>
         <th />
       </template>
       <ChannelItem
@@ -117,19 +119,19 @@ async function deleteCalendarLink(id: string) {
       <div v-if="showForm" class="modal-backdrop" @click.self="showForm = false">
         <div class="modal modal--sm">
           <div class="modal__header">
-            <h3>New channel</h3>
+            <h3>{{ t('channels.newChannel') }}</h3>
             <button class="btn btn--ghost btn--sm" @click="showForm = false"><AppIcon name="x" /></button>
           </div>
           <form @submit.prevent="save">
             <div class="modal__body">
-              <TextInput mode="form" text="Name *" v-model="form.name" required />
-              <NumberInput mode="form" text="Commission rate (%)" v-model="form.commissionRate" :min="0" :max="100" :step="0.1" />
-              <CheckboxInput mode="form" text="Active" v-model="form.isActive" />
+              <TextInput mode="form" :text="t('channels.name') + ' *'" v-model="form.name" required />
+              <NumberInput mode="form" :text="t('channels.commissionRate')" v-model="form.commissionRate" :min="0" :max="100" :step="0.1" />
+              <CheckboxInput mode="form" :text="t('channels.active')" v-model="form.isActive" />
             </div>
             <div class="modal__footer">
-              <button type="button" class="btn btn--secondary" @click="showForm = false">Cancel</button>
+              <button type="button" class="btn btn--secondary" @click="showForm = false">{{ t('common.cancel') }}</button>
               <button type="submit" class="btn btn--primary" :disabled="loading">
-                {{ loading ? 'Saving…' : 'Save' }}
+                {{ loading ? t('common.saving') : t('common.save') }}
               </button>
             </div>
           </form>

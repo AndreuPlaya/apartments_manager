@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Apartment, Channel, CalendarLink } from '../../api/client'
 import { api } from '../../api/client'
 import { useAsyncOp } from '../../composables/useAsyncOp'
@@ -13,6 +14,7 @@ import NumberInput from '../../shared/fields/NumberInput.vue'
 import CheckboxInput from '../../shared/fields/CheckboxInput.vue'
 import TextareaInput from '../../shared/fields/TextareaInput.vue'
 
+const { t } = useI18n()
 const props = defineProps<{ isAdmin?: boolean }>()
 
 const { loading, run } = useAsyncOp()
@@ -62,7 +64,7 @@ async function save() {
   if (res !== undefined) {
     showForm.value = false
     await load()
-    success('Apartment created')
+    success(t('apartments.created'))
   }
 }
 
@@ -75,9 +77,9 @@ async function updateField(apt: Apartment, patch: Partial<Omit<Apartment, 'id'>>
 }
 
 async function del(apt: Apartment) {
-  if (!(await confirm(`Delete apartment "${apt.name}"?`))) return
+  if (!(await confirm(t('apartments.deleteConfirm', { name: apt.name })))) return
   const res = await run(() => api.apartments.delete(apt.id))
-  if (res !== undefined) { await load(); success('Apartment deleted') }
+  if (res !== undefined) { await load(); success(t('apartments.deleted')) }
 }
 
 async function saveCalendarLink(channelId: string, apartmentId: string, url: string) {
@@ -105,18 +107,18 @@ async function deleteCalendarLink(id: string) {
 <template>
   <div>
     <div class="page-header">
-      <h3>Apartments</h3>
+      <h3>{{ t('apartments.title') }}</h3>
       <div class="page-header__spacer" />
-      <button class="btn btn--primary btn--sm" @click="openCreate">+ Add apartment</button>
+      <button class="btn btn--primary btn--sm" @click="openCreate">{{ t('apartments.addApartment') }}</button>
     </div>
 
-    <BaseList :is-empty="apartments.length === 0 && !loading" empty-message="No apartments yet.">
+    <BaseList :is-empty="apartments.length === 0 && !loading" :empty-message="t('apartments.noApartments')">
       <template #header>
-        <th>Name</th>
-        <th>Address</th>
-        <th>Floor / Door</th>
-        <th>Price / night</th>
-        <th>Available</th>
+        <th>{{ t('apartments.nameCol') }}</th>
+        <th>{{ t('apartments.addressCol') }}</th>
+        <th>{{ t('apartments.floorDoorCol') }}</th>
+        <th>{{ t('apartments.priceNightCol') }}</th>
+        <th>{{ t('apartments.availableCol') }}</th>
         <th />
       </template>
       <ApartmentItem
@@ -139,35 +141,35 @@ async function deleteCalendarLink(id: string) {
       <div v-if="showForm" class="modal-backdrop" @click.self="showForm = false">
         <div class="modal">
           <div class="modal__header">
-            <h3>New apartment</h3>
+            <h3>{{ t('apartments.newApartment') }}</h3>
             <button class="btn btn--ghost btn--sm" @click="showForm = false"><AppIcon name="x" /></button>
           </div>
           <form @submit.prevent="save">
             <div class="modal__body">
-              <TextInput mode="form" text="Name *" v-model="form.name" required />
-              <TextInput mode="form" text="Address *" v-model="form.address" required />
+              <TextInput mode="form" :text="t('apartments.name') + ' *'" v-model="form.name" required />
+              <TextInput mode="form" :text="t('apartments.address') + ' *'" v-model="form.address" required />
               <div class="form-row">
-                <NumberInput mode="form" text="Floor" v-model="form.floor" />
-                <TextInput mode="form" text="Door *" v-model="form.door" required />
+                <NumberInput mode="form" :text="t('apartments.floor')" v-model="form.floor" />
+                <TextInput mode="form" :text="t('apartments.door') + ' *'" v-model="form.door" required />
               </div>
               <div class="form-row">
-                <NumberInput mode="form" text="Price / night (€) *" v-model="form.price" :min="0" :step="0.01" required />
-                <NumberInput mode="form" text="Min nights" v-model="form.minNights" :min="1" />
+                <NumberInput mode="form" :text="t('apartments.priceNight') + ' *'" v-model="form.price" :min="0" :step="0.01" required />
+                <NumberInput mode="form" :text="t('apartments.minNights')" v-model="form.minNights" :min="1" />
               </div>
               <div class="form-row">
-                <NumberInput mode="form" text="Max guests" v-model="form.maxGuests" :min="1" />
-                <NumberInput mode="form" text="Rooms" v-model="form.rooms" :min="1" />
+                <NumberInput mode="form" :text="t('apartments.maxGuests')" v-model="form.maxGuests" :min="1" />
+                <NumberInput mode="form" :text="t('apartments.rooms')" v-model="form.rooms" :min="1" />
               </div>
               <div class="form-row">
-                <NumberInput mode="form" text="Bathrooms" v-model="form.bathrooms" :min="1" />
+                <NumberInput mode="form" :text="t('apartments.bathrooms')" v-model="form.bathrooms" :min="1" />
               </div>
-              <CheckboxInput mode="form" text="Available for booking" v-model="form.isAvailable" />
-              <TextareaInput mode="form" text="Description" v-model="form.description" />
+              <CheckboxInput mode="form" :text="t('apartments.availableForBooking')" v-model="form.isAvailable" />
+              <TextareaInput mode="form" :text="t('apartments.description')" v-model="form.description" />
             </div>
             <div class="modal__footer">
-              <button type="button" class="btn btn--secondary" @click="showForm = false">Cancel</button>
+              <button type="button" class="btn btn--secondary" @click="showForm = false">{{ t('common.cancel') }}</button>
               <button type="submit" class="btn btn--primary" :disabled="loading">
-                {{ loading ? 'Saving…' : 'Save' }}
+                {{ loading ? t('common.saving') : t('common.save') }}
               </button>
             </div>
           </form>
