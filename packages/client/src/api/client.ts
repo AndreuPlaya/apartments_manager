@@ -24,6 +24,7 @@ export interface Booking {
   toDate: string
   adultCount: number
   childrenCount: number
+  cribRequested?: boolean
   status: BookingStatus
   paidDate?: string
   totalAmountDue: number

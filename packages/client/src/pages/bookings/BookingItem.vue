@@ -106,12 +106,30 @@ function commitEdit() {
       paidDate: props.booking.paidDate,
       totalAmountDue: props.booking.totalAmountDue,
       comment: props.booking.comment,
+      cribRequested: props.booking.cribRequested,
       [field]: val,
     }
     emit('update', props.booking.id, payload)
   } else {
     emit('patch', props.booking.id, { [field]: val } as { paidDate?: string; comment?: string })
   }
+}
+
+function onCribToggle(checked: boolean) {
+  emit('update', props.booking.id, {
+    apartmentId: props.booking.apartmentId,
+    clientId: props.booking.clientId,
+    channelId: props.booking.channelId,
+    fromDate: props.booking.fromDate,
+    toDate: props.booking.toDate,
+    adultCount: props.booking.adultCount,
+    childrenCount: props.booking.childrenCount,
+    status: props.booking.status,
+    paidDate: props.booking.paidDate,
+    totalAmountDue: props.booking.totalAmountDue,
+    comment: props.booking.comment,
+    cribRequested: checked,
+  })
 }
 
 async function handleCancel() {
@@ -139,7 +157,15 @@ async function handleCancel() {
       <td>{{ client?.name ?? '—' }}</td>
       <td>{{ formatDate(booking.fromDate) }}</td>
       <td>{{ formatDate(booking.toDate) }}</td>
-      <td class="guests-cell">{{ guestString }}</td>
+      <td class="guests-cell">
+        {{ guestString }}
+        <AppIcon
+          v-if="booking.cribRequested && booking.childrenCount > 0"
+          name="crib"
+          :size="14"
+          class="crib-icon"
+        />
+      </td>
       <td class="status-cell">
         <template v-if="isArriving || isDeparting || isStaying">
           <AppIcon :name="(statusIcon as string)" :size="14" class="status-icon" />
@@ -247,6 +273,23 @@ async function handleCancel() {
               @blur="commitEdit" @keydown.enter.prevent="commitEdit" @keydown.escape.prevent="cancelEdit" @click.stop />
           </div>
 
+          <!-- Crib (admin-only, only when children > 0) -->
+          <div
+            v-if="isAdmin && booking.childrenCount > 0"
+            class="detail-field detail-field--crib"
+            @click.stop
+          >
+            <span class="detail-field__label">Crib</span>
+            <label class="detail-field__checkbox">
+              <input
+                type="checkbox"
+                :checked="!!booking.cribRequested"
+                @change="onCribToggle(($event.target as HTMLInputElement).checked)"
+              />
+              Requested
+            </label>
+          </div>
+
           <!-- Amount -->
           <div
             :class="['detail-field', editingField === 'totalAmountDue' && 'detail-field--editing', !isAdmin && 'detail-field--readonly']"
@@ -278,6 +321,23 @@ async function handleCancel() {
 <style scoped>
 .guests-cell {
   white-space: nowrap;
+}
+
+.crib-icon {
+  color: var(--text-muted);
+  vertical-align: middle;
+  margin-left: 0.25rem;
+}
+
+.detail-field__checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.detail-field__checkbox input {
+  margin: 0;
 }
 
 .status-cell {

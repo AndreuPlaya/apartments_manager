@@ -28,6 +28,7 @@ const form = ref({
   toDate: '',
   adultCount: 1,
   childrenCount: 0,
+  cribRequested: false,
   status: 'Active' as 'Active' | 'Cancelled',
   paidDate: '',
   totalAmountDue: 0,
@@ -47,6 +48,7 @@ watch(
         toDate: b.toDate,
         adultCount: b.adultCount,
         childrenCount: b.childrenCount,
+        cribRequested: b.cribRequested ?? false,
         status: b.status,
         paidDate: b.paidDate ?? '',
         totalAmountDue: b.totalAmountDue,
@@ -83,6 +85,7 @@ async function save() {
     toDate: form.value.toDate,
     adultCount: Number(form.value.adultCount),
     childrenCount: Number(form.value.childrenCount),
+    cribRequested: form.value.cribRequested,
     status: form.value.status,
     paidDate: form.value.paidDate || undefined,
     totalAmountDue: Number(form.value.totalAmountDue),
@@ -146,6 +149,14 @@ const activeChannels = props.channels.filter((c) => c.isActive)
               <div class="form-group">
                 <label>Children</label>
                 <input v-model="form.childrenCount" type="number" min="0" />
+              </div>
+            </div>
+            <div v-if="Number(form.childrenCount) > 0" class="form-row">
+              <div class="form-group">
+                <label class="form-checkbox">
+                  <input type="checkbox" v-model="form.cribRequested" />
+                  Crib requested
+                </label>
               </div>
             </div>
             <div class="form-row">
