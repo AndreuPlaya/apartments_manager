@@ -258,6 +258,31 @@ describe('api.users.*', () => {
   })
 })
 
+describe('api.calendarLinks.*', () => {
+  const linkBody = { channelId: 'ch1', apartmentId: 'apt1', url: 'https://example.com/ical.ics' }
+  const link = { id: 'cl1', ...linkBody }
+  it('list fetches /api/calendar-links', async () => {
+    const fetchMock = mockFetch(200, [link])
+    vi.stubGlobal('fetch', fetchMock)
+    expect(await api.calendarLinks.list()).toEqual([link])
+    expect(fetchMock.mock.calls[0]![0]).toBe('/api/calendar-links')
+  })
+  it('upsert posts to /api/admin/calendar-links', async () => {
+    const fetchMock = mockFetch(200, link)
+    vi.stubGlobal('fetch', fetchMock)
+    expect(await api.calendarLinks.upsert(linkBody)).toEqual(link)
+    expect(fetchMock.mock.calls[0]![0]).toBe('/api/admin/calendar-links')
+    expect(fetchMock.mock.calls[0]![1]).toMatchObject({ method: 'POST' })
+  })
+  it('delete sends DELETE to /api/admin/calendar-links/:id', async () => {
+    const fetchMock = mockFetch(200, '', 'text/plain')
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(api.calendarLinks.delete('cl1')).resolves.toBeUndefined()
+    expect(fetchMock.mock.calls[0]![0]).toBe('/api/admin/calendar-links/cl1')
+    expect(fetchMock.mock.calls[0]![1]).toMatchObject({ method: 'DELETE' })
+  })
+})
+
 describe('api.metrics.*', () => {
   it('get fetches /api/admin/metrics', async () => {
     const metrics = { occupancy: [], revenue: [] }

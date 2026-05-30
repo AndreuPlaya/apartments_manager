@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Apartment, Booking, Channel, Client, Property } from '../domain/models.js'
+import type { Apartment, Booking, CalendarLink, Channel, Client, Property } from '../domain/models.js'
 
 vi.mock('./fs.js')
 import { readJson, writeJson } from './fs.js'
@@ -7,12 +7,14 @@ import { readJson, writeJson } from './fs.js'
 import {
   loadApartments,
   loadBookings,
+  loadCalendarLinks,
   loadChannels,
   loadClients,
   loadProperties,
   queryBookings,
   saveApartments,
   saveBookings,
+  saveCalendarLinks,
   saveChannels,
   saveClients,
   saveProperties,
@@ -111,6 +113,18 @@ describe('loadChannels / saveChannels', () => {
   })
   it('saveChannels delegates to writeJson', () => {
     saveChannels([{ id: 'ch1', name: 'Direct', commissionRate: 0, isActive: true }])
+    expect(writeJson).toHaveBeenCalledOnce()
+  })
+})
+
+describe('loadCalendarLinks / saveCalendarLinks', () => {
+  it('loadCalendarLinks delegates to readJson', () => {
+    const links: CalendarLink[] = [{ id: 'cl1', channelId: 'ch1', apartmentId: 'apt1', url: 'https://example.com/ical' }]
+    vi.mocked(readJson).mockReturnValue(links)
+    expect(loadCalendarLinks()).toEqual(links)
+  })
+  it('saveCalendarLinks delegates to writeJson', () => {
+    saveCalendarLinks([{ id: 'cl1', channelId: 'ch1', apartmentId: 'apt1', url: 'https://example.com/ical' }])
     expect(writeJson).toHaveBeenCalledOnce()
   })
 })

@@ -9,6 +9,7 @@ vi.mock('../middleware/admin.js', () => ({
 }))
 vi.mock('../application/apartmentService.js')
 vi.mock('../application/bookingService.js')
+vi.mock('../application/calendarLinkService.js')
 vi.mock('../application/channelService.js')
 vi.mock('../application/clientService.js')
 vi.mock('../application/metricsService.js')
@@ -17,6 +18,7 @@ vi.mock('../application/userService.js')
 
 import { createApartment, deleteApartment, updateApartment } from '../application/apartmentService.js'
 import { createBooking, deleteBooking, updateBooking } from '../application/bookingService.js'
+import { deleteCalendarLink, upsertCalendarLink } from '../application/calendarLinkService.js'
 import { createChannel, deleteChannel, updateChannel } from '../application/channelService.js'
 import { createClient, deleteClient, updateClient } from '../application/clientService.js'
 import { getMetrics } from '../application/metricsService.js'
@@ -362,6 +364,43 @@ describe('Users admin routes', () => {
   it('DELETE /api/admin/users/:id returns error on AppError', async () => {
     vi.mocked(deleteUser).mockImplementation(() => { throw new NotFoundError() })
     const res = await makeApp().request('/api/admin/users/ghost', { method: 'DELETE' })
+    expect(res.status).toBe(404)
+  })
+})
+
+// ── Calendar Links ────────────────────────────────────────────────────────────
+
+describe('Calendar links admin routes', () => {
+  const linkBody = { channelId: 'ch1', apartmentId: 'apt1', url: 'https://example.com/ical.ics' }
+  const link = { id: 'cl1', ...linkBody }
+
+  it('POST /api/admin/calendar-links returns 200 with upserted link', async () => {
+    vi.mocked(upsertCalendarLink).mockReturnValue(link as any)
+    const res = await makeApp().request('/api/admin/calendar-links', {
+      method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(linkBody),
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual(link)
+  })
+
+  it('POST /api/admin/calendar-links returns error status on AppError', async () => {
+    vi.mocked(upsertCalendarLink).mockImplementation(() => { throw new ConflictError('Bad') })
+    const res = await makeApp().request('/api/admin/calendar-links', {
+      method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(linkBody),
+    })
+    expect(res.status).toBe(409)
+  })
+
+  it('DELETE /api/admin/calendar-links/:id returns { ok: true }', async () => {
+    vi.mocked(deleteCalendarLink).mockImplementation(() => undefined)
+    const res = await makeApp().request('/api/admin/calendar-links/cl1', { method: 'DELETE' })
+    expect(res.status).toBe(200)
+    expect((await res.json()).ok).toBe(true)
+  })
+
+  it('DELETE /api/admin/calendar-links/:id returns error on AppError', async () => {
+    vi.mocked(deleteCalendarLink).mockImplementation(() => { throw new NotFoundError() })
+    const res = await makeApp().request('/api/admin/calendar-links/ghost', { method: 'DELETE' })
     expect(res.status).toBe(404)
   })
 })

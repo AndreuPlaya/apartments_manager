@@ -9,9 +9,11 @@ vi.mock('../application/propertyService.js')
 vi.mock('../application/bookingService.js')
 vi.mock('../application/clientService.js')
 vi.mock('../application/channelService.js')
+vi.mock('../application/calendarLinkService.js')
 
 import { listApartments } from '../application/apartmentService.js'
 import { listBookings, patchBookingFields } from '../application/bookingService.js'
+import { listCalendarLinks } from '../application/calendarLinkService.js'
 import { listChannels } from '../application/channelService.js'
 import { listClients } from '../application/clientService.js'
 import { listProperties } from '../application/propertyService.js'
@@ -26,6 +28,7 @@ beforeEach(() => {
   vi.mocked(listBookings).mockReturnValue([])
   vi.mocked(listClients).mockReturnValue([])
   vi.mocked(listChannels).mockReturnValue([])
+  vi.mocked(listCalendarLinks).mockReturnValue([])
   vi.mocked(patchBookingFields).mockReturnValue({ id: 'b1' } as any)
 })
 
@@ -82,6 +85,15 @@ describe('GET /api/channels', () => {
     const res = await makeApp().request('/api/channels')
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual([{ id: 'ch1' }])
+  })
+})
+
+describe('GET /api/calendar-links', () => {
+  it('returns calendar link list', async () => {
+    vi.mocked(listCalendarLinks).mockReturnValue([{ id: 'cl1', channelId: 'ch1', apartmentId: 'apt1', url: 'https://x' } as any])
+    const res = await makeApp().request('/api/calendar-links')
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual([{ id: 'cl1', channelId: 'ch1', apartmentId: 'apt1', url: 'https://x' }])
   })
 })
 

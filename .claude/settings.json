@@ -90,7 +90,8 @@
       "Bash(packages/server/node_modules/.bin/tsc -p packages/server/tsconfig.json --noEmit)",
       "Bash(node_modules/.pnpm/node_modules/.bin/tsc -p packages/client/tsconfig.json --noEmit)",
       "Bash(node_modules/.pnpm/vue-tsc@2.2.12_typescript@5.9.3/node_modules/vue-tsc/node_modules/.bin/tsc -p packages/client/tsconfig.json --noEmit)",
-      "Bash(pnpm -F server test --reporter=verbose)"
+      "Bash(pnpm -F server test --reporter=verbose)",
+      "Bash(pnpm test:coverage)"
     ],
     "additionalDirectories": [
       "/tmp",
