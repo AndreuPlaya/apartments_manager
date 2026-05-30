@@ -4,6 +4,7 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue()],
   test: {
+    typecheck: { tsconfig: './tsconfig.test.json' },
     environment: 'happy-dom',
     coverage: {
       provider: 'v8',
