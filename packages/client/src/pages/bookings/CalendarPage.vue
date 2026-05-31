@@ -8,7 +8,6 @@ import { useAsyncOp } from '../../composables/useAsyncOp'
 import CalendarView from './CalendarView.vue'
 import BookingFormModal from './BookingFormModal.vue'
 import ClientEditModal from '../clients/ClientEditModal.vue'
-import type { BookingStatus } from '../../api/client'
 
 const { t } = useI18n()
 const { success, error } = useToast()
@@ -78,7 +77,7 @@ async function updateBookingDates(id: string, changes: { fromDate?: string; toDa
   if (res !== undefined) { await load(); success(t('bookings.updated')) }
 }
 
-async function onPatch(id: string, changes: { comment?: string; status?: BookingStatus; paidDate?: string }) {
+async function onPatch(id: string, changes: { comment?: string; paidDate?: string }) {
   const res = await run(() => api.bookings.patch(id, changes))
   if (res !== undefined) {
     bookings.value = bookings.value.map((b) => b.id === id ? res : b)
@@ -93,15 +92,6 @@ async function handleUpdate(id: string, payload: Partial<Omit<Booking, 'id' | 'c
     success(t('bookings.updated'))
   }
 }
-
-async function handleCancel(b: Booking) {
-  const res = await run(() => api.bookings.patch(b.id, { status: 'Cancelled' }))
-  if (res !== undefined) {
-    bookings.value = bookings.value.map((x) => x.id === b.id ? res : x)
-    success(t('bookings.cancelled'))
-  }
-}
-
 
 // ── Client edit ───────────────────────────────────────────────────────────────
 

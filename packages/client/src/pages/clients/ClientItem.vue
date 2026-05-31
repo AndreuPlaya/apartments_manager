@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Client, Booking, Apartment, Channel } from '../../api/client'
 import BaseItem from '../../shared/BaseItem.vue'
@@ -31,15 +30,6 @@ function apartmentName(id: string) {
   return props.apartments.find(a => a.id === id)?.name ?? id
 }
 
-const statusClass: Record<string, string> = {
-  Active: 'badge--active',
-  Cancelled: 'badge--cancelled',
-}
-
-const statusLabel = computed<Record<string, string>>(() => ({
-  Active: t('bookings.statusActive'),
-  Cancelled: t('bookings.statusCancelled'),
-}))
 </script>
 
 <template>
@@ -144,7 +134,6 @@ const statusLabel = computed<Record<string, string>>(() => ({
               <th>{{ t('clients.fromCol') }}</th>
               <th>{{ t('clients.toCol') }}</th>
               <th>{{ t('clients.apartmentCol') }}</th>
-              <th>{{ t('clients.statusCol') }}</th>
               <th>{{ t('clients.amountCol') }}</th>
             </tr>
           </thead>
@@ -153,7 +142,6 @@ const statusLabel = computed<Record<string, string>>(() => ({
               <td>{{ b.fromDate }}</td>
               <td>{{ b.toDate }}</td>
               <td>{{ apartmentName(b.apartmentId) }}</td>
-              <td><span :class="['badge', statusClass[b.status]]">{{ statusLabel[b.status] }}</span></td>
               <td>{{ b.totalAmountDue }}</td>
             </tr>
           </tbody>
@@ -163,42 +151,3 @@ const statusLabel = computed<Record<string, string>>(() => ({
   </BaseItem>
 </template>
 
-<style scoped>
-.cell-val { display: block; }
-
-.bookings-panel {
-  padding: 0.75rem 0.875rem 0;
-  background: var(--card);
-  border-left: 3px solid var(--border-dark);
-}
-
-.sub-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.8rem;
-  margin-bottom: 0;
-}
-
-.sub-table th,
-.sub-table td {
-  padding: 0.4rem 0.5rem;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-}
-
-.sub-table thead th {
-  font-weight: 700;
-  color: var(--text-muted);
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  background: transparent;
-}
-
-.sub-table tbody tr:last-child td { border-bottom: none; }
-
-.booking-row { cursor: pointer; }
-.booking-row:hover td { background: var(--accent-light) !important; }
-.booking-row--readonly { cursor: default; }
-.booking-row--readonly:hover td { background: transparent !important; }
-</style>

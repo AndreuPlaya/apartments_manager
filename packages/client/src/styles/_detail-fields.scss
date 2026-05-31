@@ -25,6 +25,7 @@
   }
 
   &--3col { grid-template-columns: repeat(3, 1fr); }
+  &--4col { grid-template-columns: repeat(4, 1fr); }
 }
 
 .detail-field {
@@ -41,6 +42,7 @@
   }
 
   &--wide { grid-column: 1 / -1; }
+  &--span2 { grid-column: span 2; }
 
   &--editing {
     background: var(--accent-light);

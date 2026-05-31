@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import type { Booking, Apartment, Client, Channel, BookingStatus } from '../../api/client'
+import type { Booking, Apartment, Client, Channel } from '../../api/client'
 import BookingItem from './BookingItem.vue'
 import AppIcon from '../../shared/AppIcon.vue'
 
@@ -18,8 +18,8 @@ defineProps<{
 
 const emit = defineEmits<{
   update: [id: string, payload: Partial<Omit<Booking, 'id' | 'createdAt'>>]
-  patch: [id: string, changes: { paidDate?: string; comment?: string; status?: BookingStatus }]
-  cancel: [booking: Booking]
+  patch: [id: string, changes: { paidDate?: string; comment?: string }]
+  delete: [booking: Booking]
   openClient: [client: Client]
 }>()
 </script>
@@ -44,6 +44,7 @@ const emit = defineEmits<{
         <thead>
           <tr>
             <th>{{ t('bookings.apartment') }}</th>
+            <th style="width: 1.5rem"></th>
             <th>{{ t('bookings.client') }}</th>
             <th>{{ t('bookings.checkin') }}</th>
             <th>{{ t('bookings.checkout') }}</th>
@@ -65,7 +66,7 @@ const emit = defineEmits<{
             :today="today"
             @update="(id, payload) => emit('update', id, payload)"
             @patch="(id, changes) => emit('patch', id, changes)"
-            @cancel="(booking) => emit('cancel', booking)"
+            @delete="(booking) => emit('delete', booking)"
             @open-client="(client) => emit('openClient', client)"
           />
         </tbody>
@@ -74,47 +75,3 @@ const emit = defineEmits<{
   </div>
 </template>
 
-<style scoped>
-.upcoming-section {
-  margin-top: 2rem;
-}
-
-.upcoming-section__subtitle {
-  font-size: 0.78rem;
-  font-weight: 400;
-  color: var(--text-muted);
-  margin-left: 0.375rem;
-  text-transform: lowercase;
-}
-
-.upcoming-empty {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  padding: 1.5rem 1rem;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  color: var(--text-muted);
-  font-size: 0.875rem;
-}
-
-.upcoming-skeleton {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.skeleton-row {
-  height: 44px;
-  background: linear-gradient(90deg, var(--border) 25%, var(--bg) 50%, var(--border) 75%);
-  background-size: 200% 100%;
-  border-radius: var(--radius-sm);
-  animation: shimmer 1.4s infinite;
-}
-
-@keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-</style>

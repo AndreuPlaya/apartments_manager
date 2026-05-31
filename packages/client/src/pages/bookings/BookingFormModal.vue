@@ -115,10 +115,6 @@ const apartmentOptions = computed(() =>
 const activeChannelOptions = computed(() =>
   props.channels.filter(c => c.isActive).map(c => ({ value: c.id, label: c.name }))
 )
-const statusOptions = computed(() => [
-  { value: 'Active', label: t('bookings.statusActive') },
-  { value: 'Cancelled', label: t('bookings.statusCancelled') },
-])
 </script>
 
 <template>
@@ -155,7 +151,6 @@ const statusOptions = computed(() => [
             </div>
             <div class="form-row">
               <SelectInput mode="form" :text="t('bookings.channel') + ' *'" v-model="form.channelId" :options="activeChannelOptions" :placeholder="t('common.select')" required />
-              <SelectInput mode="form" :text="t('bookings.status')" v-model="form.status" :options="statusOptions" />
               <DateInput mode="form" :text="t('bookings.paidDate')" v-model="form.paidDate" />
             </div>
             <NumberInput mode="form" :text="t('bookings.amount') + ' *'" v-model="form.totalAmountDue" :min="0" :step="0.01" required />

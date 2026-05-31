@@ -9,7 +9,6 @@ import ClientEditModal from './clients/ClientEditModal.vue'
 import TodaySummary from './bookings/TodaySummary.vue'
 import ActiveBookingsView from './bookings/ActiveBookingsView.vue'
 import UpcomingBookingsView from './bookings/UpcomingBookingsView.vue'
-import type { BookingStatus } from '../api/client'
 
 const { t } = useI18n()
 const { success, error } = useToast()
@@ -91,7 +90,7 @@ onMounted(load)
 
 // ── Booking form ───────────────────────────────────────────────────────────────
 
-async function onPatch(id: string, changes: { comment?: string; status?: BookingStatus; paidDate?: string }) {
+async function onPatch(id: string, changes: { comment?: string; paidDate?: string }) {
   const res = await run(() => api.bookings.patch(id, changes))
   if (res !== undefined) {
     bookings.value = bookings.value.map((b) => b.id === id ? res : b)
@@ -107,12 +106,9 @@ async function handleUpdate(id: string, payload: Partial<Omit<Booking, 'id' | 'c
   }
 }
 
-async function handleCancel(b: Booking) {
-  const res = await run(() => api.bookings.patch(b.id, { status: 'Cancelled' }))
-  if (res !== undefined) {
-    bookings.value = bookings.value.map((x) => x.id === b.id ? res : x)
-    success(t('bookings.cancelled'))
-  }
+async function handleDelete(b: Booking) {
+  const res = await run(() => api.bookings.delete(b.id))
+  if (res !== undefined) { await load(); success(t('bookings.deleted')) }
 }
 
 // ── Client edit ────────────────────────────────────────────────────────────────
@@ -156,7 +152,7 @@ async function handleClientSave(client: Client, patch: Partial<Omit<Client, 'id'
       :today="today"
       @update="handleUpdate"
       @patch="onPatch"
-      @cancel="handleCancel"
+      @delete="handleDelete"
       @open-client="openClient"
     />
 
@@ -171,7 +167,7 @@ async function handleClientSave(client: Client, patch: Partial<Omit<Client, 'id'
       :today="today"
       @update="handleUpdate"
       @patch="onPatch"
-      @cancel="handleCancel"
+      @delete="handleDelete"
       @open-client="openClient"
     />
   </div>

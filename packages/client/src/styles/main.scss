@@ -4,6 +4,9 @@
 @use 'detail-fields';
 @use 'calendar-links';
 @use 'trash-icon';
+@use 'booking-item';
+@use 'booking-views';
+@use 'clients';
 
 *, *::before, *::after { box-sizing: border-box; }
 

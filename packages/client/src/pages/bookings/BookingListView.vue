@@ -21,7 +21,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   update: [id: string, payload: Partial<Omit<Booking, 'id' | 'createdAt'>>]
   patch: [id: string, changes: { paidDate?: string; comment?: string }]
-  cancel: [booking: Booking]
+  delete: [booking: Booking]
   openClient: [client: Client]
   loadMore: []
 }>()
@@ -109,6 +109,7 @@ function clearFilters() {
         <thead>
           <tr>
             <th>{{ t('bookings.apartment') }}</th>
+            <th style="width: 1.5rem"></th>
             <th class="sortable-th" @click="toggleSort('client')">
               {{ t('bookings.client') }}
               <AppIcon
@@ -148,7 +149,7 @@ function clearFilters() {
             :today="today"
             @update="(id, payload) => emit('update', id, payload)"
             @patch="(id, changes) => emit('patch', id, changes)"
-            @cancel="(booking) => emit('cancel', booking)"
+            @delete="(booking) => emit('delete', booking)"
             @open-client="(client) => emit('openClient', client)"
           />
         </tbody>
@@ -164,10 +165,3 @@ function clearFilters() {
   </template>
 </template>
 
-<style scoped>
-.load-more-row {
-  display: flex;
-  justify-content: center;
-  padding: 1rem 0 0.5rem;
-}
-</style>

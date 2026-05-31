@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { Booking, Apartment, Client, Channel, BookingStatus } from '../../api/client'
+import type { Booking, Apartment, Client, Channel } from '../../api/client'
 import BookingItem from './BookingItem.vue'
 
 const { t } = useI18n()
@@ -20,8 +20,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   update: [id: string, payload: Partial<Omit<Booking, 'id' | 'createdAt'>>]
-  patch: [id: string, changes: { paidDate?: string; comment?: string; status?: BookingStatus }]
-  cancel: [booking: Booking]
+  patch: [id: string, changes: { paidDate?: string; comment?: string }]
+  delete: [booking: Booking]
   openClient: [client: Client]
 }>()
 
@@ -39,6 +39,7 @@ const allBookings = computed(() => [
         <thead>
           <tr>
             <th>{{ t('bookings.apartment') }}</th>
+            <th style="width: 1.5rem"></th>
             <th>{{ t('bookings.client') }}</th>
             <th>{{ t('bookings.checkin') }}</th>
             <th>{{ t('bookings.checkout') }}</th>
@@ -60,7 +61,7 @@ const allBookings = computed(() => [
             :today="today"
             @update="(id, payload) => emit('update', id, payload)"
             @patch="(id, changes) => emit('patch', id, changes)"
-            @cancel="(booking) => emit('cancel', booking)"
+            @delete="(booking) => emit('delete', booking)"
             @open-client="(client) => emit('openClient', client)"
           />
         </tbody>
@@ -69,8 +70,3 @@ const allBookings = computed(() => [
   </div>
 </template>
 
-<style scoped>
-.active-bookings {
-  margin-bottom: 1.5rem;
-}
-</style>

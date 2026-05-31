@@ -26,7 +26,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   update: [id: string, payload: Partial<Omit<Booking, 'id' | 'createdAt'>>]
   patch: [id: string, changes: { paidDate?: string; comment?: string }]
-  cancel: [booking: Booking]
+  delete: [booking: Booking]
   openClient: [client: Client]
 }>()
 
@@ -55,7 +55,7 @@ const daysUntilArrival = computed(() => {
 const isUpcoming = computed(() =>
   props.booking.status !== 'Cancelled' &&
   daysUntilArrival.value > 0 &&
-  daysUntilArrival.value <= 7
+  daysUntilArrival.value <= 15
 )
 
 const guestString = computed(() => {
@@ -76,10 +76,6 @@ const apartmentOptions = computed(() =>
 const channelOptions = computed(() =>
   props.channels.map(c => ({ value: c.id, label: c.name }))
 )
-const statusOptions = computed(() => [
-  { value: 'Active', label: t('bookings.statusActive') },
-  { value: 'Cancelled', label: t('bookings.statusCancelled') },
-])
 
 function updateAdminField(field: keyof Booking, val: string | number | boolean) {
   emit('update', props.booking.id, {
@@ -99,28 +95,36 @@ function updateAdminField(field: keyof Booking, val: string | number | boolean) 
   })
 }
 
-async function handleCancel() {
+async function handleDelete() {
   const aptName = apartment.value?.name ?? '—'
   const clientName = client.value?.name ?? '—'
   const dates = `${formatDate(props.booking.fromDate)} → ${formatDate(props.booking.toDate)}`
-  const ok = await confirm(t('bookings.cancelConfirm', { apartment: aptName, client: clientName, dates }))
-  if (ok) emit('cancel', props.booking)
+  const ok = await confirm(t('bookings.deleteConfirm', { apartment: aptName, client: clientName, dates }))
+  if (ok) emit('delete', props.booking)
 }
 </script>
 
 <template>
   <BaseItem
-    :col-span="7"
+    :col-span="8"
     :loading="loading"
     :can-delete="isAdmin"
     :class="{
       'row--arriving': isArriving,
       'row--staying': isStaying,
     }"
-    @delete="handleCancel"
+    @delete="handleDelete"
   >
     <template #summary>
       <td>{{ apartment?.name ?? '—' }}</td>
+      <td class="info-cell">
+        <AppIcon
+          v-if="booking.comment"
+          name="info-circle"
+          :size="13"
+          class="info-icon"
+        />
+      </td>
       <td>{{ client?.name ?? '—' }}</td>
       <td>{{ formatDate(booking.fromDate) }}</td>
       <td>{{ formatDate(booking.toDate) }}</td>
@@ -149,6 +153,7 @@ async function handleCancel() {
         <span class="panel-label">{{ t('bookings.bookingDetails') }}</span>
         <div class="details-grid details-grid--3col">
 
+          <!-- Row 1: apartment | client | channel -->
           <SelectInput
             :text="t('bookings.apartment')"
             :model-value="booking.apartmentId"
@@ -157,7 +162,6 @@ async function handleCancel() {
             @update:model-value="updateAdminField('apartmentId', $event)"
           />
 
-          <!-- Client (read-only, clickable) -->
           <div class="detail-field detail-field--readonly detail-field--client">
             <span class="detail-field__label">{{ t('bookings.client') }}</span>
             <button class="detail-field__client-btn" @click.stop="client && emit('openClient', client)">
@@ -173,6 +177,7 @@ async function handleCancel() {
             @update:model-value="updateAdminField('channelId', $event)"
           />
 
+          <!-- Row 2: checkin | checkout | [gap] -->
           <DateInput
             :text="t('bookings.checkin')"
             :model-value="booking.fromDate"
@@ -187,12 +192,9 @@ async function handleCancel() {
             @update:model-value="updateAdminField('toDate', $event)"
           />
 
-          <DateInput
-            :text="t('bookings.paidDate')"
-            :model-value="booking.paidDate ?? ''"
-            @update:model-value="emit('patch', booking.id, { paidDate: $event || undefined })"
-          />
+          <div aria-hidden="true" />
 
+          <!-- Row 3: adults | children | crib (space reserved) -->
           <NumberInput
             :text="t('bookings.adults')"
             :model-value="booking.adultCount"
@@ -209,14 +211,17 @@ async function handleCancel() {
             @update:model-value="updateAdminField('childrenCount', $event)"
           />
 
-          <CheckboxInput
-            v-if="isAdmin && booking.childrenCount > 0"
-            :text="t('bookings.crib')"
-            :model-value="!!booking.cribRequested"
-            :rights="isAdmin"
-            @update:model-value="updateAdminField('cribRequested', $event)"
-          />
-
+          <div class="booking-crib-cell">
+            <CheckboxInput
+              v-if="isAdmin && booking.childrenCount > 0"
+              :text="t('bookings.crib')"
+              :model-value="!!booking.cribRequested"
+              :rights="isAdmin"
+              @update:model-value="updateAdminField('cribRequested', $event)"
+            />
+          </div>
+          
+          <!-- Row 4: total amount | paid date | [gap] -->
           <NumberInput
             :text="t('bookings.amount')"
             :model-value="booking.totalAmountDue"
@@ -227,15 +232,17 @@ async function handleCancel() {
             @update:model-value="updateAdminField('totalAmountDue', $event)"
           />
 
-          <SelectInput
-            :text="t('bookings.status')"
-            :model-value="booking.status"
-            :options="statusOptions"
-            :rights="isAdmin"
-            @update:model-value="updateAdminField('status', $event)"
+          <DateInput
+            :text="t('bookings.paidDate')"
+            :model-value="booking.paidDate ?? ''"
+            @update:model-value="emit('patch', booking.id, { paidDate: $event || undefined })"
           />
 
+          <div aria-hidden="true" />
+
+          <!-- Row 5: comment (full width) -->
           <TextareaInput
+            class="detail-field--wide"
             :text="t('bookings.comment')"
             :model-value="booking.comment ?? ''"
             @update:model-value="emit('patch', booking.id, { comment: $event || undefined })"
@@ -246,51 +253,3 @@ async function handleCancel() {
     </template>
   </BaseItem>
 </template>
-
-<style scoped>
-.guests-cell {
-  white-space: nowrap;
-}
-
-.crib-icon {
-  color: var(--text-muted);
-  vertical-align: middle;
-  margin-left: 0.25rem;
-}
-
-.status-cell {
-  width: 2rem;
-  white-space: nowrap;
-  text-align: center;
-}
-
-.status-icon {
-  color: var(--text-muted);
-  vertical-align: middle;
-}
-
-.day-badge {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  margin-left: 0.15rem;
-  vertical-align: middle;
-}
-
-.detail-field--client:hover {
-  background: rgba(37, 99, 235, 0.03);
-  border-color: var(--border);
-}
-
-.detail-field__client-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  color: var(--accent);
-  cursor: pointer;
-  font-size: 0.8rem;
-  font-family: inherit;
-  text-align: left;
-  display: block;
-}
-.detail-field__client-btn:hover { text-decoration: underline; }
-</style>

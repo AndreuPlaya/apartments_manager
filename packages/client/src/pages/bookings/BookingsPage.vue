@@ -91,14 +91,6 @@ async function handleUpdate(id: string, payload: Partial<Omit<Booking, 'id' | 'c
   }
 }
 
-async function handleCancel(b: Booking) {
-  const res = await run(() => api.bookings.patch(b.id, { status: 'Cancelled' }))
-  if (res !== undefined) {
-    bookings.value = bookings.value.map((x) => x.id === b.id ? res : x)
-    success(t('bookings.cancelled'))
-  }
-}
-
 async function deleteBooking(b: Booking) {
   const res = await run(() => api.bookings.delete(b.id))
   if (res !== undefined) { await load(); success(t('bookings.deleted')) }
@@ -154,7 +146,7 @@ async function handleClientSave(client: Client, patch: Partial<Omit<Client, 'id'
       :today="today"
       @update="handleUpdate"
       @patch="onPatch"
-      @cancel="handleCancel"
+      @delete="deleteBooking"
       @open-client="openClient"
       @load-more="handleLoadMore"
     />
