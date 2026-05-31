@@ -15,7 +15,7 @@ const authLimiter = rateLimiter({
 
 const authRoutes = new Hono()
 
-async function issueSessionCookie(
+export async function issueSessionCookie(
   c: Context,
   username: string,
   isAdmin: boolean,

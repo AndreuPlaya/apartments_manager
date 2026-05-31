@@ -74,6 +74,7 @@ export interface CalendarLink {
 export interface AdminRecord {
   password_hash: string
   full_name: string
+  email?: string
 }
 
 export interface UserRecord {
@@ -81,6 +82,7 @@ export interface UserRecord {
   password_hash: string
   full_name: string
   enabled: boolean
+  email?: string
 }
 
 export interface Settings {

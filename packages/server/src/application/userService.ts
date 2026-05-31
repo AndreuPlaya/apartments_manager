@@ -29,6 +29,88 @@ export interface UserListItem {
   enabled: boolean
 }
 
+export interface ProfileData {
+  username: string
+  full_name: string
+  email: string | undefined
+  is_admin: boolean
+}
+
+export async function getSelfProfile(user: SessionUser): Promise<ProfileData> {
+  const settings = loadSettings()
+  if (user.isAdmin) {
+    const record = settings.admin_users[user.username]
+    if (!record) throw new NotFoundError('User not found')
+    return { username: user.username, full_name: record.full_name, email: record.email, is_admin: true }
+  }
+  const id = user.resourceId!
+  const record = settings.users[id]
+  if (!record) throw new NotFoundError('User not found')
+  return { username: record.username, full_name: record.full_name, email: record.email, is_admin: false }
+}
+
+export async function updateSelfProfile(
+  user: SessionUser,
+  req: { full_name?: string; email?: string; username?: string },
+): Promise<ProfileData> {
+  const settings = loadSettings()
+  if (user.isAdmin) {
+    const record = settings.admin_users[user.username]
+    if (!record) throw new NotFoundError('User not found')
+    if (req.username !== undefined && req.username !== user.username) {
+      if (findUser(req.username) !== null) throw new ConflictError('Username already exists')
+      const updated: import('../domain/models.js').AdminRecord = {
+        password_hash: record.password_hash,
+        full_name: req.full_name ?? record.full_name,
+        email: req.email !== undefined ? req.email : record.email,
+      }
+      delete settings.admin_users[user.username]
+      settings.admin_users[req.username] = updated
+      saveSettings(settings)
+      return { username: req.username, full_name: updated.full_name, email: updated.email, is_admin: true }
+    }
+    if (req.full_name !== undefined) record.full_name = req.full_name
+    if (req.email !== undefined) record.email = req.email
+    saveSettings(settings)
+    return { username: user.username, full_name: record.full_name, email: record.email, is_admin: true }
+  }
+  const id = user.resourceId!
+  const record = settings.users[id]
+  if (!record) throw new NotFoundError('User not found')
+  if (req.username !== undefined && req.username !== record.username) {
+    if (findUser(req.username) !== null) throw new ConflictError('Username already exists')
+    record.username = req.username
+  }
+  if (req.full_name !== undefined) record.full_name = req.full_name
+  if (req.email !== undefined) record.email = req.email
+  saveSettings(settings)
+  return { username: record.username, full_name: record.full_name, email: record.email, is_admin: false }
+}
+
+export async function changeSelfPassword(
+  user: SessionUser,
+  req: { current_password: string; password: string },
+): Promise<void> {
+  if (req.password.length < 8) throw new ValidationError('Password must be at least 8 characters')
+  const settings = loadSettings()
+  if (user.isAdmin) {
+    const record = settings.admin_users[user.username]
+    if (!record) throw new NotFoundError('User not found')
+    const valid = await bcrypt.compare(req.current_password, record.password_hash)
+    if (!valid) throw new UnauthorizedError('Current password is incorrect')
+    record.password_hash = await bcrypt.hash(req.password, 12)
+    saveSettings(settings)
+    return
+  }
+  const id = user.resourceId!
+  const record = settings.users[id]
+  if (!record) throw new NotFoundError('User not found')
+  const valid = await bcrypt.compare(req.current_password, record.password_hash)
+  if (!valid) throw new UnauthorizedError('Current password is incorrect')
+  record.password_hash = await bcrypt.hash(req.password, 12)
+  saveSettings(settings)
+}
+
 export async function authenticate(req: LoginRequest): Promise<SessionUser> {
   const found = findUser(req.username)
   if (found === null) throw new UnauthorizedError('Invalid credentials')

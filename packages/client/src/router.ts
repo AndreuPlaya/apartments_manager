@@ -47,6 +47,11 @@ const router = createRouter({
       component: () => import('./pages/metrics/MetricsPage.vue'),
       meta: { requiresAuth: true, adminOnly: true },
     },
+    {
+      path: '/profile',
+      component: () => import('./pages/profile/ProfilePage.vue'),
+      meta: { requiresAuth: true },
+    },
     { path: '/admin', redirect: '/config' },
   ],
 })

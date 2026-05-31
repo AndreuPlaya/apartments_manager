@@ -87,6 +87,13 @@ export interface MetricsData {
   revenue: MonthlyRevenue[]
 }
 
+export interface ProfileData {
+  username: string
+  full_name: string
+  email: string | undefined
+  is_admin: boolean
+}
+
 export type AuthConfig =
   | { ok: true; is_admin: boolean; username: string }
   | { ok: false }
@@ -198,5 +205,13 @@ export const api = {
 
   metrics: {
     get: () => request<MetricsData>('/api/admin/metrics'),
+  },
+
+  profile: {
+    get: () => request<ProfileData>('/api/profile'),
+    update: (body: { full_name?: string; email?: string; username?: string }) =>
+      json<ProfileData>('/api/profile', 'PATCH', body),
+    changePassword: (body: { current_password: string; password: string }) =>
+      json<{ ok: true }>('/api/profile/password', 'PATCH', body),
   },
 }

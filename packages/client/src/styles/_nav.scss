@@ -107,6 +107,23 @@
     flex-shrink: 0;
   }
 
+  &__user-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    border-radius: 6px;
+    padding: 0.2rem 0.4rem;
+    transition: background 0.15s;
+
+    &:hover { background: rgba(255, 255, 255, 0.07); }
+
+    &--active {
+      background: rgba(59, 130, 246, 0.15);
+      .app-nav__avatar { background: var(--nav-accent); }
+    }
+  }
+
   &__avatar {
     width: 28px;
     height: 28px;
@@ -130,34 +147,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  &__locale-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    background: transparent;
-    color: var(--nav-text);
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    transition: background 0.15s, color 0.15s;
-    flex-shrink: 0;
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--nav-text-bright);
-    }
-
-    &--mobile {
-      width: auto;
-      padding: 0 0.5rem;
-    }
   }
 
   &__logout {

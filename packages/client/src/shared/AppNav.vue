@@ -6,7 +6,6 @@ import { useI18n } from 'vue-i18n'
 import { api } from '../api/client'
 import { clearCachedConfig } from '../router'
 import { useToast } from '../composables/useToast'
-import { useLocale } from '../composables/useLocale'
 
 const props = defineProps<{
   username: string
@@ -17,7 +16,6 @@ const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
 const { error } = useToast()
-const { currentLocale, toggleLocale } = useLocale()
 
 const mobileOpen = ref(false)
 
@@ -54,7 +52,6 @@ async function logout() {
       <!-- Desktop links -->
       <div class="app-nav__links">
         <RouterLink to="/" class="app-nav__link" exact-active-class="app-nav__link--active">
-          <!-- Home / dashboard icon -->
           <AppIcon name="home" :size="15" />
           {{ t('nav.dashboard') }}
         </RouterLink>
@@ -91,16 +88,10 @@ async function logout() {
 
       <!-- Desktop user zone -->
       <div class="app-nav__user">
-        <div class="app-nav__avatar" :title="props.username">{{ initials }}</div>
-        <span class="app-nav__username">{{ props.username }}</span>
-        <button
-          class="app-nav__locale-toggle"
-          :aria-label="currentLocale === 'en' ? 'Switch to Spanish' : 'Switch to English'"
-          :title="currentLocale === 'en' ? 'Español' : 'English'"
-          @click="toggleLocale"
-        >
-          {{ currentLocale === 'en' ? 'ES' : 'EN' }}
-        </button>
+        <RouterLink to="/profile" class="app-nav__user-link" active-class="app-nav__user-link--active" :title="props.username">
+          <div class="app-nav__avatar">{{ initials }}</div>
+          <span class="app-nav__username">{{ props.username }}</span>
+        </RouterLink>
         <button class="app-nav__logout" @click="logout" :aria-label="t('nav.signOut')" :title="t('nav.signOut')">
           <AppIcon name="log-out" :size="16" />
         </button>
@@ -151,15 +142,10 @@ async function logout() {
       </template>
 
       <div class="app-nav__mobile-user">
-        <div class="app-nav__avatar">{{ initials }}</div>
-        <span class="app-nav__username">{{ props.username }}</span>
-        <button
-          class="app-nav__locale-toggle app-nav__locale-toggle--mobile"
-          :title="currentLocale === 'en' ? 'Español' : 'English'"
-          @click="toggleLocale"
-        >
-          {{ currentLocale === 'en' ? 'ES' : 'EN' }}
-        </button>
+        <RouterLink to="/profile" class="app-nav__user-link" @click="mobileOpen = false">
+          <div class="app-nav__avatar">{{ initials }}</div>
+          <span class="app-nav__username">{{ props.username }}</span>
+        </RouterLink>
         <button class="app-nav__mobile-logout" @click="logout">{{ t('nav.signOut') }}</button>
       </div>
     </div>

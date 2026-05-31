@@ -5,7 +5,10 @@ import { listCalendarLinks } from '../application/calendarLinkService.js'
 import { listChannels } from '../application/channelService.js'
 import { listClients } from '../application/clientService.js'
 import { listProperties } from '../application/propertyService.js'
+import { getSelfProfile, updateSelfProfile, changeSelfPassword } from '../application/userService.js'
 import { authMiddleware } from '../middleware/auth.js'
+import { findUser } from '../infrastructure/settings.js'
+import { issueSessionCookie } from './auth.js'
 import { handleError } from './_utils.js'
 
 const editorRoutes = new Hono()
@@ -44,6 +47,38 @@ editorRoutes.patch('/api/bookings/:id', async (c) => {
     const body = await c.req.json<{ comment?: string; status?: string; paidDate?: string }>()
     const { comment, status, paidDate } = body
     return c.json(patchBookingFields(c.req.param('id'), { comment, status: status as any, paidDate }))
+  } catch (err) { return handleError(err, c) }
+})
+
+editorRoutes.get('/api/profile', async (c) => {
+  try {
+    return c.json(await getSelfProfile(c.get('user')))
+  } catch (err) { return handleError(err, c) }
+})
+
+editorRoutes.patch('/api/profile', async (c) => {
+  try {
+    const body = await c.req.json<{ full_name?: string; email?: string; username?: string }>()
+    const user = c.get('user')
+    const result = await updateSelfProfile(user, body)
+    // Re-issue session cookie if username changed (JWT payload must stay current)
+    if (body.username && body.username !== user.username) {
+      const found = findUser(result.username)
+      const resourceId = found?.type === 'user' ? found.id : null
+      await issueSessionCookie(c, result.username, result.is_admin, resourceId)
+    }
+    return c.json(result)
+  } catch (err) { return handleError(err, c) }
+})
+
+editorRoutes.patch('/api/profile/password', async (c) => {
+  try {
+    const body = await c.req.json<{ current_password?: string; password?: string }>()
+    if (!body.current_password || !body.password) {
+      return c.json({ error: 'current_password and password are required' }, 400)
+    }
+    await changeSelfPassword(c.get('user'), { current_password: body.current_password, password: body.password })
+    return c.json({ ok: true })
   } catch (err) { return handleError(err, c) }
 })
 
