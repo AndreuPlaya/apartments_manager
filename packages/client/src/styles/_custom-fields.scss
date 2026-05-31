@@ -1,0 +1,296 @@
+// ── NumberInput ───────────────────────────────────────────────────────────────
+
+.field-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.05rem 0.35rem 0.15rem;
+}
+
+.stepper-val {
+  flex: 1;
+  text-align: left;
+  font-size: 0.875rem;
+  cursor: text;
+  color: var(--text);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 3px;
+  padding: 0.05rem 0.25rem;
+  transition: background 0.12s;
+
+  &:hover { background: rgba(37, 99, 235, 0.1); }
+}
+
+.stepper-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-dark);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+  user-select: none;
+  font-family: inherit;
+
+  &:hover:not(:disabled) {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    transform: scale(1.1);
+  }
+
+  &:disabled { opacity: 0.3; cursor: not-allowed; }
+}
+
+// ── SelectInput ───────────────────────────────────────────────────────────────
+
+.custom-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  cursor: pointer;
+  user-select: none;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--border-dark);
+  border-radius: var(--radius-sm);
+  font-size: 0.925rem;
+  color: var(--text);
+  background: var(--card);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+
+  &--open {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+
+  &--placeholder span { color: var(--text-muted); }
+
+  span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+.inline-select-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  user-select: none;
+  padding: 0 0.1rem;
+
+  .detail-field__val { flex: 1; min-width: 0; }
+}
+
+.select-field--open {
+  background: var(--accent-light);
+  border-color: var(--accent) !important;
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: transform 0.18s ease;
+  transform: rotate(-90deg);
+
+  &--open { transform: rotate(0deg); }
+}
+
+.select-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 998;
+}
+
+.select-dropdown {
+  position: fixed;
+  z-index: 999;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  list-style: none;
+  margin: 0;
+  padding: 0.3rem 0;
+  max-height: 220px;
+  overflow-y: auto;
+  animation: select-dropdown-in 0.14s ease-out;
+}
+
+@keyframes select-dropdown-in {
+  from { opacity: 0; transform: scaleY(0.92); transform-origin: top; }
+  to   { opacity: 1; transform: scaleY(1);    transform-origin: top; }
+}
+
+.select-option {
+  padding: 0.5rem 0.875rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: var(--text);
+  transition: background 0.1s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &:hover { background: var(--accent-light); }
+  &--active { color: var(--accent); font-weight: 600; }
+  &--placeholder { color: var(--text-muted); font-style: italic; }
+}
+
+// ── CheckboxInput ─────────────────────────────────────────────────────────────
+
+.form-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.925rem;
+  color: var(--text);
+  user-select: none;
+}
+
+.detail-field__checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--text);
+  user-select: none;
+  padding: 0.05rem 0;
+}
+
+.custom-cb {
+  width: 17px;
+  height: 17px;
+  border-radius: 3px;
+  border: 1.5px solid var(--border-dark);
+  background: var(--card);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+
+  &:not(.custom-cb--readonly):hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  }
+
+  &--checked { background: var(--accent); border-color: var(--accent); }
+
+  &--readonly { cursor: default; opacity: 0.7; }
+
+  &__check {
+    width: 10px;
+    height: 8px;
+    opacity: 0;
+    transform: scale(0.6);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+
+    &--visible { opacity: 1; transform: scale(1); }
+  }
+}
+
+// ── CurrencyInput ─────────────────────────────────────────────────────────────
+
+.currency-group {
+  display: flex;
+
+  &__badge {
+    display: flex;
+    align-items: center;
+    padding: 0 0.75rem;
+    background: var(--bg);
+    border: 1px solid var(--border-dark);
+    border-left: none;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: border-color 0.15s;
+  }
+
+  // Override global input[type="number"] width:100% and border-radius
+  &__input {
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm) !important;
+    width: auto !important;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &:focus-within &__badge { border-color: var(--accent); }
+}
+
+.currency-display {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  padding: 0 0.1rem;
+
+  &__amount {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+  }
+
+  &__symbol {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text);
+    letter-spacing: 0.01em;
+    line-height: 1.5;
+  }
+}
+
+.currency-edit {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.5rem 0.35rem;
+
+  // Override .detail-field--editing input — loaded after _detail-fields so cascade wins
+  input {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+    padding: 0;
+    border: none;
+    background: transparent;
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    outline: none;
+    line-height: inherit;
+  }
+
+  &__suffix {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text);
+    flex-shrink: 0;
+    line-height: 1;
+  }
+}

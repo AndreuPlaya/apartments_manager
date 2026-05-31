@@ -63,7 +63,7 @@ function commit() {
       v-else
       ref="inputRef"
       v-model="draft"
-      :rows="rows ?? 2"
+      :rows="rows ?? 1"
       :placeholder="placeholder"
       @blur="commit"
       @keydown.escape.prevent="cancel"

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, nextTick } from 'vue'
+import { ref, computed, nextTick } from 'vue'
+import AppIcon from '../AppIcon.vue'
 
 const props = withDefaults(defineProps<{
   text: string
@@ -22,7 +23,31 @@ const editing = ref(false)
 const draft = ref('')
 const inputRef = ref<HTMLInputElement | null>(null)
 
-function startEdit() {
+const effectiveStep = computed(() => props.step ?? 1)
+
+const canDecrement = computed(() =>
+  props.min === undefined || props.modelValue - effectiveStep.value >= props.min
+)
+const canIncrement = computed(() =>
+  props.max === undefined || props.modelValue + effectiveStep.value <= props.max
+)
+
+function decrement(e: MouseEvent) {
+  e.stopPropagation()
+  if (props.rights === false || !canDecrement.value) return
+  const next = Math.round((props.modelValue - effectiveStep.value) * 1e10) / 1e10
+  emit('update:modelValue', next)
+}
+
+function increment(e: MouseEvent) {
+  e.stopPropagation()
+  if (props.rights === false || !canIncrement.value) return
+  const next = Math.round((props.modelValue + effectiveStep.value) * 1e10) / 1e10
+  emit('update:modelValue', next)
+}
+
+function startEdit(e: MouseEvent) {
+  e.stopPropagation()
   if (props.rights === false) return
   draft.value = String(props.modelValue)
   editing.value = true
@@ -36,7 +61,7 @@ function cancel() {
 function commit() {
   editing.value = false
   const val = Number(draft.value)
-  if (val === props.modelValue) return
+  if (isNaN(val) || val === props.modelValue) return
   emit('update:modelValue', val)
 }
 
@@ -61,10 +86,30 @@ function displayValue() {
 
   <div v-else
     :class="['detail-field', editing && 'detail-field--editing', rights === false && 'detail-field--readonly', wide && 'detail-field--wide']"
-    @click="startEdit"
   >
     <span class="detail-field__label">{{ text }}</span>
-    <span v-if="!editing" class="detail-field__val">{{ displayValue() }}</span>
+
+    <template v-if="!editing">
+      <div class="field-stepper">
+        
+        <span class="stepper-val" @click="startEdit">{{ displayValue() }}</span>
+        <button
+          class="stepper-btn"
+          :disabled="rights === false || !canDecrement"
+          @click="decrement"
+          tabindex="-1"
+          aria-label="Decrease"
+        ><AppIcon name="minus" :size="11" :stroke-width="2.5" /></button>
+        <button
+          class="stepper-btn"
+          :disabled="rights === false || !canIncrement"
+          @click="increment"
+          tabindex="-1"
+          aria-label="Increase"
+        ><AppIcon name="plus" :size="11" :stroke-width="2.5" /></button>
+      </div>
+    </template>
+
     <input
       v-else
       ref="inputRef"

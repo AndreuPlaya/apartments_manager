@@ -6,6 +6,7 @@ import { useConfirm } from '../../composables/useConfirm'
 import BaseItem from '../../shared/BaseItem.vue'
 import AppIcon from '../../shared/AppIcon.vue'
 import NumberInput from '../../shared/fields/NumberInput.vue'
+import CurrencyInput from '../../shared/fields/CurrencyInput.vue'
 import DateInput from '../../shared/fields/DateInput.vue'
 import SelectInput from '../../shared/fields/SelectInput.vue'
 import CheckboxInput from '../../shared/fields/CheckboxInput.vue'
@@ -222,12 +223,9 @@ async function handleDelete() {
           </div>
           
           <!-- Row 4: total amount | paid date | [gap] -->
-          <NumberInput
+          <CurrencyInput
             :text="t('bookings.amount')"
             :model-value="booking.totalAmountDue"
-            :min="0"
-            :step="0.01"
-            :display-fn="v => v.toFixed(2)"
             :rights="isAdmin"
             @update:model-value="updateAdminField('totalAmountDue', $event)"
           />

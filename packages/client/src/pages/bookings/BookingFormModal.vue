@@ -9,6 +9,7 @@ import AppIcon from '../../shared/AppIcon.vue'
 import SelectInput from '../../shared/fields/SelectInput.vue'
 import DateInput from '../../shared/fields/DateInput.vue'
 import NumberInput from '../../shared/fields/NumberInput.vue'
+import CurrencyInput from '../../shared/fields/CurrencyInput.vue'
 import CheckboxInput from '../../shared/fields/CheckboxInput.vue'
 import TextareaInput from '../../shared/fields/TextareaInput.vue'
 
@@ -153,7 +154,7 @@ const activeChannelOptions = computed(() =>
               <SelectInput mode="form" :text="t('bookings.channel') + ' *'" v-model="form.channelId" :options="activeChannelOptions" :placeholder="t('common.select')" required />
               <DateInput mode="form" :text="t('bookings.paidDate')" v-model="form.paidDate" />
             </div>
-            <NumberInput mode="form" :text="t('bookings.amount') + ' *'" v-model="form.totalAmountDue" :min="0" :step="0.01" required />
+            <CurrencyInput mode="form" :text="t('bookings.amount') + ' *'" v-model="form.totalAmountDue" :min="0" required />
             <TextareaInput mode="form" :text="t('bookings.comment')" v-model="form.comment" />
           </div>
           <div class="modal__footer">

@@ -11,6 +11,7 @@ import BaseList from '../../shared/BaseList.vue'
 import AppIcon from '../../shared/AppIcon.vue'
 import TextInput from '../../shared/fields/TextInput.vue'
 import NumberInput from '../../shared/fields/NumberInput.vue'
+import CurrencyInput from '../../shared/fields/CurrencyInput.vue'
 import CheckboxInput from '../../shared/fields/CheckboxInput.vue'
 import TextareaInput from '../../shared/fields/TextareaInput.vue'
 
@@ -153,7 +154,7 @@ async function deleteCalendarLink(id: string) {
                 <TextInput mode="form" :text="t('apartments.door') + ' *'" v-model="form.door" required />
               </div>
               <div class="form-row">
-                <NumberInput mode="form" :text="t('apartments.priceNight') + ' *'" v-model="form.price" :min="0" :step="0.01" required />
+                <CurrencyInput mode="form" :text="t('apartments.priceNight') + ' *'" v-model="form.price" :min="0" required />
                 <NumberInput mode="form" :text="t('apartments.minNights')" v-model="form.minNights" :min="1" />
               </div>
               <div class="form-row">

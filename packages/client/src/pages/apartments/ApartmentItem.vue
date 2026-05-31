@@ -5,6 +5,7 @@ import BaseItem from '../../shared/BaseItem.vue'
 import CalendarLinksPanel from '../../shared/CalendarLinksPanel.vue'
 import TextInput from '../../shared/fields/TextInput.vue'
 import NumberInput from '../../shared/fields/NumberInput.vue'
+import CurrencyInput from '../../shared/fields/CurrencyInput.vue'
 import CheckboxInput from '../../shared/fields/CheckboxInput.vue'
 import TextareaInput from '../../shared/fields/TextareaInput.vue'
 
@@ -87,11 +88,9 @@ const apartmentLinks = () => props.calendarLinks.filter(l => l.apartmentId === p
             @update:model-value="updateField('door', $event || undefined)"
           />
 
-          <NumberInput
+          <CurrencyInput
             :text="t('apartments.priceNight')"
             :model-value="apartment.price"
-            :min="0"
-            :step="0.01"
             :rights="isAdmin ?? false"
             @update:model-value="updateField('price', $event)"
           />

@@ -35,13 +35,15 @@
   transition: background 0.12s;
   border: 1px solid transparent;
   min-width: 0;
+  height: 3.5rem;
+  overflow: hidden;
 
   &:hover {
     background: rgba(37, 99, 235, 0.06);
     border-color: var(--border);
   }
 
-  &--wide { grid-column: 1 / -1; }
+  &--wide { grid-column: 1 / -1; height: auto; overflow: visible; }
   &--span2 { grid-column: span 2; }
 
   &--editing {
@@ -49,7 +51,7 @@
     border-color: var(--accent);
     padding: 0;
 
-    .detail-field__label { padding: 0.3rem 0.5rem 0; }
+    .detail-field__label { padding: 0.35rem 0.5rem 0; }
 
     input,
     select,
@@ -58,12 +60,14 @@
       padding: 0.2rem 0.5rem 0.35rem;
       border: none;
       background: transparent;
-      font-size: 0.8rem;
+      font-size: 0.875rem;
       color: var(--text);
       outline: none;
       border-radius: 0;
       box-shadow: none;
       resize: none;
+      line-height: inherit;
+      min-height: 0;
     }
   }
 
@@ -77,25 +81,17 @@
   }
 
   &--checkbox {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
     cursor: pointer;
 
     &:hover {
       background: rgba(37, 99, 235, 0.06);
       border-color: var(--border);
     }
-
-    input[type='checkbox'] {
-      margin: 0;
-      cursor: pointer;
-    }
   }
 
   &__label {
     display: block;
-    font-size: 0.65rem;
+    font-size: 0.7rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -106,7 +102,7 @@
 
   &__val {
     display: block;
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     color: var(--text);
     white-space: nowrap;
     overflow: hidden;
