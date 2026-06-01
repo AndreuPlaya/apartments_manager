@@ -1,8 +1,15 @@
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+const authState = vi.hoisted(() => ({
+  user: { username: 'admin', isAdmin: true, resourceId: null as string | null },
+}))
+
 vi.mock('../../src/middleware/auth.js', () => ({
-  authMiddleware: async (_c: any, next: any) => { await next() },
+  authMiddleware: async (c: any, next: any) => {
+    c.set('user', authState.user)
+    await next()
+  },
 }))
 vi.mock('../../src/application/apartmentService.js')
 vi.mock('../../src/application/propertyService.js')
@@ -10,6 +17,9 @@ vi.mock('../../src/application/bookingService.js')
 vi.mock('../../src/application/clientService.js')
 vi.mock('../../src/application/channelService.js')
 vi.mock('../../src/application/calendarLinkService.js')
+vi.mock('../../src/application/userService.js')
+vi.mock('../../src/infrastructure/settings.js')
+vi.mock('../../src/routes/auth.js', () => ({ issueSessionCookie: vi.fn() }))
 
 import { listApartments } from '../../src/application/apartmentService.js'
 import { listBookings, patchBookingFields } from '../../src/application/bookingService.js'
@@ -17,12 +27,18 @@ import { listCalendarLinks } from '../../src/application/calendarLinkService.js'
 import { listChannels } from '../../src/application/channelService.js'
 import { listClients } from '../../src/application/clientService.js'
 import { listProperties } from '../../src/application/propertyService.js'
+import { getSelfProfile, updateSelfProfile, changeSelfPassword } from '../../src/application/userService.js'
+import { findUser } from '../../src/infrastructure/settings.js'
+import { issueSessionCookie } from '../../src/routes/auth.js'
 import { NotFoundError } from '../../src/application/errors.js'
 
 import editorRoutes from '../../src/routes/editor.js'
 
+const defaultProfile = { username: 'admin', full_name: 'Admin', email: undefined as string | undefined, is_admin: true }
+
 beforeEach(() => {
   vi.clearAllMocks()
+  authState.user = { username: 'admin', isAdmin: true, resourceId: null }
   vi.mocked(listApartments).mockReturnValue([])
   vi.mocked(listProperties).mockReturnValue([])
   vi.mocked(listBookings).mockReturnValue([])
@@ -30,6 +46,11 @@ beforeEach(() => {
   vi.mocked(listChannels).mockReturnValue([])
   vi.mocked(listCalendarLinks).mockReturnValue([])
   vi.mocked(patchBookingFields).mockReturnValue({ id: 'b1' } as any)
+  vi.mocked(getSelfProfile).mockResolvedValue(defaultProfile)
+  vi.mocked(updateSelfProfile).mockResolvedValue(defaultProfile)
+  vi.mocked(changeSelfPassword).mockResolvedValue(undefined)
+  vi.mocked(findUser).mockReturnValue(null)
+  vi.mocked(issueSessionCookie).mockResolvedValue(undefined)
 })
 
 function makeApp() {
@@ -125,5 +146,96 @@ describe('PATCH /api/bookings/:id', () => {
     vi.mocked(patchBookingFields).mockImplementation(() => { throw new Error('unexpected') })
     const res = await patch({})
     expect(res.status).toBe(500)
+  })
+})
+
+describe('GET /api/profile', () => {
+  it('returns the current user profile', async () => {
+    const res = await makeApp().request('/api/profile')
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual(defaultProfile)
+  })
+
+  it('returns error response when service throws', async () => {
+    vi.mocked(getSelfProfile).mockRejectedValue(new NotFoundError('User not found'))
+    const res = await makeApp().request('/api/profile')
+    expect(res.status).toBe(404)
+    expect(await res.json()).toEqual({ error: 'User not found' })
+  })
+})
+
+describe('PATCH /api/profile', () => {
+  const patch = (body: object) =>
+    makeApp().request('/api/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+
+  it('updates profile without username change and does not re-issue cookie', async () => {
+    const updated = { ...defaultProfile, full_name: 'New Name', email: 'a@b.com' }
+    vi.mocked(updateSelfProfile).mockResolvedValue(updated)
+    const res = await patch({ full_name: 'New Name', email: 'a@b.com' })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual(updated)
+    expect(issueSessionCookie).not.toHaveBeenCalled()
+  })
+
+  it('re-issues session cookie when admin username changes', async () => {
+    const updated = { ...defaultProfile, username: 'newadmin' }
+    vi.mocked(updateSelfProfile).mockResolvedValue(updated)
+    const res = await patch({ username: 'newadmin' })
+    expect(res.status).toBe(200)
+    expect(issueSessionCookie).toHaveBeenCalledOnce()
+    expect(issueSessionCookie).toHaveBeenCalledWith(expect.anything(), 'newadmin', true, null)
+  })
+
+  it('re-issues session cookie with resourceId when regular user changes username', async () => {
+    authState.user = { username: 'alice', isAdmin: false, resourceId: 'user-uuid-1' }
+    const updated = { username: 'alicenew', full_name: 'Alice', email: undefined, is_admin: false }
+    vi.mocked(updateSelfProfile).mockResolvedValue(updated)
+    vi.mocked(findUser).mockReturnValue({ type: 'user', id: 'user-uuid-1', record: {} as any })
+    const res = await patch({ username: 'alicenew' })
+    expect(res.status).toBe(200)
+    expect(issueSessionCookie).toHaveBeenCalledWith(expect.anything(), 'alicenew', false, 'user-uuid-1')
+  })
+
+  it('returns error response when service throws', async () => {
+    vi.mocked(updateSelfProfile).mockRejectedValue(new NotFoundError('User not found'))
+    const res = await patch({ full_name: 'x' })
+    expect(res.status).toBe(404)
+    expect(await res.json()).toEqual({ error: 'User not found' })
+  })
+})
+
+describe('PATCH /api/profile/password', () => {
+  const patchPw = (body: object) =>
+    makeApp().request('/api/profile/password', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+
+  it('changes password successfully', async () => {
+    const res = await patchPw({ current_password: 'oldpass12', password: 'newpass12' })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ ok: true })
+  })
+
+  it('returns 400 when current_password is missing', async () => {
+    const res = await patchPw({ password: 'newpass12' })
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 400 when password is missing', async () => {
+    const res = await patchPw({ current_password: 'oldpass12' })
+    expect(res.status).toBe(400)
+  })
+
+  it('returns error response when service throws', async () => {
+    vi.mocked(changeSelfPassword).mockRejectedValue(new NotFoundError('User not found'))
+    const res = await patchPw({ current_password: 'oldpass12', password: 'newpass12' })
+    expect(res.status).toBe(404)
+    expect(await res.json()).toEqual({ error: 'User not found' })
   })
 })

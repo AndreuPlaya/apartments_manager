@@ -9,7 +9,7 @@ import {
   saveSettings,
 } from '../../src/infrastructure/settings.js'
 
-import { authenticate, createUser, deleteUser, listUsers, updateUser } from '../../src/application/userService.js'
+import { authenticate, changeSelfPassword, createUser, deleteUser, getSelfProfile, listUsers, updateSelfProfile, updateUser } from '../../src/application/userService.js'
 
 // Pre-compute a real bcrypt hash for 'password123' (4 rounds = fast in tests)
 const adminPasswordHash = bcrypt.hashSync('password123', 4)
@@ -199,5 +199,155 @@ describe('deleteUser', () => {
 
   it('throws NotFoundError for unknown id', () => {
     expect(() => deleteUser('does-not-exist')).toThrow('not found')
+  })
+})
+
+describe('getSelfProfile', () => {
+  it('returns profile for admin user', async () => {
+    const profile = await getSelfProfile({ username: 'admin', isAdmin: true, resourceId: null })
+    expect(profile.username).toBe('admin')
+    expect(profile.full_name).toBe('Administrator')
+    expect(profile.is_admin).toBe(true)
+  })
+
+  it('throws NotFoundError for missing admin', async () => {
+    await expect(getSelfProfile({ username: 'nobody', isAdmin: true, resourceId: null })).rejects.toThrow('not found')
+  })
+
+  it('returns profile for regular user', async () => {
+    const profile = await getSelfProfile({ username: 'alice', isAdmin: false, resourceId: 'user-uuid-1' })
+    expect(profile.username).toBe('alice')
+    expect(profile.is_admin).toBe(false)
+  })
+
+  it('throws NotFoundError for missing regular user', async () => {
+    await expect(getSelfProfile({ username: 'alice', isAdmin: false, resourceId: 'no-such-id' })).rejects.toThrow('not found')
+  })
+})
+
+describe('updateSelfProfile', () => {
+  it('updates admin full_name and email without renaming', async () => {
+    const result = await updateSelfProfile(
+      { username: 'admin', isAdmin: true, resourceId: null },
+      { full_name: 'New Name', email: 'new@test.com' },
+    )
+    expect(result.full_name).toBe('New Name')
+    expect(result.email).toBe('new@test.com')
+    expect(result.username).toBe('admin')
+    expect(saveSettings).toHaveBeenCalledOnce()
+  })
+
+  it('renames admin to a new username with email', async () => {
+    vi.mocked(findUser).mockReturnValue(null)
+    const result = await updateSelfProfile(
+      { username: 'admin', isAdmin: true, resourceId: null },
+      { username: 'newadmin', email: 'x@test.com' },
+    )
+    expect(result.username).toBe('newadmin')
+    expect(result.email).toBe('x@test.com')
+    expect(result.is_admin).toBe(true)
+  })
+
+  it('renames admin to a new username without email preserves existing email', async () => {
+    vi.mocked(findUser).mockReturnValue(null)
+    const settingsWithEmail = structuredClone(mockSettings)
+    settingsWithEmail.admin_users['admin'].email = 'original@test.com'
+    vi.mocked(loadSettings).mockReturnValue(settingsWithEmail)
+    const result = await updateSelfProfile(
+      { username: 'admin', isAdmin: true, resourceId: null },
+      { username: 'newadmin' },
+    )
+    expect(result.username).toBe('newadmin')
+    expect(result.email).toBe('original@test.com')
+  })
+
+  it('throws ConflictError when renaming admin to existing username', async () => {
+    await expect(
+      updateSelfProfile({ username: 'admin', isAdmin: true, resourceId: null }, { username: 'alice' }),
+    ).rejects.toThrow('already exists')
+  })
+
+  it('throws NotFoundError for missing admin', async () => {
+    await expect(
+      updateSelfProfile({ username: 'nobody', isAdmin: true, resourceId: null }, {}),
+    ).rejects.toThrow('not found')
+  })
+
+  it('updates regular user full_name and email without rename', async () => {
+    const result = await updateSelfProfile(
+      { username: 'alice', isAdmin: false, resourceId: 'user-uuid-1' },
+      { full_name: 'Alice B', email: 'alice@test.com' },
+    )
+    expect(result.full_name).toBe('Alice B')
+    expect(result.email).toBe('alice@test.com')
+    expect(result.username).toBe('alice')
+    expect(saveSettings).toHaveBeenCalledOnce()
+  })
+
+  it('renames regular user to a new username', async () => {
+    vi.mocked(findUser).mockReturnValue(null)
+    const result = await updateSelfProfile(
+      { username: 'alice', isAdmin: false, resourceId: 'user-uuid-1' },
+      { username: 'alicenew' },
+    )
+    expect(result.username).toBe('alicenew')
+  })
+
+  it('throws ConflictError when renaming regular user to existing username', async () => {
+    await expect(
+      updateSelfProfile({ username: 'alice', isAdmin: false, resourceId: 'user-uuid-1' }, { username: 'admin' }),
+    ).rejects.toThrow('already exists')
+  })
+
+  it('throws NotFoundError for missing regular user', async () => {
+    await expect(
+      updateSelfProfile({ username: 'alice', isAdmin: false, resourceId: 'no-such-id' }, {}),
+    ).rejects.toThrow('not found')
+  })
+})
+
+describe('changeSelfPassword', () => {
+  it('throws ValidationError for short password', async () => {
+    await expect(
+      changeSelfPassword({ username: 'admin', isAdmin: true, resourceId: null }, { current_password: 'password123', password: 'short' }),
+    ).rejects.toThrow('at least 8 characters')
+  })
+
+  it('changes password for admin', async () => {
+    await expect(
+      changeSelfPassword({ username: 'admin', isAdmin: true, resourceId: null }, { current_password: 'password123', password: 'newpassword1' }),
+    ).resolves.toBeUndefined()
+    expect(saveSettings).toHaveBeenCalledOnce()
+  })
+
+  it('throws UnauthorizedError for wrong current password (admin)', async () => {
+    await expect(
+      changeSelfPassword({ username: 'admin', isAdmin: true, resourceId: null }, { current_password: 'wrongpass', password: 'newpassword1' }),
+    ).rejects.toThrow('incorrect')
+  })
+
+  it('throws NotFoundError for missing admin', async () => {
+    await expect(
+      changeSelfPassword({ username: 'nobody', isAdmin: true, resourceId: null }, { current_password: 'password123', password: 'newpassword1' }),
+    ).rejects.toThrow('not found')
+  })
+
+  it('changes password for regular user', async () => {
+    await expect(
+      changeSelfPassword({ username: 'alice', isAdmin: false, resourceId: 'user-uuid-1' }, { current_password: 'password123', password: 'newpassword1' }),
+    ).resolves.toBeUndefined()
+    expect(saveSettings).toHaveBeenCalledOnce()
+  })
+
+  it('throws UnauthorizedError for wrong current password (regular user)', async () => {
+    await expect(
+      changeSelfPassword({ username: 'alice', isAdmin: false, resourceId: 'user-uuid-1' }, { current_password: 'wrongpass', password: 'newpassword1' }),
+    ).rejects.toThrow('incorrect')
+  })
+
+  it('throws NotFoundError for missing regular user', async () => {
+    await expect(
+      changeSelfPassword({ username: 'alice', isAdmin: false, resourceId: 'no-such-id' }, { current_password: 'password123', password: 'newpassword1' }),
+    ).rejects.toThrow('not found')
   })
 })

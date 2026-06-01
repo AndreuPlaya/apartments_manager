@@ -122,9 +122,10 @@
 .select-dropdown {
   position: fixed;
   z-index: 999;
-  background: var(--card);
+  background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-left: 3px solid var(--accent);
+  border-radius: 0;
   box-shadow: var(--shadow-md);
   list-style: none;
   margin: 0;
