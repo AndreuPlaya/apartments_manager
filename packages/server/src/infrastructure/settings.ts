@@ -19,17 +19,19 @@ export function saveSettings(settings: Settings): void {
 
 let _cachedSecret: Uint8Array | null = null
 
-export function ensureSecretKey(): string {
+export function ensureSecretKey(): void {
+  if (process.env['JWT_SECRET']) return
   const settings = loadSettings()
   if (!settings.secret_key) {
     settings.secret_key = randomBytes(32).toString('hex')
     saveSettings(settings)
     _cachedSecret = null
   }
-  return settings.secret_key
 }
 
 export function getSecret(): Uint8Array {
+  const envSecret = process.env['JWT_SECRET']
+  if (envSecret) return new TextEncoder().encode(envSecret)
   if (_cachedSecret === null) {
     _cachedSecret = new TextEncoder().encode(loadSettings().secret_key)
   }

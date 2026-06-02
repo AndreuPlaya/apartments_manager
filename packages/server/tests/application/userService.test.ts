@@ -193,8 +193,11 @@ describe('deleteUser', () => {
     expect(saved?.users['user-uuid-1']?.enabled).toBe(false)
   })
 
-  it('throws ForbiddenError when trying to delete an admin', () => {
-    expect(() => deleteUser('admin')).toThrow('Cannot delete admin')
+  it('disables an admin by setting enabled=false', () => {
+    deleteUser('admin')
+    const lastCall = vi.mocked(saveSettings).mock.calls[vi.mocked(saveSettings).mock.calls.length - 1]
+    const saved = lastCall?.[0]
+    expect(saved?.admin_users['admin']?.enabled).toBe(false)
   })
 
   it('throws NotFoundError for unknown id', () => {

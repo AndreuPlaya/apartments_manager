@@ -164,7 +164,7 @@ export const api = {
     update: (id: string, body: Partial<Omit<Booking, 'id' | 'createdAt'>>) =>
       json<Booking>(`/api/admin/bookings/${id}`, 'PATCH', body),
     patch: (id: string, body: { comment?: string; status?: BookingStatus; paidDate?: string }) =>
-      json<Booking>(`/api/bookings/${id}`, 'PATCH', body),
+      json<Booking>(`/api/admin/bookings/${id}`, 'PATCH', body),
     delete: (id: string) => request<void>(`/api/admin/bookings/${id}`, { method: 'DELETE' }),
   },
 

@@ -75,6 +75,7 @@ export interface AdminRecord {
   password_hash: string
   full_name: string
   email?: string
+  enabled?: boolean
 }
 
 export interface UserRecord {

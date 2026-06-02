@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { listApartments } from '../application/apartmentService.js'
-import { listBookings, patchBookingFields } from '../application/bookingService.js'
+import { listBookings } from '../application/bookingService.js'
 import { listCalendarLinks } from '../application/calendarLinkService.js'
 import { listChannels } from '../application/channelService.js'
 import { listClients } from '../application/clientService.js'
@@ -40,14 +40,6 @@ editorRoutes.get('/api/channels', (c) => {
 
 editorRoutes.get('/api/calendar-links', (c) => {
   return c.json(listCalendarLinks())
-})
-
-editorRoutes.patch('/api/bookings/:id', async (c) => {
-  try {
-    const body = await c.req.json<{ comment?: string; status?: string; paidDate?: string }>()
-    const { comment, status, paidDate } = body
-    return c.json(patchBookingFields(c.req.param('id'), { comment, status: status as any, paidDate }))
-  } catch (err) { return handleError(err, c) }
 })
 
 editorRoutes.get('/api/profile', async (c) => {

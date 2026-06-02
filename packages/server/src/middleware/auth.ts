@@ -20,9 +20,12 @@ export const authMiddleware: MiddlewareHandler = async (c, next) => {
     const found = findUser(username)
     if (found === null) return c.json({ error: 'Unauthorized' }, 401)
     if (found.type === 'user' && !found.record.enabled) return c.json({ error: 'Unauthorized' }, 401)
+    if (found.type === 'admin' && found.record.enabled === false) return c.json({ error: 'Unauthorized' }, 401)
+    const actualIsAdmin = found.type === 'admin'
+    if ((payload['isAdmin'] as boolean) !== actualIsAdmin) return c.json({ error: 'Unauthorized' }, 401)
     c.set('user', {
       username,
-      isAdmin: payload['isAdmin'] as boolean,
+      isAdmin: actualIsAdmin,
       resourceId: (payload['resourceId'] as string | null) ?? null,
     })
     await next()

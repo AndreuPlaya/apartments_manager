@@ -45,17 +45,17 @@ describe('saveSettings', () => {
 })
 
 describe('ensureSecretKey', () => {
-  it('returns existing key without saving when already set', () => {
-    const key = ensureSecretKey()
-    expect(key).toBe('existing-key')
+  it('does not save when key is already set', () => {
+    ensureSecretKey()
     expect(writeJson).not.toHaveBeenCalled()
   })
 
   it('generates and saves a new key when secret_key is empty', () => {
     vi.mocked(readJson).mockReturnValue({ ...baseSettings, secret_key: '' })
-    const key = ensureSecretKey()
-    expect(key).toHaveLength(64) // 32 bytes hex
+    ensureSecretKey()
     expect(writeJson).toHaveBeenCalledOnce()
+    const saved = vi.mocked(writeJson).mock.calls[0]?.[1] as any
+    expect(saved?.secret_key).toHaveLength(64)
   })
 })
 

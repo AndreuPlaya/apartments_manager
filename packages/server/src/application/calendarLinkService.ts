@@ -1,13 +1,28 @@
 import { randomUUID } from 'node:crypto'
 import type { CalendarLink, CreateCalendarLinkRequest } from '../domain/models.js'
 import { loadCalendarLinks, saveCalendarLinks } from '../infrastructure/data.js'
-import { NotFoundError } from './errors.js'
+import { NotFoundError, ValidationError } from './errors.js'
+
+const ALLOWED_PROTOCOLS = new Set(['https:', 'http:', 'webcal:'])
+
+function validateCalendarUrl(url: string): void {
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    throw new ValidationError('Invalid URL format')
+  }
+  if (!ALLOWED_PROTOCOLS.has(parsed.protocol)) {
+    throw new ValidationError(`URL protocol must be http, https, or webcal`)
+  }
+}
 
 export function listCalendarLinks(): CalendarLink[] {
   return loadCalendarLinks()
 }
 
 export function upsertCalendarLink(req: CreateCalendarLinkRequest): CalendarLink {
+  validateCalendarUrl(req.url)
   const all = loadCalendarLinks()
   const existing = all.find(
     (l) => l.channelId === req.channelId && l.apartmentId === req.apartmentId,

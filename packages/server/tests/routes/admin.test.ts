@@ -2,11 +2,15 @@ import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('../../src/middleware/auth.js', () => ({
-  authMiddleware: async (_c: any, next: any) => { await next() },
+  authMiddleware: async (c: any, next: any) => {
+    c.set('user', { username: 'admin', isAdmin: true, resourceId: null })
+    await next()
+  },
 }))
 vi.mock('../../src/middleware/admin.js', () => ({
   adminMiddleware: async (_c: any, next: any) => { await next() },
 }))
+vi.mock('../../src/infrastructure/audit.js')
 vi.mock('../../src/application/apartmentService.js')
 vi.mock('../../src/application/bookingService.js')
 vi.mock('../../src/application/calendarLinkService.js')

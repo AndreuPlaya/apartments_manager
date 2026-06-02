@@ -15,7 +15,6 @@ import {
 } from '../infrastructure/settings.js'
 import {
   ConflictError,
-  ForbiddenError,
   NotFoundError,
   UnauthorizedError,
   ValidationError,
@@ -135,7 +134,7 @@ export function listUsers(): UserListItem[] {
   const items: UserListItem[] = []
 
   for (const [username, record] of Object.entries(settings.admin_users)) {
-    items.push({ id: username, username, full_name: record.full_name, isAdmin: true, enabled: true })
+    items.push({ id: username, username, full_name: record.full_name, isAdmin: true, enabled: record.enabled !== false })
   }
 
   for (const [id, record] of Object.entries(settings.users)) {
@@ -222,9 +221,11 @@ export async function updateUser(id: string, req: UpdateUserRequest): Promise<Us
 export function deleteUser(id: string): void {
   const settings = loadSettings()
 
-  // Prevent deleting admins via this route
-  if (settings.admin_users[id] !== undefined) {
-    throw new ForbiddenError('Cannot delete admin accounts via this route')
+  const adminRecord = settings.admin_users[id]
+  if (adminRecord !== undefined) {
+    adminRecord.enabled = false
+    saveSettings(settings)
+    return
   }
 
   const record = settings.users[id]
