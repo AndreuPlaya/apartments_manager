@@ -1,123 +1,219 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { MetricsData } from '../../api/client'
-import { api } from '../../api/client'
-import { useAsyncOp } from '../../composables/useAsyncOp'
+import { useMetrics } from './useMetrics'
 
-const { t, locale } = useI18n()
-const { loading, run } = useAsyncOp()
-const metrics = ref<MetricsData | null>(null)
-const selectedYear = ref(new Date().getFullYear())
-
-function monthName(monthIndex: number): string {
-  return new Date(2024, monthIndex - 1).toLocaleDateString(locale.value, { month: 'short' })
-}
-
-async function load() {
-  const res = await run(() => api.metrics.get())
-  if (res) metrics.value = res
-}
-
-onMounted(load)
-
-const availableYears = computed(() => {
-  if (!metrics.value) return []
-  return [...new Set(metrics.value.occupancy.map((o) => o.year))].sort()
-})
-
-const occupancyForYear = computed(() => {
-  if (!metrics.value) return []
-  return metrics.value.occupancy.filter((o) => o.year === selectedYear.value)
-})
-
-const revenueForYear = computed(() => {
-  if (!metrics.value) return []
-  return metrics.value.revenue.filter((r) => r.year === selectedYear.value)
-})
-
-const totalRevenue = computed(() => revenueForYear.value.reduce((s, r) => s + r.revenue, 0))
-const avgOccupancy = computed(() => {
-  const rows = occupancyForYear.value
-  if (!rows.length) return 0
-  return rows.reduce((s, r) => s + r.occupancyRate, 0) / rows.length
-})
+const { t } = useI18n()
+const {
+  metrics,
+  loading,
+  selectedYear,
+  availableYears,
+  occupancyForYear,
+  revenueForYear,
+  totalRevenue,
+  avgOccupancy,
+  occupancyAll,
+  revenueAll,
+  gridLines,
+  occBars,
+  revBars,
+  cumLine,
+  RING_R,
+  ringDash,
+  ringGap,
+  CW,
+  CH,
+  PAD,
+  monthName,
+  fmtRevenue,
+} = useMetrics()
 </script>
 
 <template>
-  <div>
-    <div class="page-header">
-      <h3>{{ t('metrics.title') }}</h3>
-      <div class="page-header__spacer" />
-      <select v-model="selectedYear" style="width: auto">
-        <option v-for="y in availableYears" :key="y" :value="y">{{ y }}</option>
-      </select>
+  <div class="ms">
+    <!-- Year tabs -->
+    <div v-if="availableYears.length" class="ms__years">
+      <button
+        v-for="y in availableYears"
+        :key="y"
+        :class="['ms__year-btn', { 'ms__year-btn--active': y === selectedYear }]"
+        @click="selectedYear = y"
+      >
+        {{ y }}
+      </button>
     </div>
 
-    <div v-if="loading" class="empty-state"><p>{{ t('common.loading') }}</p></div>
-    <div v-else-if="!metrics" class="empty-state"><p>{{ t('metrics.noMetrics') }}</p></div>
-    <div v-else>
-      <!-- Year summary -->
-      <div class="summary-strip" style="margin-bottom: 1.5rem">
-        <div class="stat-card">
-          <div class="stat-card__value">€{{ totalRevenue.toFixed(0) }}</div>
-          <div class="stat-card__label">{{ t('metrics.totalRevenue', { year: selectedYear }) }}</div>
+    <!-- Loading -->
+    <div v-if="loading" class="empty-state">
+      <p>{{ t('common.loading') }}</p>
+    </div>
+
+    <template v-else-if="metrics">
+      <!-- KPI Row -->
+      <div class="ms__kpis">
+        <div class="ms__kpi ms__kpi--rev">
+          <div class="ms__kpi-label">
+            {{ t('metrics.totalRevenue', { year: selectedYear }) }}
+          </div>
+          <div class="ms__kpi-num ms__kpi-num--rev">
+            <sup class="ms__kpi-sup">€</sup>{{ fmtRevenue(totalRevenue) }}
+          </div>
+          <div class="ms__kpi-sub">{{ revenueForYear.length }}&thinsp;months recorded</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-card__value">{{ avgOccupancy.toFixed(1) }}%</div>
-          <div class="stat-card__label">{{ t('metrics.avgOccupancy', { year: selectedYear }) }}</div>
+
+        <div class="ms__kpi ms__kpi--occ">
+          <div class="ms__kpi-label">
+            {{ t('metrics.avgOccupancy', { year: selectedYear }) }}
+          </div>
+          <div class="ms__kpi-ring-row">
+            <div>
+              <div class="ms__kpi-num ms__kpi-num--occ">
+                {{ avgOccupancy.toFixed(1) }}<sup class="ms__kpi-sup">%</sup>
+              </div>
+              <div class="ms__kpi-sub">{{ occupancyForYear.length }}&thinsp;months recorded</div>
+            </div>
+            <svg viewBox="0 0 80 80" class="ms__ring">
+              <circle cx="40" cy="40" :r="RING_R" fill="none" stroke="#e5e7eb" stroke-width="5" />
+              <circle
+                cx="40" cy="40" :r="RING_R"
+                fill="none"
+                stroke="#16a34a"
+                stroke-width="5"
+                stroke-linecap="round"
+                :stroke-dasharray="`${ringDash} ${ringGap}`"
+                transform="rotate(-90 40 40)"
+                class="ms__ring-arc"
+              />
+            </svg>
+          </div>
         </div>
       </div>
 
-      <!-- Occupancy table -->
-      <h4 style="margin-bottom: 0.75rem">{{ t('metrics.occupancy') }}</h4>
-      <div class="table-wrap" style="margin-bottom: 1.5rem">
-        <table>
-          <thead>
-            <tr>
-              <th>{{ t('metrics.month') }}</th>
-              <th>{{ t('metrics.bookedNights') }}</th>
-              <th>{{ t('metrics.totalNights') }}</th>
-              <th>{{ t('metrics.occupancyRate') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="o in occupancyForYear" :key="`${o.year}-${o.month}`">
-              <td>{{ monthName(o.month) }}</td>
-              <td>{{ o.bookedNights }}</td>
-              <td>{{ o.totalNights }}</td>
-              <td>{{ o.occupancyRate.toFixed(1) }}%</td>
-            </tr>
-            <tr v-if="occupancyForYear.length === 0">
-              <td colspan="4" class="text-muted" style="text-align: center">{{ t('metrics.noData') }}</td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- Charts -->
+      <div class="ms__charts">
+        <!-- Occupancy bars -->
+        <div class="ms__chart">
+          <div class="ms__chart-header">
+            <span class="ms__chart-title">{{ t('metrics.occupancy') }}</span>
+            <span class="ms__chart-sub-label">Monthly rate %</span>
+          </div>
+          <svg :viewBox="`0 0 ${CW} ${CH}`" class="ms__svg">
+            <defs>
+              <linearGradient id="ms-g-high" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#2563eb" />
+                <stop offset="100%" stop-color="#2563eb" stop-opacity="0.08" />
+              </linearGradient>
+              <linearGradient id="ms-g-mid" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#d97706" />
+                <stop offset="100%" stop-color="#d97706" stop-opacity="0.08" />
+              </linearGradient>
+              <linearGradient id="ms-g-low" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#dc2626" />
+                <stop offset="100%" stop-color="#dc2626" stop-opacity="0.08" />
+              </linearGradient>
+            </defs>
+            <!-- Grid lines -->
+            <line
+              v-for="g in gridLines" :key="g.y"
+              :x1="PAD.l" :y1="g.y" :x2="CW - PAD.r" :y2="g.y"
+              class="ms__grid-line"
+            />
+            <!-- Bars -->
+            <g v-for="b in occBars" :key="b.month" class="ms__bar-grp">
+              <rect
+                :x="b.x" :y="b.y" :width="b.w" :height="b.h"
+                :fill="`url(#ms-g-${b.tier})`"
+                rx="3"
+                class="ms__bar"
+              />
+              <text :x="b.cx" :y="b.labelY" text-anchor="middle" class="ms__chart-label">
+                {{ b.month }}
+              </text>
+            </g>
+          </svg>
+        </div>
+
+        <!-- Revenue bars + cumulative line -->
+        <div class="ms__chart">
+          <div class="ms__chart-header">
+            <span class="ms__chart-title">{{ t('metrics.revenue') }}</span>
+            <div class="ms__chart-legend">
+              <span class="ms__legend-bar">Monthly</span>
+              <span class="ms__legend-line">Cumulative</span>
+            </div>
+          </div>
+          <svg :viewBox="`0 0 ${CW} ${CH}`" class="ms__svg">
+            <defs>
+              <linearGradient id="ms-g-rev" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#16a34a" stop-opacity="0.55" />
+                <stop offset="100%" stop-color="#16a34a" stop-opacity="0.04" />
+              </linearGradient>
+            </defs>
+            <!-- Grid lines -->
+            <line
+              v-for="g in gridLines" :key="g.y"
+              :x1="PAD.l" :y1="g.y" :x2="CW - PAD.r" :y2="g.y"
+              class="ms__grid-line"
+            />
+            <!-- Revenue bars -->
+            <rect
+              v-for="b in revBars" :key="b.month"
+              :x="b.x" :y="b.y" :width="b.w" :height="b.h"
+              fill="url(#ms-g-rev)"
+              rx="3"
+              class="ms__bar"
+            />
+            <!-- Cumulative line -->
+            <path
+              :d="cumLine.path"
+              fill="none"
+              stroke="#16a34a"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <!-- Dots -->
+            <circle
+              v-for="pt in cumLine.pts" :key="pt.x"
+              :cx="pt.x" :cy="pt.y"
+              r="2.5"
+              fill="#16a34a"
+              :style="{ display: pt.cum > 0 ? '' : 'none' }"
+            />
+            <!-- Month labels -->
+            <text
+              v-for="b in revBars" :key="`rl-${b.month}`"
+              :x="b.cx" :y="b.labelY"
+              text-anchor="middle"
+              class="ms__chart-label"
+            >{{ b.month }}</text>
+          </svg>
+        </div>
       </div>
 
-      <!-- Revenue table -->
-      <h4 style="margin-bottom: 0.75rem">{{ t('metrics.revenue') }}</h4>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>{{ t('metrics.month') }}</th>
-              <th>{{ t('metrics.revenue') }}</th>
-              <th>{{ t('metrics.cumulative') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="r in revenueForYear" :key="`${r.year}-${r.month}`">
-              <td>{{ monthName(r.month) }}</td>
-              <td>€{{ r.revenue.toFixed(2) }}</td>
-              <td>€{{ r.cumulativeRevenue.toFixed(2) }}</td>
-            </tr>
-            <tr v-if="revenueForYear.length === 0">
-              <td colspan="3" class="text-muted" style="text-align: center">{{ t('metrics.noData') }}</td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- Month strip -->
+      <div class="ms__strip">
+        <div v-for="(o, i) in occupancyAll" :key="o.month" class="ms__strip-cell">
+          <div class="ms__strip-month">{{ monthName(o.month) }}</div>
+          <div
+            :class="[
+              'ms__strip-rate',
+              o.occupancyRate >= 70 ? 'ms__strip-rate--hi'
+              : o.occupancyRate >= 40 ? 'ms__strip-rate--md'
+              : 'ms__strip-rate--lo',
+            ]"
+          >
+            {{ o.occupancyRate > 0 ? o.occupancyRate.toFixed(0) + '%' : '—' }}
+          </div>
+          <div class="ms__strip-rev">
+            {{ revenueAll[i].revenue > 0 ? '€' + fmtRevenue(revenueAll[i].revenue) : '—' }}
+          </div>
+        </div>
       </div>
+    </template>
+
+    <div v-else class="empty-state">
+      <p>{{ t('metrics.noMetrics') }}</p>
     </div>
   </div>
 </template>
