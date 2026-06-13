@@ -56,7 +56,7 @@
   padding: 0.25rem 0.5rem 0.25rem 0;
   flex-shrink: 0;
   position: sticky;
-  top: 1rem;
+  top: calc(var(--nav-height) + 1.25rem);
 }
 
 .alpha-btn {
