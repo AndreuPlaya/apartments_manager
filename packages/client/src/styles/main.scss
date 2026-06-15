@@ -598,12 +598,12 @@ input[type="number"] { -moz-appearance: textfield; }
   &--start {
     border-top-left-radius: 6px;
     border-bottom-left-radius: 6px;
-    margin-left: 5rem;
+    margin-left: calc(100% / 14);
   }
   &--end {
     border-top-right-radius: 6px;
     border-bottom-right-radius: 6px;
-    margin-right: 8rem;
+    margin-right: calc(100% / 14);
   }
 
   &--highlighted {

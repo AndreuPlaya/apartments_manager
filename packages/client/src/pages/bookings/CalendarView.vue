@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Booking, Apartment, Client, Channel, BookingStatus } from '../../api/client'
 import BookingInfoPopup from './BookingInfoPopup.vue'
@@ -19,6 +19,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   update: [id: string, changes: { fromDate?: string; toDate?: string }]
   patch: [id: string, changes: { comment?: string; status?: BookingStatus; paidDate?: string }]
+  'month-change': [year: number, month: number]
 }>()
 
 // ── Month navigation ──────────────────────────────────────────────────────────
@@ -35,6 +36,8 @@ function nextMonth() {
   if (calMonth.value === 11) { calMonth.value = 0; calYear.value++ }
   else calMonth.value++
 }
+
+watch([calYear, calMonth], ([y, m]) => emit('month-change', y, m))
 
 const todayFlash = ref(false)
 let flashTimer: ReturnType<typeof setTimeout> | null = null

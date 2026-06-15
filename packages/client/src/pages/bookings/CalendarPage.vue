@@ -30,6 +30,14 @@ function monthsAgo(fromDate: string, months: number): string {
 
 const loadFromDate = ref(monthsAgo(new Date().toISOString().split('T')[0]!, 2))
 
+async function onMonthChange(year: number, month: number) {
+  const firstOfMonth = `${year}-${String(month + 1).padStart(2, '0')}-01`
+  if (firstOfMonth < loadFromDate.value) {
+    loadFromDate.value = firstOfMonth
+    await load()
+  }
+}
+
 async function load() {
   pageLoading.value = true
   try {
@@ -128,6 +136,7 @@ async function handleClientSave(client: Client, patch: Partial<Omit<Client, 'id'
       :loading="pageLoading"
       @update="updateBookingDates"
       @patch="onPatch"
+      @month-change="onMonthChange"
     />
   </div>
 
