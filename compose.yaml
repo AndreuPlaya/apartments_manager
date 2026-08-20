@@ -11,6 +11,11 @@ services:
     environment:
       - DATA_DIR=/data
       - NODE_ENV=production
+      # Number of reverse proxies in front of this container. One Caddy today,
+      # so only the last X-Forwarded-For hop is trusted when rate-limiting by
+      # IP. Raise this if another proxy is added in front, or the limit can be
+      # evaded by forging the header.
+      - TRUST_PROXY=1
     restart: unless-stopped
     healthcheck:
       # 127.0.0.1, not localhost: the server binds IPv4 only, and localhost

@@ -5,12 +5,16 @@ import { rateLimiter } from 'hono-rate-limiter'
 import type { Context } from 'hono'
 import { AppError } from '../application/errors.js'
 import { authenticate, createUser } from '../application/userService.js'
+import { clientIp } from '../infrastructure/clientIp.js'
 import { getSecret, isFirstRun } from '../infrastructure/settings.js'
 
 const authLimiter = rateLimiter({
   windowMs: 15 * 60 * 1000,
   limit: 20,
-  keyGenerator: (c) => c.req.header('x-forwarded-for') ?? c.req.header('x-real-ip') ?? 'unknown',
+  // Not the raw X-Forwarded-For header: only the hops our own proxies appended
+  // are trustworthy, otherwise a client can forge a fresh IP per request and
+  // walk straight past this limit. See clientIp().
+  keyGenerator: clientIp,
 })
 
 const authRoutes = new Hono()
