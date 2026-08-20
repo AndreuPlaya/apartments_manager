@@ -68,10 +68,11 @@ describe('TextareaInput — inline mode (default)', () => {
     expect(w.find('textarea').attributes('rows')).toBe('4')
   })
 
-  it('defaults to rows=2', async () => {
+  // Inline editing starts as a single row and grows; form mode still defaults to 2.
+  it('defaults to rows=1', async () => {
     const w = mount(TextareaInput, { props: { text: 'Comment', modelValue: '' } })
     await w.find('.detail-field').trigger('click')
-    expect(w.find('textarea').attributes('rows')).toBe('2')
+    expect(w.find('textarea').attributes('rows')).toBe('1')
   })
 
   it('emits update:modelValue with trimmed value on blur', async () => {

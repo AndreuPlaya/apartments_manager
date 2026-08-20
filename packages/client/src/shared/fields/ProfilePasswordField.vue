@@ -57,7 +57,18 @@ function commit() {
         @keydown.enter.prevent="commit"
         @keydown.escape.prevent="cancel"
       />
-      <button type="button" class="pf-pw-eye" tabindex="-1" @click="visible = !visible" :aria-label="visible ? 'Hide' : 'Show'">
+      <!--
+        mousedown fires before blur; preventing its default keeps focus on the
+        input, so revealing the password does not commit and close the editor.
+      -->
+      <button
+        type="button"
+        class="pf-pw-eye"
+        tabindex="-1"
+        :aria-label="visible ? 'Hide' : 'Show'"
+        @mousedown.prevent
+        @click="visible = !visible"
+      >
         <AppIcon :name="visible ? 'eye-off' : 'eye'" :size="14" />
       </button>
     </div>

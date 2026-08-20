@@ -290,3 +290,39 @@ describe('api.metrics.*', () => {
     expect(await api.metrics.get()).toEqual(metrics)
   })
 })
+
+describe('api.profile.*', () => {
+  const profile = { username: 'alice', full_name: 'Alice', email: 'alice@example.com', isAdmin: false }
+
+  it('get fetches /api/profile', async () => {
+    const fetchMock = mockFetch(200, profile)
+    vi.stubGlobal('fetch', fetchMock)
+
+    expect(await api.profile.get()).toEqual(profile)
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/profile')
+  })
+
+  it('update patches /api/profile with the given fields', async () => {
+    const fetchMock = mockFetch(200, profile)
+    vi.stubGlobal('fetch', fetchMock)
+
+    expect(await api.profile.update({ full_name: 'Alicia' })).toEqual(profile)
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe('/api/profile')
+    expect(init.method).toBe('PATCH')
+    expect(JSON.parse(init.body)).toEqual({ full_name: 'Alicia' })
+  })
+
+  it('changePassword patches /api/profile/password', async () => {
+    const fetchMock = mockFetch(200, { ok: true })
+    vi.stubGlobal('fetch', fetchMock)
+
+    expect(await api.profile.changePassword({ current_password: 'old', password: 'new' })).toEqual({ ok: true })
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe('/api/profile/password')
+    expect(init.method).toBe('PATCH')
+    expect(JSON.parse(init.body)).toEqual({ current_password: 'old', password: 'new' })
+  })
+})

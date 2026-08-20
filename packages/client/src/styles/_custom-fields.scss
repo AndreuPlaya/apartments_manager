@@ -55,6 +55,27 @@
 
 // ── SelectInput ───────────────────────────────────────────────────────────────
 
+.custom-select-wrap {
+  position: relative;
+}
+
+// Mirrors the select value so native `required` validation still fires. Kept
+// out of sight but *not* display:none / visibility:hidden — browsers refuse to
+// validate controls they cannot focus, and would throw instead of showing the
+// validation bubble.
+.custom-select-validity {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .custom-select-trigger {
   display: flex;
   align-items: center;
@@ -158,6 +179,7 @@
 // ── CheckboxInput ─────────────────────────────────────────────────────────────
 
 .form-checkbox {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -168,6 +190,7 @@
 }
 
 .detail-field__checkbox {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -176,6 +199,30 @@
   color: var(--text);
   user-select: none;
   padding: 0.05rem 0;
+}
+
+// Anchors the hidden checkbox of the single-line inline variant, which has no
+// <label> wrapper of its own.
+.detail-field--checkbox {
+  position: relative;
+}
+
+// The real checkbox, kept out of sight but still focusable and announced by
+// screen readers. Not display:none — that would drop it from the tab order and
+// from the accessibility tree, leaving the control mouse-only.
+.custom-cb__input {
+  position: absolute;
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+
+  // Focus ring is drawn on the visual box that replaces it.
+  &:focus-visible + .custom-cb {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35);
+  }
 }
 
 .custom-cb {

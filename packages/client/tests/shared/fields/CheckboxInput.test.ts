@@ -40,14 +40,20 @@ describe('CheckboxInput — inline single-line (no checkboxLabel)', () => {
 
   it('emits update:modelValue with true on check', async () => {
     const w = mount(CheckboxInput, { props: { text: 'Active', modelValue: false } })
-    await w.find('input').setValue(true)
+    await w.find('.detail-field').trigger('click')
     expect(w.emitted('update:modelValue')).toEqual([[true]])
   })
 
   it('emits update:modelValue with false on uncheck', async () => {
     const w = mount(CheckboxInput, { props: { text: 'Active', modelValue: true } })
-    await w.find('input').setValue(false)
+    await w.find('.detail-field').trigger('click')
     expect(w.emitted('update:modelValue')).toEqual([[false]])
+  })
+
+  it('does not emit when rights=false', async () => {
+    const w = mount(CheckboxInput, { props: { text: 'Active', modelValue: false, rights: false } })
+    await w.find('.detail-field').trigger('click')
+    expect(w.emitted('update:modelValue')).toBeFalsy()
   })
 })
 
@@ -85,7 +91,7 @@ describe('CheckboxInput — inline two-line (with checkboxLabel)', () => {
 
   it('emits update:modelValue on change', async () => {
     const w = mount(CheckboxInput, { props: { text: 'Crib', modelValue: false, checkboxLabel: 'Requested' } })
-    await w.find('input').setValue(true)
+    await w.find('.detail-field__checkbox').trigger('click')
     expect(w.emitted('update:modelValue')).toEqual([[true]])
   })
 })
@@ -114,13 +120,66 @@ describe('CheckboxInput — form mode', () => {
 
   it('emits update:modelValue with true on check', async () => {
     const w = mount(CheckboxInput, { props: { text: 'Active', modelValue: false, mode: 'form' } })
-    await w.find('input').setValue(true)
+    await w.find('label.form-checkbox').trigger('click')
     expect(w.emitted('update:modelValue')).toEqual([[true]])
   })
 
   it('emits update:modelValue with false on uncheck', async () => {
     const w = mount(CheckboxInput, { props: { text: 'Active', modelValue: true, mode: 'form' } })
-    await w.find('input').setValue(false)
+    await w.find('label.form-checkbox').trigger('click')
     expect(w.emitted('update:modelValue')).toEqual([[false]])
+  })
+})
+
+describe('CheckboxInput — keyboard and assistive tech', () => {
+  it('exposes a real checkbox rather than a decorative span', () => {
+    const w = mount(CheckboxInput, { props: { text: 'Active', modelValue: false } })
+    const input = w.find('input[type="checkbox"]')
+
+    expect(input.exists()).toBe(true)
+    // display:none would drop it from the tab order and the accessibility tree.
+    expect(input.attributes('style')).toBeUndefined()
+  })
+
+  it('marks the painted checkbox as decorative', () => {
+    const w = mount(CheckboxInput, { props: { text: 'Active', modelValue: false } })
+    expect(w.find('.custom-cb').attributes('aria-hidden')).toBe('true')
+  })
+
+  it('names the checkbox when no label wraps it', () => {
+    const w = mount(CheckboxInput, { props: { text: 'Active', modelValue: false } })
+    expect(w.find('input').attributes('aria-label')).toBe('Active')
+  })
+
+  it('toggles from the keyboard in inline mode', async () => {
+    const w = mount(CheckboxInput, { props: { text: 'Active', modelValue: false } })
+    await w.find('input').trigger('change')
+    expect(w.emitted('update:modelValue')).toEqual([[true]])
+  })
+
+  it('toggles from the keyboard in two-line inline mode', async () => {
+    const w = mount(CheckboxInput, {
+      props: { text: 'Crib', modelValue: false, checkboxLabel: 'Requested' },
+    })
+    await w.find('input').trigger('change')
+    expect(w.emitted('update:modelValue')).toEqual([[true]])
+  })
+
+  it('toggles from the keyboard in form mode', async () => {
+    const w = mount(CheckboxInput, { props: { text: 'Active', modelValue: true, mode: 'form' } })
+    await w.find('input').trigger('change')
+    expect(w.emitted('update:modelValue')).toEqual([[false]])
+  })
+
+  it('emits once per label click, not twice', async () => {
+    const w = mount(CheckboxInput, { props: { text: 'Active', modelValue: false, mode: 'form' } })
+    await w.find('label.form-checkbox').trigger('click')
+    expect(w.emitted('update:modelValue')).toHaveLength(1)
+  })
+
+  it('emits once per inline container click, not twice', async () => {
+    const w = mount(CheckboxInput, { props: { text: 'Active', modelValue: false } })
+    await w.find('.detail-field').trigger('click')
+    expect(w.emitted('update:modelValue')).toHaveLength(1)
   })
 })

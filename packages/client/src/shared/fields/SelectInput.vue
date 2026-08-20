@@ -51,6 +51,12 @@ function selectOption(val: string) {
   if (val !== props.modelValue) emit('update:modelValue', val)
 }
 
+// The browser focuses an invalid control to show its validation bubble; hand
+// that focus to the visible trigger, since the mirror input is invisible.
+function focusTrigger() {
+  triggerRef.value?.focus()
+}
+
 function handleScroll() {
   if (isOpen.value) isOpen.value = false
 }
@@ -63,20 +69,36 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll, { capture: 
   <!-- Form mode -->
   <div v-if="mode === 'form'" class="form-group">
     <label>{{ text }}</label>
-    <div
-      ref="triggerRef"
-      class="custom-select-trigger"
-      :class="{ 'custom-select-trigger--open': isOpen, 'custom-select-trigger--placeholder': isPlaceholderActive }"
-      role="combobox"
-      :aria-expanded="isOpen"
-      tabindex="0"
-      @click="openDropdown"
-      @keydown.enter.prevent="openDropdown"
-      @keydown.space.prevent="openDropdown"
-      @keydown.escape.prevent="isOpen = false"
-    >
-      <span>{{ displayLabel }}</span>
-      <AppIcon name="chevron-down" :size="14" :stroke-width="2" class="chevron" :class="{ 'chevron--open': isOpen }" />
+    <div class="custom-select-wrap">
+      <div
+        ref="triggerRef"
+        class="custom-select-trigger"
+        :class="{ 'custom-select-trigger--open': isOpen, 'custom-select-trigger--placeholder': isPlaceholderActive }"
+        role="combobox"
+        :aria-expanded="isOpen"
+        tabindex="0"
+        @click="openDropdown"
+        @keydown.enter.prevent="openDropdown"
+        @keydown.space.prevent="openDropdown"
+        @keydown.escape.prevent="isOpen = false"
+      >
+        <span>{{ displayLabel }}</span>
+        <AppIcon name="chevron-down" :size="14" :stroke-width="2" class="chevron" :class="{ 'chevron--open': isOpen }" />
+      </div>
+      <!--
+        The trigger is a <div>, which the browser cannot validate. This mirror
+        input carries `required` so a required select blocks submit like every
+        other field in the form. It must stay visible to the layout engine —
+        browsers skip validation for display:none controls.
+      -->
+      <input
+        class="custom-select-validity"
+        :value="modelValue"
+        :required="required"
+        tabindex="-1"
+        aria-hidden="true"
+        @focus="focusTrigger"
+      />
     </div>
   </div>
 

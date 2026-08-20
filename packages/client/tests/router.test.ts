@@ -89,6 +89,12 @@ describe('router beforeEach guard', () => {
     expect(router.currentRoute.value.path).toBe('/clients')
   })
 
+  it('allows a non-admin to access /profile', async () => {
+    vi.mocked(api.auth.config).mockResolvedValue({ ok: true, is_admin: false, username: 'alice' })
+    await router.push('/profile')
+    expect(router.currentRoute.value.path).toBe('/profile')
+  })
+
   it('redirects non-admin away from /config to /', async () => {
     vi.mocked(api.auth.config).mockResolvedValue({ ok: true, is_admin: false, username: 'alice' })
     await router.push('/config')

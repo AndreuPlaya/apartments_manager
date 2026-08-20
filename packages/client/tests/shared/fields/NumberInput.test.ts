@@ -10,14 +10,14 @@ describe('NumberInput — inline mode (default)', () => {
 
   it('shows the numeric value', () => {
     const w = mount(NumberInput, { props: { text: 'Adults', modelValue: 2 } })
-    expect(w.find('.detail-field__val').text()).toBe('2')
+    expect(w.find('.stepper-val').text()).toBe('2')
   })
 
   it('uses displayFn when provided', () => {
     const w = mount(NumberInput, {
       props: { text: 'Amount', modelValue: 9.5, displayFn: (v: number) => `€${v.toFixed(2)}` },
     })
-    expect(w.find('.detail-field__val').text()).toBe('€9.50')
+    expect(w.find('.stepper-val').text()).toBe('€9.50')
   })
 
   it('adds detail-field--wide when wide=true', () => {
@@ -32,25 +32,25 @@ describe('NumberInput — inline mode (default)', () => {
 
   it('does not start editing when rights=false', async () => {
     const w = mount(NumberInput, { props: { text: 'N', modelValue: 1, rights: false } })
-    await w.find('.detail-field').trigger('click')
+    await w.find('.stepper-val').trigger('click')
     expect(w.find('input').exists()).toBe(false)
   })
 
   it('enters edit mode on click', async () => {
     const w = mount(NumberInput, { props: { text: 'Adults', modelValue: 2 } })
-    await w.find('.detail-field').trigger('click')
+    await w.find('.stepper-val').trigger('click')
     expect(w.find('input').exists()).toBe(true)
   })
 
   it('pre-fills draft with current value', async () => {
     const w = mount(NumberInput, { props: { text: 'Adults', modelValue: 3 } })
-    await w.find('.detail-field').trigger('click')
+    await w.find('.stepper-val').trigger('click')
     expect((w.find('input').element as HTMLInputElement).value).toBe('3')
   })
 
   it('passes min/max/step to the input', async () => {
     const w = mount(NumberInput, { props: { text: 'N', modelValue: 1, min: 0, max: 100, step: 0.5 } })
-    await w.find('.detail-field').trigger('click')
+    await w.find('.stepper-val').trigger('click')
     const input = w.find('input')
     expect(input.attributes('min')).toBe('0')
     expect(input.attributes('max')).toBe('100')
@@ -59,7 +59,7 @@ describe('NumberInput — inline mode (default)', () => {
 
   it('emits update:modelValue as a number on blur', async () => {
     const w = mount(NumberInput, { props: { text: 'Adults', modelValue: 2 } })
-    await w.find('.detail-field').trigger('click')
+    await w.find('.stepper-val').trigger('click')
     await w.find('input').setValue('5')
     await w.find('input').trigger('blur')
     expect(w.emitted('update:modelValue')).toEqual([[5]])
@@ -67,7 +67,7 @@ describe('NumberInput — inline mode (default)', () => {
 
   it('emits on Enter keydown', async () => {
     const w = mount(NumberInput, { props: { text: 'Adults', modelValue: 2 } })
-    await w.find('.detail-field').trigger('click')
+    await w.find('.stepper-val').trigger('click')
     await w.find('input').setValue('4')
     await w.find('input').trigger('keydown', { key: 'Enter' })
     expect(w.emitted('update:modelValue')).toEqual([[4]])
@@ -75,14 +75,14 @@ describe('NumberInput — inline mode (default)', () => {
 
   it('does not emit when value is unchanged', async () => {
     const w = mount(NumberInput, { props: { text: 'Adults', modelValue: 2 } })
-    await w.find('.detail-field').trigger('click')
+    await w.find('.stepper-val').trigger('click')
     await w.find('input').trigger('blur')
     expect(w.emitted('update:modelValue')).toBeFalsy()
   })
 
   it('cancels edit on Escape without emitting', async () => {
     const w = mount(NumberInput, { props: { text: 'Adults', modelValue: 2 } })
-    await w.find('.detail-field').trigger('click')
+    await w.find('.stepper-val').trigger('click')
     await w.find('input').setValue('9')
     await w.find('input').trigger('keydown', { key: 'Escape' })
     expect(w.find('input').exists()).toBe(false)
@@ -91,9 +91,65 @@ describe('NumberInput — inline mode (default)', () => {
 
   it('exits editing after commit', async () => {
     const w = mount(NumberInput, { props: { text: 'Adults', modelValue: 2 } })
-    await w.find('.detail-field').trigger('click')
+    await w.find('.stepper-val').trigger('click')
     await w.find('input').setValue('5')
     await w.find('input').trigger('blur')
+    expect(w.find('input').exists()).toBe(false)
+  })
+})
+
+describe('NumberInput — inline stepper buttons', () => {
+  const buttons = (w: ReturnType<typeof mount>) => w.findAll('.stepper-btn')
+
+  it('decrements by 1 by default', async () => {
+    const w = mount(NumberInput, { props: { text: 'Adults', modelValue: 2 } })
+    await buttons(w)[0].trigger('click')
+    expect(w.emitted('update:modelValue')).toEqual([[1]])
+  })
+
+  it('increments by 1 by default', async () => {
+    const w = mount(NumberInput, { props: { text: 'Adults', modelValue: 2 } })
+    await buttons(w)[1].trigger('click')
+    expect(w.emitted('update:modelValue')).toEqual([[3]])
+  })
+
+  it('steps by the step prop', async () => {
+    const w = mount(NumberInput, { props: { text: 'Price', modelValue: 10, step: 0.5 } })
+    await buttons(w)[1].trigger('click')
+    expect(w.emitted('update:modelValue')).toEqual([[10.5]])
+  })
+
+  it('avoids floating-point drift', async () => {
+    const w = mount(NumberInput, { props: { text: 'Price', modelValue: 0.1, step: 0.2 } })
+    await buttons(w)[1].trigger('click')
+    expect(w.emitted('update:modelValue')).toEqual([[0.3]])
+  })
+
+  it('disables decrement at the minimum', async () => {
+    const w = mount(NumberInput, { props: { text: 'Adults', modelValue: 1, min: 1 } })
+    expect(buttons(w)[0].attributes('disabled')).toBeDefined()
+    await buttons(w)[0].trigger('click')
+    expect(w.emitted('update:modelValue')).toBeFalsy()
+  })
+
+  it('disables increment at the maximum', async () => {
+    const w = mount(NumberInput, { props: { text: 'Adults', modelValue: 4, max: 4 } })
+    expect(buttons(w)[1].attributes('disabled')).toBeDefined()
+    await buttons(w)[1].trigger('click')
+    expect(w.emitted('update:modelValue')).toBeFalsy()
+  })
+
+  it('disables both buttons when rights=false', async () => {
+    const w = mount(NumberInput, { props: { text: 'Adults', modelValue: 2, rights: false } })
+    expect(buttons(w)[0].attributes('disabled')).toBeDefined()
+    expect(buttons(w)[1].attributes('disabled')).toBeDefined()
+    await buttons(w)[1].trigger('click')
+    expect(w.emitted('update:modelValue')).toBeFalsy()
+  })
+
+  it('does not open the editor when a stepper button is clicked', async () => {
+    const w = mount(NumberInput, { props: { text: 'Adults', modelValue: 2 } })
+    await buttons(w)[1].trigger('click')
     expect(w.find('input').exists()).toBe(false)
   })
 })
