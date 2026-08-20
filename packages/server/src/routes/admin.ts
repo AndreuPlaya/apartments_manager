@@ -63,6 +63,9 @@ adminRoutes.use('/api/admin/*', authMiddleware, adminMiddleware)
 const writeLimiter = rateLimiter({
   windowMs: 60 * 1000,
   limit: 120,
+  // The limiter always runs behind authMiddleware, which either sets the user
+  // or returns 401, so the fallback key is defensive only.
+  /* c8 ignore next */
   keyGenerator: (c) => c.get('user')?.username ?? 'unknown',
 })
 

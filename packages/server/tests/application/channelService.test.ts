@@ -1,59 +1,56 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Booking, Channel } from '../../src/domain/models.js'
-
-vi.mock('../../src/infrastructure/data.js')
-import {
-  loadBookings,
-  loadChannels,
-  saveChannels,
-} from '../../src/infrastructure/data.js'
-
+import { beforeEach, describe, expect, it } from 'vitest'
 import {
   createChannel,
   deleteChannel,
   listChannels,
   updateChannel,
 } from '../../src/application/channelService.js'
+import type { Channel } from '../../src/domain/models.js'
+import * as channels from '../../src/infrastructure/repositories/channels.js'
+import { seedBase, seedBooking, useTestDb } from '../helpers/testDb.js'
 
-const channel: Channel = {
-  id: 'ch1',
-  name: 'Airbnb',
-  commissionRate: 0.12,
-  isActive: true,
-}
+useTestDb()
+
+const airbnb: Channel = { id: 'ch2', name: 'Airbnb', commissionRate: 0.12, isActive: true }
 
 beforeEach(() => {
-  vi.clearAllMocks()
-  vi.mocked(loadChannels).mockReturnValue([channel])
-  vi.mocked(loadBookings).mockReturnValue([])
-  vi.mocked(saveChannels).mockImplementation(() => undefined)
+  seedBase()
+  channels.insert(airbnb)
 })
 
 describe('listChannels', () => {
-  it('returns what loadChannels returns', () => {
-    expect(listChannels()).toEqual([channel])
+  it('returns the stored channels ordered by name', () => {
+    expect(listChannels().map((c) => c.name)).toEqual(['Airbnb', 'Direct'])
   })
 })
 
 describe('createChannel', () => {
-  it('creates a channel with a generated id', () => {
-    vi.mocked(loadChannels).mockReturnValue([])
-    const result = createChannel({ name: 'Direct', commissionRate: 0, isActive: true })
+  it('creates a channel with a generated id and persists it', () => {
+    const result = createChannel({ name: 'Vrbo', commissionRate: 0.08, isActive: true })
+
     expect(result.id).toBeDefined()
-    expect(result.name).toBe('Direct')
-    expect(saveChannels).toHaveBeenCalledOnce()
+    expect(channels.findById(result.id)).toEqual(result)
   })
 
   it('throws ConflictError on duplicate name (case-insensitive)', () => {
-    expect(() => createChannel({ name: 'airbnb', commissionRate: 0, isActive: true })).toThrow('already exists')
+    expect(() => createChannel({ name: 'airbnb', commissionRate: 0, isActive: true })).toThrow(
+      'already exists',
+    )
+    expect(listChannels()).toHaveLength(2)
   })
 })
 
 describe('updateChannel', () => {
   it('updates a channel successfully', () => {
-    const result = updateChannel('ch1', { commissionRate: 0.15 })
+    const result = updateChannel('ch2', { commissionRate: 0.15 })
+
     expect(result.commissionRate).toBe(0.15)
-    expect(saveChannels).toHaveBeenCalledOnce()
+    expect(channels.findById('ch2')!.commissionRate).toBe(0.15)
+  })
+
+  it('persists isActive as a boolean', () => {
+    expect(updateChannel('ch2', { isActive: false }).isActive).toBe(false)
+    expect(channels.findById('ch2')!.isActive).toBe(false)
   })
 
   it('throws NotFoundError for unknown id', () => {
@@ -61,23 +58,19 @@ describe('updateChannel', () => {
   })
 
   it('throws ConflictError when renaming to an existing name', () => {
-    vi.mocked(loadChannels).mockReturnValue([
-      channel,
-      { id: 'ch2', name: 'Booking.com', commissionRate: 0.1, isActive: true },
-    ])
-    expect(() => updateChannel('ch1', { name: 'booking.com' })).toThrow('already exists')
+    expect(() => updateChannel('ch2', { name: 'direct' })).toThrow('already exists')
   })
 
   it('allows updating name to the same name (no conflict with self)', () => {
-    const result = updateChannel('ch1', { name: 'Airbnb' })
-    expect(result.name).toBe('Airbnb')
+    expect(updateChannel('ch2', { name: 'Airbnb' }).name).toBe('Airbnb')
   })
 })
 
 describe('deleteChannel', () => {
   it('deletes a channel with no bookings', () => {
-    deleteChannel('ch1')
-    expect(saveChannels).toHaveBeenCalledWith([])
+    deleteChannel('ch2')
+
+    expect(listChannels().map((c) => c.id)).toEqual(['ch1'])
   })
 
   it('throws NotFoundError for unknown id', () => {
@@ -85,12 +78,9 @@ describe('deleteChannel', () => {
   })
 
   it('throws ConflictError when the channel has existing bookings', () => {
-    const booking: Booking = {
-      id: 'b1', apartmentId: 'apt1', clientId: 'cli1', channelId: 'ch1',
-      fromDate: '2025-06-01', toDate: '2025-06-05', adultCount: 1, childrenCount: 0,
-      status: 'Active', totalAmountDue: 0, createdAt: '',
-    }
-    vi.mocked(loadBookings).mockReturnValue([booking])
+    seedBooking()
+
     expect(() => deleteChannel('ch1')).toThrow('existing bookings')
+    expect(listChannels()).toHaveLength(2)
   })
 })

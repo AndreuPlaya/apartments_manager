@@ -16,7 +16,8 @@ The public-facing (non-authenticated) homepage is **out of scope** — it will b
 
 | Layer | Technology |
 |---|---|
-| Runtime | Node.js 20, ESM throughout |
+| Runtime | Node.js 24, ESM throughout |
+| Persistence | SQLite via `node:sqlite` (builtin, no dependency) |
 | HTTP framework | Hono 4.x |
 | JWT | jose 5.x (HS256, httpOnly cookie, 7-day maxAge) |
 | Password hashing | bcryptjs 2.x (12 salt rounds) |
@@ -37,7 +38,8 @@ apartments_manager/
 ├── packages/
 │   ├── server/src/
 │   │   ├── domain/          # Pure types + pure functions (no I/O)
-│   │   ├── infrastructure/  # File I/O only (settings.json, data files)
+│   │   ├── infrastructure/  # I/O only (SQLite, settings.json)
+│   │   │   └── repositories/  # one module per entity — all SQL lives here
 │   │   ├── application/     # Business rules and authorization
 │   │   ├── middleware/      # auth.ts, admin.ts (cross-cutting only)
 │   │   ├── routes/          # auth.ts, editor.ts, admin.ts
@@ -50,7 +52,7 @@ apartments_manager/
 │       ├── styles/          # _variables.scss with CSS custom properties
 │       └── router.ts
 ├── data/                    # Volume-mounted; gitignored
-│   ├── input_data/
+│   ├── database/            # app.db (+ -wal/-shm) — created on first boot
 │   └── config/              # settings.json (auto-created on first boot)
 ├── docs/
 │   └── ARCHITECTURE_BLUEPRINT.md
@@ -98,13 +100,14 @@ Layers depend **inward only**: Routes → Application → Infrastructure → Dom
 ```
 Routes (HTTP contract only)
   └── Application Services (all business rules + authorization checks)
-        └── Infrastructure (file I/O only: settings.json, data files)
+        └── Infrastructure (I/O only: SQLite repositories, settings.json)
               └── Domain (TypeScript interfaces + pure functions)
 ```
 
 Key invariants:
 - **Domain** (`domain/models.ts`): interfaces only, no classes. Pure transform functions beside them.
-- **Infrastructure** (`infrastructure/settings.ts`, `infrastructure/data.ts`): all JSON writes use the atomic temp+rename pattern (`writeFileSync(tmp); renameSync(tmp, dest)`).
+- **Infrastructure**: `infrastructure/repositories/*.ts` hold every SQL statement, one module per entity, each exposing `list` / `findById` / `insert` / `update` / `deleteById` plus the lookups its service needs. `infrastructure/db.ts` owns the connection, the pragmas (`WAL`, `foreign_keys`, `busy_timeout`) and the `transaction()` helper. `infrastructure/settings.ts` still writes `settings.json` with the atomic temp+rename pattern.
+- **Schema changes** go in `infrastructure/migrations.ts` as a new append-only entry — never edit an applied migration. They run automatically on the first `getDb()`.
 - **Application services** receive plain data arguments (never Hono `Context`) so they are testable without HTTP.
 - **Routes** map request → service call → response. No business logic.
 - **Middleware** `auth.ts` sets `c.get('user')`; `admin.ts` checks `user.isAdmin`. Admin routes stack both.
@@ -131,7 +134,19 @@ Entities the application manages:
 - **Client**: guest/tenant (identityDocument, name, email, phoneNumber, address fields)
 - **Channel**: booking source (name, commissionRate, isActive) — e.g. Airbnb, Booking.com, direct
 
-All persistent data lives in `$DATA_DIR` (env var, defaults to `.`). No external database.
+All persistent data lives in `$DATA_DIR` (env var, defaults to `.`): the SQLite file at `$DATA_DIR/database/app.db` plus `$DATA_DIR/config/settings.json`. No database server — SQLite is embedded via the `node:sqlite` builtin.
+
+Integrity the schema enforces (so services do not have to): unique names for apartments, properties and channels (case-insensitive); unique client document and email; foreign keys from bookings to apartment/client/channel with `ON DELETE RESTRICT`; calendar links cascade when their apartment or channel is deleted.
+
+Booking overlap has no SQL equivalent (SQLite lacks exclusion constraints), so `bookingService` runs the check and the write inside one `transaction()` — `BEGIN IMMEDIATE` takes the write lock up front, so two concurrent requests cannot both pass the check.
+
+---
+
+## Migrating from the JSON files
+
+`infrastructure/importJson.ts` runs on every boot and does nothing unless legacy JSON files are present *and* the database is still empty. It imports all six entities in one transaction, then renames each `*.json` to `*.json.migrated`.
+
+If any record is rejected (duplicate name, missing foreign key), the whole import rolls back, the JSON files are left untouched and the server fails to start with a report naming every offending record. Fix the JSON and restart. To retry from scratch: delete `app.db*` and rename the `.migrated` files back.
 
 ---
 
@@ -147,7 +162,7 @@ All persistent data lives in `$DATA_DIR` (env var, defaults to `.`). No external
 
 ## Docker Deployment
 
-Single container. `./data` is bind-mounted at `/data` inside the container (`DATA_DIR=/data`). Backing up the app = copying the `data/` directory.
+Single container. `./data` is bind-mounted at `/data` inside the container (`DATA_DIR=/data`). Backing up the app = copying the `data/` directory — stop the container first, or use `sqlite3 app.db ".backup out.db"` for a hot copy (WAL means a plain `cp` of a live database can catch a partial write).
 
 Build order in Dockerfile: deps → client build → server build → final image (copies server dist + client dist + node_modules).
 

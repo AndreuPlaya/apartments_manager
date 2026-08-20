@@ -57,6 +57,17 @@ describe('ensureSecretKey', () => {
     const saved = vi.mocked(writeJson).mock.calls[0]?.[1] as any
     expect(saved?.secret_key).toHaveLength(64)
   })
+
+  it('leaves settings untouched when JWT_SECRET is supplied by the environment', () => {
+    vi.stubEnv('JWT_SECRET', 'from-env')
+    vi.mocked(readJson).mockReturnValue({ ...baseSettings, secret_key: '' })
+
+    ensureSecretKey()
+
+    expect(readJson).not.toHaveBeenCalled()
+    expect(writeJson).not.toHaveBeenCalled()
+    vi.unstubAllEnvs()
+  })
 })
 
 describe('getSecret', () => {
@@ -64,6 +75,14 @@ describe('getSecret', () => {
     const secret = getSecret()
     expect(secret).toBeInstanceOf(Uint8Array)
     expect(new TextDecoder().decode(secret)).toBe('existing-key')
+  })
+
+  it('prefers JWT_SECRET from the environment over settings.json', () => {
+    vi.stubEnv('JWT_SECRET', 'from-env')
+
+    expect(new TextDecoder().decode(getSecret())).toBe('from-env')
+
+    vi.unstubAllEnvs()
   })
 })
 

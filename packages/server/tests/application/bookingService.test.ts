@@ -1,45 +1,24 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Apartment, Booking, Channel, Client } from '../../src/domain/models.js'
-
-vi.mock('../../src/infrastructure/data.js')
+import { beforeEach, describe, expect, it } from 'vitest'
 import {
-  loadApartments,
-  loadBookings,
-  loadChannels,
-  loadClients,
-  queryBookings,
-  saveBookings,
-} from '../../src/infrastructure/data.js'
+  createBooking,
+  deleteBooking,
+  listBookings,
+  patchBookingFields,
+  updateBooking,
+} from '../../src/application/bookingService.js'
+import type { CreateBookingRequest } from '../../src/domain/models.js'
+import * as apartments from '../../src/infrastructure/repositories/apartments.js'
+import * as bookings from '../../src/infrastructure/repositories/bookings.js'
+import * as channels from '../../src/infrastructure/repositories/channels.js'
+import { APARTMENT, CHANNEL, seedBase, seedBooking, useTestDb } from '../helpers/testDb.js'
 
-import { createBooking, deleteBooking, listBookings, patchBookingFields, updateBooking } from '../../src/application/bookingService.js'
+useTestDb()
 
-const apt: Apartment = {
-  id: 'apt1',
-  name: 'Beach House',
-  address: '1 Ocean Ave',
-  floor: 1,
-  door: 'A',
-  price: 100,
-  minNights: 2,
-  maxGuests: 4,
-  rooms: 2,
-  bathrooms: 1,
-  isAvailable: true,
-}
+beforeEach(() => {
+  seedBase()
+})
 
-const client: Client = {
-  id: 'cli1',
-  name: 'Alice',
-}
-
-const channel: Channel = {
-  id: 'ch1',
-  name: 'Direct',
-  commissionRate: 0,
-  isActive: true,
-}
-
-const validReq = {
+const validReq: CreateBookingRequest = {
   apartmentId: 'apt1',
   clientId: 'cli1',
   channelId: 'ch1',
@@ -47,51 +26,78 @@ const validReq = {
   toDate: '2025-06-05',
   adultCount: 2,
   childrenCount: 0,
-  status: 'Active' as const,
+  status: 'Active',
   totalAmountDue: 400,
 }
 
-beforeEach(() => {
-  vi.mocked(loadApartments).mockReturnValue([apt])
-  vi.mocked(loadClients).mockReturnValue([client])
-  vi.mocked(loadChannels).mockReturnValue([channel])
-  vi.mocked(loadBookings).mockReturnValue([])
-  vi.mocked(saveBookings).mockImplementation(() => undefined)
-  vi.mocked(queryBookings).mockReturnValue([])
-})
-
 describe('listBookings', () => {
-  it('delegates to queryBookings and returns its result', () => {
-    const b: Booking = {
-      id: 'b1', apartmentId: 'apt1', clientId: 'cli1', channelId: 'ch1',
-      fromDate: '2025-06-01', toDate: '2025-06-05', adultCount: 1, childrenCount: 0,
-      status: 'Active', totalAmountDue: 400, createdAt: '2025-01-01T00:00:00Z',
-    }
-    vi.mocked(queryBookings).mockReturnValue([b])
-    const result = listBookings({ apartmentId: 'apt1' })
-    expect(result).toEqual([b])
-    expect(queryBookings).toHaveBeenCalledWith({ apartmentId: 'apt1' })
+  it('returns every booking when no filter is given', () => {
+    const b = seedBooking()
+
+    expect(listBookings({})).toEqual([b])
+  })
+
+  it('filters by apartment', () => {
+    apartments.insert({ ...APARTMENT, id: 'apt2', name: 'Villa' })
+    seedBooking()
+    const other = seedBooking({ id: 'b2', apartmentId: 'apt2' })
+
+    expect(listBookings({ apartmentId: 'apt2' })).toEqual([other])
+  })
+
+  it('filters by an open-ended window', () => {
+    seedBooking({ id: 'b1', fromDate: '2025-06-01', toDate: '2025-06-05' })
+    seedBooking({ id: 'b2', fromDate: '2025-08-01', toDate: '2025-08-05' })
+
+    expect(listBookings({ from: '2025-07-01' }).map((b) => b.id)).toEqual(['b2'])
+    expect(listBookings({ to: '2025-07-01' }).map((b) => b.id)).toEqual(['b1'])
+  })
+
+  it('filters by a closed window, excluding the checkout day', () => {
+    seedBooking({ id: 'b1', fromDate: '2025-06-01', toDate: '2025-06-05' })
+
+    expect(listBookings({ from: '2025-06-05', to: '2025-06-10' })).toEqual([])
+    expect(listBookings({ from: '2025-06-04', to: '2025-06-10' })).toHaveLength(1)
   })
 })
 
 describe('createBooking', () => {
   it('creates a valid booking with generated id and createdAt', () => {
     const result = createBooking(validReq)
+
     expect(result.id).toBeDefined()
     expect(result.createdAt).toBeDefined()
     expect(result.fromDate).toBe('2025-06-01')
     expect(result.toDate).toBe('2025-06-05')
-    expect(saveBookings).toHaveBeenCalledOnce()
+    expect(bookings.findById(result.id)).toEqual(result)
+  })
+
+  it('round-trips optional fields', () => {
+    const result = createBooking({
+      ...validReq,
+      cribRequested: true,
+      comment: 'late arrival',
+      paidDate: '2025-05-20',
+    })
+
+    expect(bookings.findById(result.id)).toEqual(result)
   })
 
   it('strips time component from dates', () => {
-    const result = createBooking({ ...validReq, fromDate: '2025-06-01T12:00:00Z', toDate: '2025-06-05T12:00:00Z' })
+    const result = createBooking({
+      ...validReq,
+      fromDate: '2025-06-01T12:00:00Z',
+      toDate: '2025-06-05T12:00:00Z',
+    })
+
     expect(result.fromDate).toBe('2025-06-01')
     expect(result.toDate).toBe('2025-06-05')
   })
 
   it('throws ValidationError when toDate <= fromDate', () => {
-    expect(() => createBooking({ ...validReq, toDate: '2025-06-01' })).toThrow('toDate must be after fromDate')
+    expect(() => createBooking({ ...validReq, toDate: '2025-06-01' })).toThrow(
+      'toDate must be after fromDate',
+    )
   })
 
   it('throws ValidationError when minNights not met (1 night, min 2)', () => {
@@ -99,90 +105,59 @@ describe('createBooking', () => {
   })
 
   it('throws ValidationError for non-existent apartment', () => {
-    vi.mocked(loadApartments).mockReturnValue([])
-    expect(() => createBooking(validReq)).toThrow("not found")
+    expect(() => createBooking({ ...validReq, apartmentId: 'no-such' })).toThrow('not found')
   })
 
   it('throws ValidationError for unavailable apartment', () => {
-    vi.mocked(loadApartments).mockReturnValue([{ ...apt, isAvailable: false }])
+    apartments.update({ ...APARTMENT, isAvailable: false })
+
     expect(() => createBooking(validReq)).toThrow('not available')
   })
 
   it('throws ValidationError for non-existent client', () => {
-    vi.mocked(loadClients).mockReturnValue([])
-    expect(() => createBooking(validReq)).toThrow("not found")
+    expect(() => createBooking({ ...validReq, clientId: 'no-such' })).toThrow('not found')
   })
 
   it('throws ValidationError for non-existent channel', () => {
-    vi.mocked(loadChannels).mockReturnValue([])
-    expect(() => createBooking(validReq)).toThrow("not found")
+    expect(() => createBooking({ ...validReq, channelId: 'no-such' })).toThrow('not found')
   })
 
   it('throws ValidationError for inactive channel', () => {
-    vi.mocked(loadChannels).mockReturnValue([{ ...channel, isActive: false }])
+    channels.update({ ...CHANNEL, isActive: false })
+
     expect(() => createBooking(validReq)).toThrow('not active')
   })
 
   it('throws ConflictError when dates overlap an existing booking', () => {
-    const existing: Booking = {
-      id: 'b-existing',
-      apartmentId: 'apt1',
-      clientId: 'cli1',
-      channelId: 'ch1',
-      fromDate: '2025-06-03',
-      toDate: '2025-06-08',
-      adultCount: 1,
-      childrenCount: 0,
-      status: 'Active',
-      totalAmountDue: 500,
-      createdAt: '2025-01-01T00:00:00Z',
-    }
-    vi.mocked(loadBookings).mockReturnValue([existing])
+    seedBooking({ id: 'b-existing', fromDate: '2025-06-03', toDate: '2025-06-08' })
+
     expect(() => createBooking(validReq)).toThrow('overlap')
+    expect(listBookings({})).toHaveLength(1)
   })
 
   it('does NOT throw when new checkin equals existing checkout (adjacent)', () => {
-    const existing: Booking = {
-      id: 'b-existing',
-      apartmentId: 'apt1',
-      clientId: 'cli1',
-      channelId: 'ch1',
-      fromDate: '2025-05-28',
-      toDate: '2025-06-01',
-      adultCount: 1,
-      childrenCount: 0,
-      status: 'Active',
-      totalAmountDue: 300,
-      createdAt: '2025-01-01T00:00:00Z',
-    }
-    vi.mocked(loadBookings).mockReturnValue([existing])
+    seedBooking({ id: 'b-existing', fromDate: '2025-05-28', toDate: '2025-06-01' })
+
     expect(() => createBooking(validReq)).not.toThrow()
+  })
+
+  it('rolls back the insert when a later rule rejects the booking', () => {
+    expect(() => createBooking({ ...validReq, channelId: 'no-such' })).toThrow()
+    expect(listBookings({})).toEqual([])
   })
 })
 
 describe('updateBooking', () => {
-  const existingBooking: Booking = {
-    id: 'b1',
-    apartmentId: 'apt1',
-    clientId: 'cli1',
-    channelId: 'ch1',
-    fromDate: '2025-06-01',
-    toDate: '2025-06-05',
-    adultCount: 2,
-    childrenCount: 0,
-    status: 'Active',
-    totalAmountDue: 400,
-    createdAt: '2025-01-01T00:00:00Z',
-  }
-
   beforeEach(() => {
-    vi.mocked(loadBookings).mockReturnValue([existingBooking])
+    seedBooking({ adultCount: 2 })
   })
 
   it('updates non-date fields without re-validating dates', () => {
     const result = updateBooking('b1', { totalAmountDue: 500 })
+
     expect(result.totalAmountDue).toBe(500)
     expect(result.fromDate).toBe('2025-06-01')
+    expect(bookings.findById('b1')!.totalAmountDue).toBe(500)
   })
 
   it('throws NotFoundError for unknown id', () => {
@@ -190,33 +165,29 @@ describe('updateBooking', () => {
   })
 
   it('excludes self when checking overlap during date update', () => {
-    // Updating fromDate to same range should not conflict with itself
-    const result = updateBooking('b1', { fromDate: '2025-06-02' })
-    expect(result.fromDate).toBe('2025-06-02')
+    expect(updateBooking('b1', { fromDate: '2025-06-02' }).fromDate).toBe('2025-06-02')
   })
 
   it('throws ConflictError when updated dates overlap another booking', () => {
-    const other: Booking = {
-      ...existingBooking,
-      id: 'b2',
-      fromDate: '2025-06-08',
-      toDate: '2025-06-12',
-    }
-    vi.mocked(loadBookings).mockReturnValue([existingBooking, other])
+    seedBooking({ id: 'b2', fromDate: '2025-06-08', toDate: '2025-06-12' })
+
     expect(() => updateBooking('b1', { toDate: '2025-06-10' })).toThrow('overlap')
+    expect(bookings.findById('b1')!.toDate).toBe('2025-06-05')
   })
 
   it('throws ValidationError when updated dates are invalid (toDate <= fromDate)', () => {
-    expect(() => updateBooking('b1', { toDate: '2025-05-31' })).toThrow('toDate must be after fromDate')
+    expect(() => updateBooking('b1', { toDate: '2025-05-31' })).toThrow(
+      'toDate must be after fromDate',
+    )
   })
 
   it('throws ValidationError when updated apartment not found', () => {
-    vi.mocked(loadApartments).mockReturnValue([])
     expect(() => updateBooking('b1', { apartmentId: 'no-such-apt' })).toThrow('not found')
   })
 
   it('throws ValidationError when updated apartment is unavailable', () => {
-    vi.mocked(loadApartments).mockReturnValue([{ ...apt, isAvailable: false }])
+    apartments.update({ ...APARTMENT, isAvailable: false })
+
     expect(() => updateBooking('b1', { apartmentId: 'apt1' })).toThrow('not available')
   })
 
@@ -229,72 +200,67 @@ describe('updateBooking', () => {
   })
 
   it('throws ValidationError when updated channel is inactive', () => {
-    vi.mocked(loadChannels).mockReturnValue([{ ...channel, isActive: false }])
+    channels.update({ ...CHANNEL, isActive: false })
+
     expect(() => updateBooking('b1', { channelId: 'ch1' })).toThrow('not active')
   })
 
   it('validates clientId when updating client', () => {
-    vi.mocked(loadClients).mockReturnValue([])
     expect(() => updateBooking('b1', { clientId: 'no-such-cli' })).toThrow('not found')
   })
 })
 
 describe('deleteBooking', () => {
   it('removes an existing booking', () => {
-    const b: Booking = {
-      id: 'b1', apartmentId: 'apt1', clientId: 'cli1', channelId: 'ch1',
-      fromDate: '2025-06-01', toDate: '2025-06-05', adultCount: 1, childrenCount: 0,
-      status: 'Active', totalAmountDue: 0, createdAt: '',
-    }
-    vi.mocked(loadBookings).mockReturnValue([b])
+    seedBooking()
+
     deleteBooking('b1')
-    expect(saveBookings).toHaveBeenCalledWith([])
+
+    expect(listBookings({})).toEqual([])
   })
 
   it('throws NotFoundError for unknown id', () => {
-    vi.mocked(loadBookings).mockReturnValue([])
     expect(() => deleteBooking('ghost')).toThrow('not found')
   })
 })
 
 describe('patchBookingFields', () => {
-  const existing: Booking = {
-    id: 'b1', apartmentId: 'apt1', clientId: 'cli1', channelId: 'ch1',
-    fromDate: '2025-06-01', toDate: '2025-06-05', adultCount: 1, childrenCount: 0,
-    status: 'Active', totalAmountDue: 0, createdAt: '',
-  }
-
   beforeEach(() => {
-    vi.mocked(loadBookings).mockReturnValue([existing])
+    seedBooking()
   })
 
   it('patches comment only', () => {
     const result = patchBookingFields('b1', { comment: 'hello' })
+
     expect(result.comment).toBe('hello')
     expect(result.status).toBe('Active')
-    expect(saveBookings).toHaveBeenCalled()
+    expect(bookings.findById('b1')!.comment).toBe('hello')
   })
 
   it('patches status only', () => {
     const result = patchBookingFields('b1', { status: 'Cancelled' })
+
     expect(result.status).toBe('Cancelled')
     expect(result.comment).toBeUndefined()
   })
 
   it('patches paidDate only', () => {
-    const result = patchBookingFields('b1', { paidDate: '2025-06-02' })
-    expect(result.paidDate).toBe('2025-06-02')
+    expect(patchBookingFields('b1', { paidDate: '2025-06-02' }).paidDate).toBe('2025-06-02')
   })
 
   it('patches multiple fields at once', () => {
-    const result = patchBookingFields('b1', { comment: 'hi', paidDate: '2025-06-03', status: 'Cancelled' })
+    const result = patchBookingFields('b1', {
+      comment: 'hi',
+      paidDate: '2025-06-03',
+      status: 'Cancelled',
+    })
+
     expect(result.comment).toBe('hi')
     expect(result.paidDate).toBe('2025-06-03')
     expect(result.status).toBe('Cancelled')
   })
 
   it('throws NotFoundError for unknown id', () => {
-    vi.mocked(loadBookings).mockReturnValue([])
     expect(() => patchBookingFields('ghost', { comment: 'x' })).toThrow('not found')
   })
 })

@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ── Base ───────────────────────────────────────────────────────────────────
-FROM node:20-alpine AS base
+FROM node:24-alpine AS base
 RUN npm install -g pnpm@9
 
 # ── Dependencies ───────────────────────────────────────────────────────────
@@ -25,7 +25,7 @@ COPY packages/server ./packages/server
 RUN pnpm -F server build
 
 # ── Production image ───────────────────────────────────────────────────────
-FROM node:20-alpine AS runner
+FROM node:24-alpine AS runner
 WORKDIR /app
 
 RUN apk add --no-cache su-exec

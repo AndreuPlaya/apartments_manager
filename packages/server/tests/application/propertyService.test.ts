@@ -1,55 +1,62 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Property } from '../../src/domain/models.js'
-
-vi.mock('../../src/infrastructure/data.js')
-import {
-  loadProperties,
-  saveProperties,
-} from '../../src/infrastructure/data.js'
-
+import { describe, expect, it } from 'vitest'
 import {
   createProperty,
   deleteProperty,
   listProperties,
   updateProperty,
 } from '../../src/application/propertyService.js'
+import type { CreatePropertyRequest } from '../../src/domain/models.js'
+import * as properties from '../../src/infrastructure/repositories/properties.js'
+import { useTestDb } from '../helpers/testDb.js'
 
-const prop: Property = {
-  id: 'prop1',
+useTestDb()
+
+const req: CreatePropertyRequest = {
   name: 'Downtown Block',
+  address: '2 Main St',
+  rentalType: 'long-term',
+  isAvailable: true,
 }
 
-beforeEach(() => {
-  vi.clearAllMocks()
-  vi.mocked(loadProperties).mockReturnValue([prop])
-  vi.mocked(saveProperties).mockImplementation(() => undefined)
-})
-
 describe('listProperties', () => {
-  it('returns what loadProperties returns', () => {
-    expect(listProperties()).toEqual([prop])
+  it('returns the stored properties', () => {
+    const created = createProperty(req)
+
+    expect(listProperties()).toEqual([created])
   })
 })
 
 describe('createProperty', () => {
-  it('creates a property with a generated id', () => {
-    vi.mocked(loadProperties).mockReturnValue([])
-    const result = createProperty({ name: 'Seaside Complex' })
+  it('creates a property with a generated id and persists it', () => {
+    const result = createProperty({ ...req, name: 'Seaside Complex' })
+
     expect(result.id).toBeDefined()
     expect(result.name).toBe('Seaside Complex')
-    expect(saveProperties).toHaveBeenCalledOnce()
+    expect(properties.findById(result.id)).toEqual(result)
+  })
+
+  it('round-trips optional fields', () => {
+    const result = createProperty({ ...req, city: 'Valencia', floor: '3', door: 'B', comment: 'x' })
+
+    expect(properties.findById(result.id)).toEqual(result)
   })
 
   it('throws ConflictError on duplicate name (case-insensitive)', () => {
-    expect(() => createProperty({ name: 'downtown block' })).toThrow('already exists')
+    createProperty(req)
+
+    expect(() => createProperty({ ...req, name: 'downtown block' })).toThrow('already exists')
+    expect(listProperties()).toHaveLength(1)
   })
 })
 
 describe('updateProperty', () => {
   it('updates a property successfully', () => {
-    const result = updateProperty('prop1', { name: 'Uptown Block' })
+    const created = createProperty(req)
+
+    const result = updateProperty(created.id, { name: 'Uptown Block' })
+
     expect(result.name).toBe('Uptown Block')
-    expect(saveProperties).toHaveBeenCalledOnce()
+    expect(properties.findById(created.id)!.name).toBe('Uptown Block')
   })
 
   it('throws NotFoundError for unknown id', () => {
@@ -57,23 +64,26 @@ describe('updateProperty', () => {
   })
 
   it('throws ConflictError when renaming to an existing name', () => {
-    vi.mocked(loadProperties).mockReturnValue([
-      prop,
-      { id: 'prop2', name: 'Seaside Complex' },
-    ])
-    expect(() => updateProperty('prop1', { name: 'seaside complex' })).toThrow('already exists')
+    const created = createProperty(req)
+    createProperty({ ...req, name: 'Seaside Complex' })
+
+    expect(() => updateProperty(created.id, { name: 'seaside complex' })).toThrow('already exists')
   })
 
   it('allows updating name to the same name (no conflict with self)', () => {
-    const result = updateProperty('prop1', { name: 'Downtown Block' })
-    expect(result.name).toBe('Downtown Block')
+    const created = createProperty(req)
+
+    expect(updateProperty(created.id, { name: 'Downtown Block' }).name).toBe('Downtown Block')
   })
 })
 
 describe('deleteProperty', () => {
   it('deletes a property', () => {
-    deleteProperty('prop1')
-    expect(saveProperties).toHaveBeenCalledWith([])
+    const created = createProperty(req)
+
+    deleteProperty(created.id)
+
+    expect(listProperties()).toEqual([])
   })
 
   it('throws NotFoundError for unknown id', () => {

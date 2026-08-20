@@ -6,6 +6,7 @@ import { secureHeaders } from 'hono/secure-headers'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { importLegacyJson } from './infrastructure/importJson.js'
 import { ensureSecretKey, isFirstRun } from './infrastructure/settings.js'
 import adminRoutes from './routes/admin.js'
 import authRoutes from './routes/auth.js'
@@ -13,14 +14,25 @@ import editorRoutes from './routes/editor.js'
 
 ensureSecretKey()
 
+// Opens the database, applies pending migrations and, on the first boot after
+// the SQLite switch, imports the legacy JSON files.
+const migration = importLegacyJson()
+if (migration.imported) {
+  console.log('Imported legacy JSON data into SQLite:', migration.counts)
+}
+
 const app = new Hono()
 
 app.use('*', secureHeaders())
 app.use('/api/*', bodyLimit({ maxSize: 512 * 1024 }))
 
+// Liveness probe: unauthenticated, and answers before setup is complete so a
+// fresh deployment reports healthy while it waits for its first admin.
+app.get('/api/health', (c) => c.json({ ok: true }))
+
 // First-run guard — all non-auth API routes return 503 until an admin is created
 app.use('/api/*', async (c, next) => {
-  if (c.req.path.startsWith('/api/auth')) return next()
+  if (c.req.path.startsWith('/api/auth') || c.req.path === '/api/health') return next()
   if (isFirstRun()) return c.json({ setupRequired: true }, 503)
   return next()
 })

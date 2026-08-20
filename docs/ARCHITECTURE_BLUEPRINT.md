@@ -10,7 +10,7 @@ A **self-hosted, multi-user web application** with:
 
 - Cookie-based JWT authentication with two user roles (admin and regular user)
 - A Vue 3 SPA frontend served from the same process as the API
-- File-based persistence (JSON + plain text) — no external database required
+- Embedded persistence (SQLite via the `node:sqlite` builtin) — no database server required
 - An admin-controlled approval workflow for user-submitted changes
 - A full audit trail of all accepted changes (immutable append-only log)
 - Single Docker container deployment with a mounted data volume
@@ -135,10 +135,12 @@ export interface ChangeRecord {
 **Rule: only I/O and data format concerns. No business logic.**
 
 - `settings.ts` — `loadSettings()` / `saveSettings()` / `ensureSecretKey()` / `findUser()`. Reads and writes `config/settings.json`.
-- `data.ts` — CRUD operations on the domain-specific data files. Provides `loadItems()`, `saveItems()`, `loadPending()`, `savePending()`, `loadHistory()`, `saveHistory()`.
+- `db.ts` — owns the SQLite connection, the pragmas (`WAL`, `foreign_keys`, `busy_timeout`) and the `transaction()` helper.
+- `migrations.ts` — the append-only list of schema migrations, applied on the first `getDb()`.
+- `repositories/*.ts` — one module per entity; every SQL statement in the codebase lives here. Each exposes `list` / `findById` / `insert` / `update` / `deleteById` plus the lookups its service needs.
 - `reporter.ts` (optional) — formatting helpers (dates, durations, display values). Pure output-formatting, no decisions.
 
-**Atomic write pattern** (use everywhere JSON files are saved):
+**Atomic write pattern** (still used for `settings.json`, the one remaining JSON file):
 
 ```typescript
 import { writeFileSync, renameSync } from 'fs'
@@ -375,28 +377,33 @@ All persistent data lives under `DATA_DIR` (an environment variable, default `.`
 
 ```
 $DATA_DIR/
-├── input_data/          # Domain-specific source files (raw imports)
-├── corrections/
-│   ├── pending.json     # Queued changes awaiting admin approval
-│   └── history.json     # Approved and applied changes (append-only)
+├── database/
+│   └── app.db           # SQLite: all domain entities (+ -wal and -shm alongside)
 └── config/
-    └── settings.json    # Users, secret key, app config
+    ├── settings.json    # Users, secret key, app config
+    └── audit.jsonl      # Append-only log of mutations
 ```
 
-### 6.2 Why No Database
+### 6.2 Why No Database Server
 
-For single-server, low-write-frequency internal tools, JSON files are sufficient and have advantages:
+Domain data lives in an embedded SQLite file rather than a database server. That keeps the deployment properties that made JSON files attractive:
 
-- **Zero infrastructure** — no DB process, no connection strings, no migrations
-- **Human-readable** — files can be inspected, backed up with `cp`, and version-controlled during development
-- **Portable** — the data volume is just a directory; no DB dump/restore needed for backups
-- **Auditable** — history.json is a flat append-only log that can be `grep`'d
+- **Zero infrastructure** — no DB process, no connection strings, no credentials
+- **Portable** — the data volume is still just a directory; backing up is still copying it
+- **Single container** — nothing to orchestrate alongside the app
 
-The tradeoff: this does not scale to high write concurrency or large datasets. If either becomes a concern, the infrastructure layer is the only thing that needs to change (swap file I/O for a DB client in `infrastructure/data.ts`).
+What the move away from JSON files bought, and why it was made:
+
+- **Concurrency safety** — a JSON collection is rewritten whole on every save, so two concurrent writes lose one of them. SQLite serialises writers, and read-then-write sequences (the booking overlap check) run under `BEGIN IMMEDIATE`.
+- **Referential integrity** — foreign keys stop a booking from outliving its client; unique indexes stop duplicate names and documents.
+- **Indexed queries** — filtering bookings no longer means loading every booking into memory.
+- **Explicit schema changes** — versioned migrations replace remapping legacy shapes on every read.
+
+For a hot backup while the app is running, use `sqlite3 app.db ".backup out.db"` rather than copying the file mid-write.
 
 ### 6.3 Atomic Writes
 
-Every write to a JSON file uses the temp-file rename pattern:
+Domain writes are SQLite transactions. `settings.json` is the one file still written directly, and it uses the temp-file rename pattern:
 
 ```typescript
 function saveJson<T>(filePath: string, data: T): void {

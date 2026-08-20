@@ -1,79 +1,66 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Apartment, Booking } from '../../src/domain/models.js'
-
-vi.mock('../../src/infrastructure/data.js')
-import {
-  loadApartments,
-  loadBookings,
-  saveApartments,
-} from '../../src/infrastructure/data.js'
-
+import { beforeEach, describe, expect, it } from 'vitest'
 import {
   createApartment,
   deleteApartment,
   listApartments,
   updateApartment,
 } from '../../src/application/apartmentService.js'
+import * as apartments from '../../src/infrastructure/repositories/apartments.js'
+import { APARTMENT, seedBase, seedBooking, useTestDb } from '../helpers/testDb.js'
 
-const apt: Apartment = {
-  id: 'apt1',
-  name: 'Beach House',
-  address: '1 Ocean Ave',
-  floor: 1,
-  door: 'A',
-  price: 100,
-  minNights: 2,
-  maxGuests: 4,
-  rooms: 2,
+useTestDb()
+
+beforeEach(() => {
+  seedBase()
+})
+
+const req = {
+  name: 'Mountain Cabin',
+  address: '1 Hill Rd',
+  floor: 2,
+  door: 'B',
+  price: 80,
+  minNights: 1,
+  maxGuests: 2,
+  rooms: 1,
   bathrooms: 1,
   isAvailable: true,
 }
 
-beforeEach(() => {
-  vi.clearAllMocks()
-  vi.mocked(loadApartments).mockReturnValue([apt])
-  vi.mocked(loadBookings).mockReturnValue([])
-  vi.mocked(saveApartments).mockImplementation(() => undefined)
-})
-
 describe('listApartments', () => {
-  it('returns what loadApartments returns', () => {
-    expect(listApartments()).toEqual([apt])
+  it('returns the stored apartments', () => {
+    expect(listApartments()).toEqual([APARTMENT])
   })
 })
 
 describe('createApartment', () => {
-  const req = {
-    name: 'Mountain Cabin',
-    address: '1 Hill Rd',
-    floor: 2,
-    door: 'B',
-    price: 80,
-    minNights: 1,
-    maxGuests: 2,
-    rooms: 1,
-    bathrooms: 1,
-    isAvailable: true,
-  }
-
-  it('creates an apartment with a generated id', () => {
+  it('creates an apartment with a generated id and persists it', () => {
     const result = createApartment(req)
+
     expect(result.id).toBeDefined()
     expect(result.name).toBe('Mountain Cabin')
-    expect(saveApartments).toHaveBeenCalledOnce()
+    expect(listApartments()).toHaveLength(2)
+  })
+
+  it('round-trips optional fields', () => {
+    const result = createApartment({ ...req, description: 'Cosy' })
+
+    expect(apartments.findById(result.id)).toEqual(result)
   })
 
   it('throws ConflictError on duplicate name (case-insensitive)', () => {
     expect(() => createApartment({ ...req, name: 'beach house' })).toThrow('already exists')
+    expect(listApartments()).toHaveLength(1)
   })
 })
 
 describe('updateApartment', () => {
   it('updates an apartment successfully', () => {
     const result = updateApartment('apt1', { price: 120 })
+
     expect(result.price).toBe(120)
     expect(result.name).toBe('Beach House')
-    expect(saveApartments).toHaveBeenCalledOnce()
+    expect(apartments.findById('apt1')!.price).toBe(120)
   })
 
   it('throws NotFoundError for unknown id', () => {
@@ -81,23 +68,22 @@ describe('updateApartment', () => {
   })
 
   it('throws ConflictError when renaming to an existing name', () => {
-    vi.mocked(loadApartments).mockReturnValue([
-      apt,
-      { ...apt, id: 'apt2', name: 'Villa' },
-    ])
+    apartments.insert({ ...APARTMENT, id: 'apt2', name: 'Villa' })
+
     expect(() => updateApartment('apt1', { name: 'villa' })).toThrow('already exists')
+    expect(apartments.findById('apt1')!.name).toBe('Beach House')
   })
 
   it('allows updating name to the same name (no conflict with self)', () => {
-    const result = updateApartment('apt1', { name: 'Beach House' })
-    expect(result.name).toBe('Beach House')
+    expect(updateApartment('apt1', { name: 'Beach House' }).name).toBe('Beach House')
   })
 })
 
 describe('deleteApartment', () => {
   it('deletes an apartment with no bookings', () => {
     deleteApartment('apt1')
-    expect(saveApartments).toHaveBeenCalledWith([])
+
+    expect(listApartments()).toEqual([])
   })
 
   it('throws NotFoundError for unknown id', () => {
@@ -105,12 +91,9 @@ describe('deleteApartment', () => {
   })
 
   it('throws ConflictError when the apartment has existing bookings', () => {
-    const booking: Booking = {
-      id: 'b1', apartmentId: 'apt1', clientId: 'cli1', channelId: 'ch1',
-      fromDate: '2025-06-01', toDate: '2025-06-05', adultCount: 1, childrenCount: 0,
-      status: 'Active', totalAmountDue: 400, createdAt: '',
-    }
-    vi.mocked(loadBookings).mockReturnValue([booking])
+    seedBooking()
+
     expect(() => deleteApartment('apt1')).toThrow('existing bookings')
+    expect(listApartments()).toHaveLength(1)
   })
 })

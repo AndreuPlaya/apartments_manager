@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import type { CalendarLink, CreateCalendarLinkRequest } from '../domain/models.js'
-import { loadCalendarLinks, saveCalendarLinks } from '../infrastructure/data.js'
+import { transaction } from '../infrastructure/db.js'
+import * as calendarLinks from '../infrastructure/repositories/calendarLinks.js'
 import { NotFoundError, ValidationError } from './errors.js'
 
 const ALLOWED_PROTOCOLS = new Set(['https:', 'http:', 'webcal:'])
@@ -18,32 +19,29 @@ function validateCalendarUrl(url: string): void {
 }
 
 export function listCalendarLinks(): CalendarLink[] {
-  return loadCalendarLinks()
+  return calendarLinks.list()
 }
 
 export function upsertCalendarLink(req: CreateCalendarLinkRequest): CalendarLink {
   validateCalendarUrl(req.url)
-  const all = loadCalendarLinks()
-  const existing = all.find(
-    (l) => l.channelId === req.channelId && l.apartmentId === req.apartmentId,
-  )
 
-  if (existing) {
-    const updated: CalendarLink = { ...existing, url: req.url }
-    const idx = all.findIndex((l) => l.id === existing.id)
-    all[idx] = updated
-    saveCalendarLinks(all)
-    return updated
-  }
+  return transaction(() => {
+    const existing = calendarLinks.findByChannelAndApartment(req.channelId, req.apartmentId)
 
-  const link: CalendarLink = { id: randomUUID(), ...req }
-  saveCalendarLinks([...all, link])
-  return link
+    if (existing !== null) {
+      calendarLinks.updateUrl(existing.id, req.url)
+      return { ...existing, url: req.url }
+    }
+
+    const link: CalendarLink = { id: randomUUID(), ...req }
+    calendarLinks.insert(link)
+    return link
+  })
 }
 
 export function deleteCalendarLink(id: string): void {
-  const all = loadCalendarLinks()
-  const idx = all.findIndex((l) => l.id === id)
-  if (idx === -1) throw new NotFoundError(`Calendar link '${id}' not found`)
-  saveCalendarLinks(all.filter((l) => l.id !== id))
+  transaction(() => {
+    if (calendarLinks.findById(id) === null) throw new NotFoundError(`Calendar link '${id}' not found`)
+    calendarLinks.deleteById(id)
+  })
 }

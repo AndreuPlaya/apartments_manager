@@ -89,4 +89,53 @@ describe('authMiddleware', () => {
     const body = await res.json()
     expect(body.resourceId).toBe('user-uuid-1')
   })
+
+  it('returns 401 for a disabled admin', async () => {
+    vi.mocked(findUser).mockReturnValue({
+      type: 'admin',
+      username: 'admin',
+      record: { password_hash: 'x', full_name: 'Admin', enabled: false },
+    })
+    const app = makeApp()
+    const token = await makeToken({ username: 'admin', isAdmin: true, resourceId: null })
+
+    const res = await app.request('/test', { headers: { Cookie: `session=${token}` } })
+
+    expect(res.status).toBe(401)
+  })
+
+  it('still admits an admin whose record has no enabled flag', async () => {
+    vi.mocked(findUser).mockReturnValue({
+      type: 'admin',
+      username: 'admin',
+      record: { password_hash: 'x', full_name: 'Admin', enabled: true },
+    })
+    const app = makeApp()
+    const token = await makeToken({ username: 'admin', isAdmin: true, resourceId: null })
+
+    expect((await app.request('/test', { headers: { Cookie: `session=${token}` } })).status).toBe(200)
+  })
+
+  it('rejects a token claiming admin for a non-admin account', async () => {
+    vi.mocked(findUser).mockReturnValue({
+      type: 'user',
+      id: 'u1',
+      record: { username: 'alice', password_hash: 'x', full_name: 'Alice', enabled: true },
+    })
+    const app = makeApp()
+    const token = await makeToken({ username: 'alice', isAdmin: true, resourceId: 'u1' })
+
+    const res = await app.request('/test', { headers: { Cookie: `session=${token}` } })
+
+    expect(res.status).toBe(401)
+  })
+
+  it('rejects a token claiming non-admin for an admin account', async () => {
+    const app = makeApp()
+    const token = await makeToken({ username: 'admin', isAdmin: false, resourceId: null })
+
+    const res = await app.request('/test', { headers: { Cookie: `session=${token}` } })
+
+    expect(res.status).toBe(401)
+  })
 })

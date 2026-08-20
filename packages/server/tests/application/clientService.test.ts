@@ -1,63 +1,99 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Booking, Client } from '../../src/domain/models.js'
-
-vi.mock('../../src/infrastructure/data.js')
-import {
-  loadBookings,
-  loadClients,
-  saveClients,
-} from '../../src/infrastructure/data.js'
-
+import { beforeEach, describe, expect, it } from 'vitest'
 import {
   createClient,
   deleteClient,
   listClients,
   updateClient,
 } from '../../src/application/clientService.js'
+import * as clients from '../../src/infrastructure/repositories/clients.js'
+import { seedBase, seedBooking, useTestDb } from '../helpers/testDb.js'
 
-const client: Client = {
-  id: 'cli1',
-  name: 'Alice',
-  identityDocument: 'A12345',
-  email: 'alice@example.com',
-}
+useTestDb()
 
 beforeEach(() => {
-  vi.clearAllMocks()
-  vi.mocked(loadClients).mockReturnValue([client])
-  vi.mocked(loadBookings).mockReturnValue([])
-  vi.mocked(saveClients).mockImplementation(() => undefined)
+  seedBase()
+  clients.update({
+    id: 'cli1',
+    name: 'Alice',
+    identityDocument: 'A12345',
+    email: 'alice@example.com',
+  })
 })
 
 describe('listClients', () => {
-  it('returns what loadClients returns', () => {
-    expect(listClients()).toEqual([client])
+  it('returns the stored clients', () => {
+    expect(listClients()).toEqual([
+      { id: 'cli1', name: 'Alice', identityDocument: 'A12345', email: 'alice@example.com' },
+    ])
   })
 })
 
 describe('createClient', () => {
   it('creates a client with no optional fields', () => {
-    vi.mocked(loadClients).mockReturnValue([])
     const result = createClient({ name: 'Bob' })
+
     expect(result.id).toBeDefined()
     expect(result.name).toBe('Bob')
-    expect(saveClients).toHaveBeenCalledOnce()
+    expect(clients.findById(result.id)).toEqual(result)
+  })
+
+  it('round-trips every optional field', () => {
+    const result = createClient({
+      name: 'Bob',
+      identityDocument: 'B99999',
+      email: 'bob@example.com',
+      phoneNumber: '+34600000000',
+      street: '3 Elm St',
+      city: 'Valencia',
+      country: 'ES',
+      zipCode: '46001',
+      comment: 'VIP',
+    })
+
+    expect(clients.findById(result.id)).toEqual(result)
   })
 
   it('throws ConflictError for duplicate identityDocument (case-insensitive)', () => {
     expect(() => createClient({ name: 'Bob', identityDocument: 'a12345' })).toThrow('already exists')
+    expect(listClients()).toHaveLength(1)
   })
 
   it('throws ConflictError for duplicate email (case-insensitive)', () => {
     expect(() => createClient({ name: 'Bob', email: 'ALICE@example.com' })).toThrow('already exists')
+  })
+
+  it('stores a blank document or email as absent, not as an empty string', () => {
+    const result = createClient({ name: 'Bob', identityDocument: '', email: '   ' })
+
+    expect(result.identityDocument).toBeUndefined()
+    expect(result.email).toBeUndefined()
+    expect(clients.findById(result.id)).toEqual(result)
+  })
+
+  it('allows many clients with blank documents and emails', () => {
+    // The create form submits empty strings for untouched fields; these must not
+    // collide with each other on the unique indexes.
+    createClient({ name: 'Bob', identityDocument: '', email: '' })
+    createClient({ name: 'Carol', identityDocument: '', email: '' })
+    createClient({ name: 'Dave', identityDocument: '', email: '' })
+
+    expect(listClients()).toHaveLength(4)
+  })
+
+  it('allows several clients without document or email', () => {
+    createClient({ name: 'Bob' })
+    createClient({ name: 'Carol' })
+
+    expect(listClients()).toHaveLength(3)
   })
 })
 
 describe('updateClient', () => {
   it('updates a client successfully', () => {
     const result = updateClient('cli1', { name: 'Alicia' })
+
     expect(result.name).toBe('Alicia')
-    expect(saveClients).toHaveBeenCalledOnce()
+    expect(clients.findById('cli1')!.name).toBe('Alicia')
   })
 
   it('throws NotFoundError for unknown id', () => {
@@ -65,31 +101,36 @@ describe('updateClient', () => {
   })
 
   it('throws ConflictError when identityDocument conflicts with another client', () => {
-    vi.mocked(loadClients).mockReturnValue([
-      client,
-      { id: 'cli2', name: 'Bob', identityDocument: 'B99999' },
-    ])
+    createClient({ name: 'Bob', identityDocument: 'B99999' })
+
     expect(() => updateClient('cli1', { identityDocument: 'b99999' })).toThrow('already exists')
+    expect(clients.findById('cli1')!.identityDocument).toBe('A12345')
   })
 
   it('throws ConflictError when email conflicts with another client', () => {
-    vi.mocked(loadClients).mockReturnValue([
-      client,
-      { id: 'cli2', name: 'Bob', email: 'bob@example.com' },
-    ])
+    createClient({ name: 'Bob', email: 'bob@example.com' })
+
     expect(() => updateClient('cli1', { email: 'BOB@example.com' })).toThrow('already exists')
   })
 
+  it('clears the document when updated to a blank value', () => {
+    const result = updateClient('cli1', { identityDocument: '', email: '' })
+
+    expect(result.identityDocument).toBeUndefined()
+    expect(result.email).toBeUndefined()
+    expect(clients.findById('cli1')!.identityDocument).toBeUndefined()
+  })
+
   it('allows updating identityDocument to own value', () => {
-    const result = updateClient('cli1', { identityDocument: 'A12345' })
-    expect(result.identityDocument).toBe('A12345')
+    expect(updateClient('cli1', { identityDocument: 'A12345' }).identityDocument).toBe('A12345')
   })
 })
 
 describe('deleteClient', () => {
   it('deletes a client with no bookings', () => {
     deleteClient('cli1')
-    expect(saveClients).toHaveBeenCalledWith([])
+
+    expect(listClients()).toEqual([])
   })
 
   it('throws NotFoundError for unknown id', () => {
@@ -97,12 +138,9 @@ describe('deleteClient', () => {
   })
 
   it('throws ConflictError when the client has existing bookings', () => {
-    const booking: Booking = {
-      id: 'b1', apartmentId: 'apt1', clientId: 'cli1', channelId: 'ch1',
-      fromDate: '2025-06-01', toDate: '2025-06-05', adultCount: 1, childrenCount: 0,
-      status: 'Active', totalAmountDue: 0, createdAt: '',
-    }
-    vi.mocked(loadBookings).mockReturnValue([booking])
+    seedBooking()
+
     expect(() => deleteClient('cli1')).toThrow('existing bookings')
+    expect(listClients()).toHaveLength(1)
   })
 })
