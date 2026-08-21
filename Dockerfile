@@ -12,15 +12,31 @@ COPY packages/server/package.json ./packages/server/package.json
 COPY packages/client/package.json ./packages/client/package.json
 RUN pnpm install --frozen-lockfile
 
+# ── Tests ──────────────────────────────────────────────────────────────────
+# Etapa propia para que la pipeline pueda ejecutarlos con `--target tests` sin
+# necesitar Node en el contenedor del job: le basta el cliente de Docker.
+# No entra en la imagen final —nada la referencia— así que no la engorda.
+FROM deps AS tests
+WORKDIR /app
+COPY packages/client ./packages/client
+COPY packages/server ./packages/server
+RUN pnpm test
+
 # ── Client build ───────────────────────────────────────────────────────────
 FROM deps AS client-build
 WORKDIR /app
+# Techo del heap de V8. docker-host va justo de memoria y quien se dispara
+# durante el build es vite/tsup; sin esto el pico ronda los 768 MB.
+ARG NODE_OPTIONS=""
+ENV NODE_OPTIONS=$NODE_OPTIONS
 COPY packages/client ./packages/client
 RUN pnpm -F client build
 
 # ── Server build ───────────────────────────────────────────────────────────
 FROM deps AS server-build
 WORKDIR /app
+ARG NODE_OPTIONS=""
+ENV NODE_OPTIONS=$NODE_OPTIONS
 COPY packages/server ./packages/server
 RUN pnpm -F server build
 

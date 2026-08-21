@@ -1,4 +1,8 @@
 node_modules/
+# También los de cada paquete: pnpm los llena de symlinks al .pnpm del host, y
+# ese directorio tiene otro hash que el que instala el build. Si se cuelan,
+# pisan los symlinks buenos de la imagen y quedan colgando.
+packages/*/node_modules/
 packages/*/dist/
 data/
 .git/
