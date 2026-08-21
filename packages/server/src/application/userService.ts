@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs'
-import { randomUUID } from 'node:crypto'
+import { pbkdf2Sync, randomUUID, timingSafeEqual } from 'node:crypto'
 import type {
   AdminRecord,
   CreateUserRequest,
@@ -19,6 +19,58 @@ import {
   UnauthorizedError,
   ValidationError,
 } from './errors.js'
+import { normalizeUsername } from '../domain/validators.js'
+
+// ---------------------------------------------------------------------------
+// Password hashing
+// ---------------------------------------------------------------------------
+
+const SALT_ROUNDS = 12
+
+/**
+ * Verify a password against a legacy Flask/werkzeug PBKDF2 hash.
+ *
+ * Format: `pbkdf2:<digest>:<iterations>$<salt>$<hex>`. The blueprint (§5.5)
+ * requires accepting these so a migration never forces a password reset —
+ * `working_hours_manager` has carried the same fallback since its own move off
+ * Flask. Hashes written from here on are bcrypt.
+ */
+function verifyWerkzeugHash(password: string, stored: string): boolean {
+  const parts = stored.split('$')
+  if (parts.length !== 3) return false
+  const [methodStr, salt, expected] = parts
+  const methodParts = methodStr!.split(':')
+  if (methodParts[0] !== 'pbkdf2' || methodParts.length < 3) return false
+  const digest = methodParts[1]!
+  const iterations = Number.parseInt(methodParts[2]!, 10)
+  if (!Number.isFinite(iterations) || iterations <= 0) return false
+
+  let derived: Buffer
+  try {
+    derived = pbkdf2Sync(password, salt!, iterations, 32, digest)
+  } catch {
+    // Unknown digest name — treat as a failed verification, not a crash.
+    return false
+  }
+  const derivedBuf = Buffer.from(derived.toString('hex'))
+  const expectedBuf = Buffer.from(expected!)
+  if (derivedBuf.length !== expectedBuf.length) return false
+  return timingSafeEqual(derivedBuf, expectedBuf)
+}
+
+export function hashPassword(raw: string): Promise<string> {
+  return bcrypt.hash(raw, SALT_ROUNDS)
+}
+
+/**
+ * Check a password against whatever format the stored hash happens to be:
+ * bcrypt (`$2a$`/`$2b$`/`$2y$`, all understood by bcryptjs) or legacy werkzeug
+ * PBKDF2.
+ */
+export async function verifyPassword(raw: string, stored: string): Promise<boolean> {
+  if (stored.startsWith('pbkdf2:')) return verifyWerkzeugHash(raw, stored)
+  return bcrypt.compare(raw, stored)
+}
 
 export interface UserListItem {
   id: string
@@ -95,18 +147,18 @@ export async function changeSelfPassword(
   if (user.isAdmin) {
     const record = settings.admin_users[user.username]
     if (!record) throw new NotFoundError('User not found')
-    const valid = await bcrypt.compare(req.current_password, record.password_hash)
+    const valid = await verifyPassword(req.current_password, record.password_hash)
     if (!valid) throw new UnauthorizedError('Current password is incorrect')
-    record.password_hash = await bcrypt.hash(req.password, 12)
+    record.password_hash = await hashPassword(req.password)
     saveSettings(settings)
     return
   }
   const id = user.resourceId!
   const record = settings.users[id]
   if (!record) throw new NotFoundError('User not found')
-  const valid = await bcrypt.compare(req.current_password, record.password_hash)
+  const valid = await verifyPassword(req.current_password, record.password_hash)
   if (!valid) throw new UnauthorizedError('Current password is incorrect')
-  record.password_hash = await bcrypt.hash(req.password, 12)
+  record.password_hash = await hashPassword(req.password)
   saveSettings(settings)
 }
 
@@ -156,7 +208,7 @@ export async function createUser(req: CreateUserRequest): Promise<UserListItem> 
   const existing = findUser(req.username)
   if (existing !== null) throw new ConflictError('Username already exists')
 
-  const password_hash = await bcrypt.hash(req.password, 12)
+  const password_hash = await hashPassword(req.password)
   const settings = loadSettings()
 
   if (req.isAdmin) {
@@ -188,7 +240,7 @@ export async function updateUser(id: string, req: UpdateUserRequest): Promise<Us
       // Renaming admin — check for conflicts
       if (findUser(req.username) !== null) throw new ConflictError('Username already exists')
       const updatedRecord: AdminRecord = {
-        password_hash: req.password ? await bcrypt.hash(req.password, 12) : adminRecord.password_hash,
+        password_hash: req.password ? await hashPassword(req.password) : adminRecord.password_hash,
         full_name: req.full_name ?? adminRecord.full_name,
       }
       delete settings.admin_users[id]
@@ -196,7 +248,7 @@ export async function updateUser(id: string, req: UpdateUserRequest): Promise<Us
       saveSettings(settings)
       return { id: req.username, username: req.username, full_name: updatedRecord.full_name, isAdmin: true, enabled: true }
     }
-    if (req.password) adminRecord.password_hash = await bcrypt.hash(req.password, 12)
+    if (req.password) adminRecord.password_hash = await hashPassword(req.password)
     if (req.full_name !== undefined) adminRecord.full_name = req.full_name
     saveSettings(settings)
     return { id, username: id, full_name: adminRecord.full_name, isAdmin: true, enabled: true }
@@ -210,7 +262,7 @@ export async function updateUser(id: string, req: UpdateUserRequest): Promise<Us
     if (findUser(req.username) !== null) throw new ConflictError('Username already exists')
     record.username = req.username
   }
-  if (req.password) record.password_hash = await bcrypt.hash(req.password, 12)
+  if (req.password) record.password_hash = await hashPassword(req.password)
   if (req.full_name !== undefined) record.full_name = req.full_name
   if (req.enabled !== undefined) record.enabled = req.enabled
 

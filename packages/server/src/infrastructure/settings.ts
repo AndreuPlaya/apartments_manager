@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto'
 import type { AdminRecord, Settings, UserRecord } from '../domain/models.js'
+import { normalizeUsername } from '../domain/validators.js'
 import { readJson, writeJson } from './fs.js'
 import { PATHS } from './paths.js'
 
@@ -46,16 +47,33 @@ export type FoundUser =
   | { type: 'admin'; username: string; record: AdminRecord }
   | { type: 'user'; id: string; record: UserRecord }
 
+/**
+ * Look up an account by username, ignoring case and surrounding whitespace.
+ *
+ * The returned `username`/`record.username` is always the *stored* spelling,
+ * never what the caller typed: it is the key into `admin_users` and what goes
+ * into the JWT, so handing back the typed form would break every later lookup.
+ */
 export function findUser(username: string): FoundUser | null {
   const settings = loadSettings()
 
-  const adminRecord = settings.admin_users[username]
-  if (adminRecord !== undefined) {
-    return { type: 'admin', username, record: adminRecord }
+  // An exact key hit wins outright, so a settings.json that somehow holds both
+  // `Ana` and `ana` still resolves each of them to itself.
+  const exactAdmin = settings.admin_users[username]
+  if (exactAdmin !== undefined) {
+    return { type: 'admin', username, record: exactAdmin }
+  }
+
+  const wanted = normalizeUsername(username)
+
+  for (const [name, record] of Object.entries(settings.admin_users)) {
+    if (normalizeUsername(name) === wanted) {
+      return { type: 'admin', username: name, record }
+    }
   }
 
   for (const [id, record] of Object.entries(settings.users)) {
-    if (record.username === username) {
+    if (normalizeUsername(record.username) === wanted) {
       return { type: 'user', id, record }
     }
   }
