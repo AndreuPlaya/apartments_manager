@@ -72,7 +72,7 @@
     }
 
     &:hover {
-      background: rgba(255, 255, 255, 0.07);
+      background: var(--nav-hover);
       color: var(--nav-text-bright);
 
       svg { opacity: 1; }
@@ -80,7 +80,7 @@
 
     &--active {
       color: var(--nav-text-bright) !important;
-      background: rgba(59, 130, 246, 0.18) !important;
+      background: var(--nav-active) !important;
 
       svg { opacity: 1 !important; }
     }
@@ -92,7 +92,7 @@
     width: 5px;
     height: 5px;
     border-radius: 50%;
-    background: #f59e0b;
+    background: var(--secondary);
     flex-shrink: 0;
     margin-left: 1px;
     opacity: 0.85;
@@ -116,11 +116,16 @@
     padding: 0.2rem 0.4rem;
     transition: background 0.15s;
 
-    &:hover { background: rgba(255, 255, 255, 0.07); }
+    &:hover { background: var(--nav-hover); }
 
     &--active {
-      background: rgba(59, 130, 246, 0.15);
-      .app-nav__avatar { background: var(--nav-accent); }
+      background: var(--nav-active);
+      // Sobre el azul del logo el texto va en tinta profunda, no en lino:
+      // es la pareja de 4,41:1 que autoriza §5.2 de la identidad cromática.
+      .app-nav__avatar {
+        background: var(--nav-accent);
+        color: var(--nav-on-accent);
+      }
     }
   }
 
@@ -164,7 +169,7 @@
     flex-shrink: 0;
 
     &:hover {
-      background: rgba(255, 255, 255, 0.08);
+      background: var(--nav-hover);
       color: var(--nav-text-bright);
     }
   }
@@ -183,7 +188,7 @@
     margin-left: auto;
     transition: background 0.15s;
 
-    &:hover { background: rgba(255, 255, 255, 0.08); }
+    &:hover { background: var(--nav-hover); }
   }
 
   &__mobile-menu {
@@ -214,7 +219,7 @@
     margin-left: auto;
     padding: 0.3rem 0.75rem;
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid var(--nav-border);
     color: var(--nav-text);
     border-radius: 6px;
     font-size: 0.8rem;
@@ -222,7 +227,7 @@
     transition: background 0.15s, color 0.15s;
 
     &:hover {
-      background: rgba(255, 255, 255, 0.08);
+      background: var(--nav-hover);
       color: var(--nav-text-bright);
     }
   }

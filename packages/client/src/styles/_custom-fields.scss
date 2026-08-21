@@ -21,7 +21,7 @@
   padding: 0.05rem 0.25rem;
   transition: background 0.12s;
 
-  &:hover { background: rgba(37, 99, 235, 0.1); }
+  &:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); }
 }
 
 .stepper-btn {
@@ -44,9 +44,9 @@
   font-family: inherit;
 
   &:hover:not(:disabled) {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
+    background: var(--accent-solid);
+    border-color: var(--accent-solid);
+    color: var(--on-accent);
     transform: scale(1.1);
   }
 
@@ -96,12 +96,12 @@
   &:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
   }
 
   &--open {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
   }
 
   &--placeholder span { color: var(--text-muted); }
@@ -221,7 +221,7 @@
   // Focus ring is drawn on the visual box that replaces it.
   &:focus-visible + .custom-cb {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 45%, transparent);
   }
 }
 
@@ -239,10 +239,10 @@
 
   &:not(.custom-cb--readonly):hover {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
   }
 
-  &--checked { background: var(--accent); border-color: var(--accent); }
+  &--checked { background: var(--accent-solid); border-color: var(--accent-solid); }
 
   &--readonly { cursor: default; opacity: 0.7; }
 

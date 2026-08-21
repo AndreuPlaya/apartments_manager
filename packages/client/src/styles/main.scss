@@ -46,12 +46,12 @@ h1, h2, h3, h4 { margin: 0 0 0.5rem; font-weight: 600; }
   font-size: 0.75rem;
   font-weight: 600;
   &--admin { background: var(--accent-light); color: var(--accent); }
-  &--paid { background: #dcfce7; color: #15803d; }
-  &--notpaid { background: #fef9c3; color: #a16207; }
-  &--cancelled { background: #f3f4f6; color: #6b7280; }
-  &--active { background: #dcfce7; color: #15803d; }
-  &--inactive { background: #f3f4f6; color: #6b7280; }
-  &--enabled { background: #dcfce7; color: #15803d; }
+  &--paid { background: var(--success-light); color: var(--success); }
+  &--notpaid { background: var(--warning-light); color: var(--warning); }
+  &--cancelled { background: var(--bg-soft); color: var(--text-muted); }
+  &--active { background: var(--success-light); color: var(--success); }
+  &--inactive { background: var(--bg-soft); color: var(--text-muted); }
+  &--enabled { background: var(--success-light); color: var(--success); }
   &--disabled { background: var(--danger-light); color: var(--danger); }
 }
 
@@ -124,7 +124,7 @@ table {
   }
 
   tr:not(:last-child) td { border-bottom: 1px solid var(--border); }
-  tbody tr:hover td { background: #f9fafb; }
+  tbody tr:hover td { background: var(--bg-soft); }
 }
 
 // ── Forms ────────────────────────────────────────────────────────────────────
@@ -168,7 +168,7 @@ textarea {
   &:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
   }
 }
 
@@ -212,8 +212,8 @@ input[type="number"] { -moz-appearance: textfield; }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 
   &--primary {
-    background: var(--accent);
-    color: #fff;
+    background: var(--accent-solid);
+    color: var(--on-accent);
     &:hover:not(:disabled) { background: var(--accent-dark); }
   }
 
@@ -226,8 +226,8 @@ input[type="number"] { -moz-appearance: textfield; }
 
   &--danger {
     background: var(--danger);
-    color: #fff;
-    &:hover:not(:disabled) { background: #b91c1c; }
+    color: var(--danger-light);
+    &:hover:not(:disabled) { background: color-mix(in srgb, var(--danger) 84%, var(--text)); }
   }
 
   &--ghost {
@@ -348,7 +348,7 @@ input[type="number"] { -moz-appearance: textfield; }
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -409,9 +409,9 @@ input[type="number"] { -moz-appearance: textfield; }
   animation: slide-in 0.2s ease;
   pointer-events: auto;
 
-  &--success { background: #15803d; color: #fff; }
-  &--error   { background: var(--danger); color: #fff; }
-  &--info    { background: var(--accent); color: #fff; }
+  &--success { background: var(--success); color: var(--success-light); }
+  &--error   { background: var(--danger); color: var(--danger-light); }
+  &--info    { background: var(--accent-solid); color: var(--on-accent); }
 }
 
 @keyframes slide-in {
@@ -458,7 +458,7 @@ input[type="number"] { -moz-appearance: textfield; }
 
     &:last-child { border-right: none; }
     &:hover:not(.active) { background: var(--bg); color: var(--text); }
-    &.active { background: var(--accent); color: #fff; }
+    &.active { background: var(--accent-solid); color: var(--on-accent); }
   }
 }
 
@@ -537,9 +537,9 @@ input[type="number"] { -moz-appearance: textfield; }
 }
 
 @keyframes today-pulse {
-  0%   { box-shadow: 0 0 0 0    rgba(37, 99, 235, 0.5); }
-  60%  { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
-  100% { box-shadow: 0 0 0 0    rgba(37, 99, 235, 0); }
+  0%   { box-shadow: 0 0 0 0    color-mix(in srgb, var(--accent) 50%, transparent); }
+  60%  { box-shadow: 0 0 0 10px transparent; }
+  100% { box-shadow: 0 0 0 0    transparent; }
 }
 
 .cal-band {
@@ -590,7 +590,7 @@ input[type="number"] { -moz-appearance: textfield; }
   overflow: hidden;
   pointer-events: none;
   border-radius: 0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-sm);
   transition: filter 0.12s, box-shadow 0.12s;
   position: relative;
   min-width: 0;
@@ -608,7 +608,7 @@ input[type="number"] { -moz-appearance: textfield; }
 
   &--highlighted {
     filter: brightness(1.15);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), inset 0 0 0 2px rgba(255, 255, 255, 0.4);
+    box-shadow: var(--shadow-md), inset 0 0 0 2px color-mix(in srgb, var(--apt-on-color) 45%, transparent);
   }
 
   &--no-drop { filter: hue-rotate(320deg) brightness(0.85); }
@@ -634,13 +634,13 @@ input[type="number"] { -moz-appearance: textfield; }
   &__label {
     font-size: 0.72rem;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.95);
+    color: var(--apt-on-color);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     padding: 0 6px;
     flex: 1;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    text-shadow: none;
   }
 
   &__handle {
@@ -656,7 +656,7 @@ input[type="number"] { -moz-appearance: textfield; }
 
     &::before {
       content: '⋮';
-      color: rgba(255, 255, 255, 0.8);
+      color: color-mix(in srgb, var(--apt-on-color) 80%, transparent);
       font-size: 10px;
       line-height: 1;
     }
@@ -807,7 +807,7 @@ input[type="number"] { -moz-appearance: textfield; }
     padding: 0.5rem 0.75rem;
     font-family: inherit;
     outline: none;
-    &:focus { border-color: var(--primary); }
+    &:focus { border-color: var(--accent); }
   }
 
   &__comment-save {
@@ -839,11 +839,11 @@ input[type="number"] { -moz-appearance: textfield; }
   cursor: pointer;
   text-align: center;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
-  &:hover { border-color: var(--primary); color: var(--primary); }
+  &:hover { border-color: var(--accent); color: var(--accent); }
   &--active {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: #fff;
+    background: var(--accent-solid);
+    border-color: var(--accent-solid);
+    color: var(--on-accent);
     font-weight: 600;
   }
 }

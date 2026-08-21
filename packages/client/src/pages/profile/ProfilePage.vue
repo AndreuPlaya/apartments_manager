@@ -7,15 +7,18 @@ import type { ProfileData } from '../../api/client'
 import { useToast } from '../../composables/useToast'
 import { useAsyncOp } from '../../composables/useAsyncOp'
 import { useLocale } from '../../composables/useLocale'
+import { useTheme } from '../../composables/useTheme'
 import { clearCachedConfig } from '../../router'
 import ProfileTextField from '../../shared/fields/ProfileTextField.vue'
 import ProfilePasswordField from '../../shared/fields/ProfilePasswordField.vue'
 import ProfileLangField from '../../shared/fields/ProfileLangField.vue'
+import ProfileThemeField from '../../shared/fields/ProfileThemeField.vue'
 
 const { t } = useI18n()
 const router = useRouter()
 const { success, error } = useToast()
 const { currentLocale, setLocale } = useLocale()
+const { currentTheme, setTheme } = useTheme()
 
 const profile = ref<ProfileData | null>(null)
 const loading = ref(true)
@@ -25,6 +28,7 @@ const pw = reactive({ current: '', next: '', confirm: '' })
 const pwError = ref('')
 
 const langModel = ref<string>(currentLocale.value)
+const themeModel = ref<string>(currentTheme.value)
 
 const initials = computed(() => {
   const name = profile.value?.full_name || account.username || '?'
@@ -85,6 +89,11 @@ async function submitPassword() {
 function onLangChange(val: string) {
   langModel.value = val
   setLocale(val as 'en' | 'es')
+}
+
+function onThemeChange(val: string) {
+  themeModel.value = val
+  setTheme(val as 'dark' | 'light')
 }
 </script>
 
@@ -188,6 +197,11 @@ function onLangChange(val: string) {
               :text="t('profile.language')"
               :model-value="langModel"
               @update:model-value="onLangChange"
+            />
+            <ProfileThemeField
+              :text="t('profile.theme')"
+              :model-value="themeModel"
+              @update:model-value="onThemeChange"
             />
           </div>
         </div>

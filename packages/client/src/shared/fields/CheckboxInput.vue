@@ -34,7 +34,7 @@ function toggle() {
         :class="{ 'custom-cb--checked': modelValue, 'custom-cb--readonly': rights === false }"
       >
         <svg class="custom-cb__check" :class="{ 'custom-cb__check--visible': modelValue }" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M1 4l3 3 5-5" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M1 4l3 3 5-5" stroke="var(--on-accent)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </span>
       {{ text }}
@@ -61,7 +61,7 @@ function toggle() {
         :class="{ 'custom-cb--checked': modelValue, 'custom-cb--readonly': rights === false }"
       >
         <svg class="custom-cb__check" :class="{ 'custom-cb__check--visible': modelValue }" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M1 4l3 3 5-5" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M1 4l3 3 5-5" stroke="var(--on-accent)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </span>
       {{ checkboxLabel }}
@@ -89,7 +89,7 @@ function toggle() {
       :class="{ 'custom-cb--checked': modelValue, 'custom-cb--readonly': rights === false }"
     >
       <svg class="custom-cb__check" :class="{ 'custom-cb__check--visible': modelValue }" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M1 4l3 3 5-5" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M1 4l3 3 5-5" stroke="var(--on-accent)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </span>
   </div>

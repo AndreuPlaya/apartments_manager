@@ -73,9 +73,19 @@ const sortedApartments = computed(() =>
   [...props.apartments].sort((a, b) => a.name.localeCompare(b.name))
 )
 
-function aptColor(aptId: string): string {
+function aptColorIndex(aptId: string): number {
   const idx = sortedApartments.value.findIndex((a) => a.id === aptId)
-  return `var(--cal-color-${idx % CALENDAR_COLOR_COUNT})`
+  return idx % CALENDAR_COLOR_COUNT
+}
+
+function aptColor(aptId: string): string {
+  return `var(--cal-color-${aptColorIndex(aptId)})`
+}
+
+// Texto de la banda: sobre la mostaza va en tinta, nunca en blanco (§6 de la
+// identidad cromática), así que cada color lleva su pareja.
+function aptOnColor(aptId: string): string {
+  return `var(--cal-on-${aptColorIndex(aptId)})`
 }
 
 const visibleApartments = computed(() =>
@@ -455,6 +465,7 @@ function closePopup() { popupBooking.value = null }
               gridColumnStart: seg.startCol,
               gridColumnEnd: seg.endCol + 1,
               '--apt-color': aptColor(apt.id),
+              '--apt-on-color': aptOnColor(apt.id),
             }"
           >
             <div

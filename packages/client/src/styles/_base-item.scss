@@ -1,5 +1,5 @@
 .base-item-row--expanded td {
-  background: rgba(37, 99, 235, 0.03);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
 }
 
 .actions-cell {

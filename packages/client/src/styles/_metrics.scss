@@ -173,12 +173,12 @@
 
 .ms__legend-bar::before {
   height: 8px;
-  background: rgba(22, 163, 74, 0.45);
+  background: color-mix(in srgb, var(--success) 45%, transparent);
 }
 
 .ms__legend-line::before {
   height: 2px;
-  background: #16a34a;
+  background: var(--success);
 }
 
 .ms__svg {

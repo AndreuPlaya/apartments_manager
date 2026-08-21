@@ -42,7 +42,7 @@
   justify-content: center;
   letter-spacing: 0.02em;
   flex-shrink: 0;
-  border: 2px solid rgba(59, 130, 246, 0.25);
+  border: 2px solid color-mix(in srgb, var(--brand) 30%, transparent);
 }
 
 .profile-hdr__info {
@@ -83,15 +83,15 @@
   border-radius: 999px;
 
   &--admin {
-    background: rgba(37, 99, 235, 0.1);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
     color: var(--accent);
-    border: 1px solid rgba(37, 99, 235, 0.2);
+    border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
   }
 
   &--user {
-    background: rgba(22, 163, 74, 0.1);
+    background: color-mix(in srgb, var(--success) 14%, transparent);
     color: var(--success);
-    border: 1px solid rgba(22, 163, 74, 0.2);
+    border: 1px solid color-mix(in srgb, var(--success) 28%, transparent);
   }
 }
 
@@ -182,6 +182,14 @@
 .pf-lang-flag {
   font-size: 1rem;
   line-height: 1;
+  flex-shrink: 0;
+}
+
+.pf-theme-swatch {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  border: 1px solid var(--border-dark);
   flex-shrink: 0;
 }
 

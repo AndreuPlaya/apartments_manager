@@ -85,12 +85,12 @@
     font-family: var(--font-mono, ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace);
     font-size: 0.75rem;
     padding: 0.2rem 0.4rem;
-    border: 1.5px solid var(--accent, #3b82f6);
+    border: 1.5px solid var(--accent);
     border-radius: 3px;
     background: var(--input-bg, var(--card));
     color: var(--text);
     outline: none;
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, #3b82f6) 20%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
   }
 
   .icon-btn {
@@ -106,8 +106,8 @@
     opacity: 0;
 
     &--danger:hover {
-      color: var(--danger, #ef4444);
-      background: color-mix(in srgb, var(--danger, #ef4444) 10%, transparent);
+      color: var(--danger);
+      background: color-mix(in srgb, var(--danger) 14%, transparent);
     }
   }
 

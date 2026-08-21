@@ -77,8 +77,8 @@
   }
 
   &--active {
-    background: var(--accent);
-    color: #fff;
+    background: var(--accent-solid);
+    color: var(--on-accent);
   }
 }
 

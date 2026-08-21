@@ -1,71 +1,180 @@
-// Design tokens
-$accent: #2563eb;
-$accent-dark: #1d4ed8;
-$accent-light: #dbeafe;
-$success: #16a34a;
-$warning: #d97706;
-$danger: #dc2626;
-$danger-light: #fee2e2;
-
-$bg: #f9fafb;
-$card: #ffffff;
-$text: #111827;
-$text-muted: #6b7280;
-$border: #e5e7eb;
-$border-dark: #d1d5db;
+// ─────────────────────────────────────────────────────────────────────────────
+// IXA — Identidad cromática v1.0 (docs/identidad-cromatica.html)
+//
+// Los nombres de la norma son los de theme.json. Aquí se mapean a los tokens
+// que ya usa la aplicación, para no tocar cada componente:
+//
+//   base        #f7f2e7  lino, fondo          gris-texto  #6b6255  párrafo
+//   blanco      #ffffff  superficies          gris-medio  #756a5a  letra pequeña
+//   gris-suave  #efe6d3  franjas y pie        accent      #0062c4  botones y enlaces
+//   gris-borde  #e8dfc9  bordes               azul-logo   #007ffd  marca (NUNCA texto)
+//   contrast    #2a2622  titulares            secundario  #e0a526  distintivos
+//   tinta       #1f1c18  cierres a contra     sobre-secundario #2a2622
+//
+// §5.2 «Aplicaciones internas»: para apm la norma se invierte — la tinta
+// profunda pasa a fondo y el lino a texto. Ese es el tema por defecto
+// (data-theme="dark"); el claro queda disponible en :root.
+//
+// Ningún gris neutro y ningún negro puro: todo tono nuevo se deriva de los
+// once de la norma.
+// ─────────────────────────────────────────────────────────────────────────────
 
 $radius-sm: 4px;
 $radius-md: 8px;
 $radius-lg: 12px;
 
-$shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-$shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
-$shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-
-// Calendar apartment color palette
-$calendar-colors: #3b82f6, #f59e0b, #10b981, #ef4444, #8b5cf6, #06b6d4, #f97316, #84cc16;
-
-// Nav-specific tokens
-$nav-bg:          #0f172a;
-$nav-text:        #cbd5e1;
-$nav-text-bright: #f1f5f9;
-$nav-accent:      #3b82f6;
-$nav-avatar-bg:   #1e3a5f;
-$nav-dropdown-bg: #1e293b;
-$nav-border:      rgba(255, 255, 255, 0.07);
+// ── Tema claro — la norma tal cual (§2, §3) ─────────────────────────────────
 
 :root {
-  --accent: #{$accent};
-  --accent-dark: #{$accent-dark};
-  --accent-light: #{$accent-light};
-  --success: #{$success};
-  --warning: #{$warning};
-  --danger: #{$danger};
-  --danger-light: #{$danger-light};
-  --bg: #{$bg};
-  --card: #{$card};
-  --text: #{$text};
-  --text-muted: #{$text-muted};
-  --border: #{$border};
-  --border-dark: #{$border-dark};
+  // Superficies
+  --bg:          #f7f2e7;  // base — lino
+  --bg-soft:     #efe6d3;  // gris-suave — franjas, cabeceras de tabla
+  --card:        #ffffff;  // blanco — tarjetas, formularios, modales
+
+  // Texto y línea
+  --text:        #2a2622;  // contrast — titulares y cifras
+  --text-body:   #6b6255;  // gris-texto — texto corrido
+  --text-muted:  #756a5a;  // gris-medio — letra pequeña
+  --border:      #e8dfc9;  // gris-borde
+  --border-dark: #d9cdaf;  // derivado del borde, un escalón más marcado
+
+  // Identidad
+  --brand:         #007ffd;  // azul-logo — solo marca, iconos y detalle
+  --accent:        #0062c4;  // enlaces, foco
+  --accent-solid:  #0062c4;  // fondo de botón principal
+  --on-accent:     #ffffff;  // texto sobre el botón principal
+  --accent-dark:   #004e9c;  // derivado — hover del botón
+  --accent-light:  #e4effb;  // derivado — fondo de distintivo azul
+  --secondary:     #e0a526;  // mostaza — distintivos
+  --on-secondary:  #2a2622;  // sobre-secundario — nunca blanco (§6)
+
+  // Estado (§2.4) — solo aplicaciones y formularios
+  --success:       #1d6b47;
+  --success-light: #e6f2e9;
+  --warning:       #7a5411;
+  --warning-light: #fbf0d8;
+  --danger:        #9a2b1e;
+  --danger-light:  #fbe9e6;
+  --info:          #0a4f9c;
+  --info-light:    #e4effb;
+
+  // Velo reglamentario de tinta (§5.3)
+  --overlay:      rgba(42, 38, 34, 0.55);
+  --veil-top:     rgba(42, 38, 34, 0.10);
+  --veil-bottom:  rgba(42, 38, 34, 0.82);
+
+  --shadow-sm: 0 1px 2px rgba(42, 38, 34, 0.07);
+  --shadow-md: 0 4px 6px rgba(42, 38, 34, 0.09);
+  --shadow-lg: 0 10px 30px rgba(42, 38, 34, 0.10);
+
+  // Barra de navegación — franja a contra en tinta profunda
+  --nav-bg:          #1f1c18;
+  --nav-text:        #b8ada0;
+  --nav-text-bright: #f4efe4;
+  --nav-accent:      #007ffd;  // sobre tinta profunda el azul-logo sí pesa (§5.2)
+  --nav-on-accent:   #1f1c18;  // el azul-logo solo admite texto oscuro (4,41:1)
+  --nav-avatar-bg:   #332c25;
+  --nav-dropdown-bg: #241f1b;
+  --nav-border:      rgba(244, 239, 228, 0.10);
+  --nav-hover:       rgba(244, 239, 228, 0.08);
+  --nav-active:      rgba(0, 127, 253, 0.18);
+
+  // Colores de apartamento del calendario. No son distintivos (§6): codifican
+  // un dato, así que necesitan distinguirse entre sí. Los ocho salen de la
+  // paleta o se derivan de ella; ninguno viene de una biblioteca ajena.
+  --cal-color-0: #0062c4;  // azul acción
+  --cal-color-1: #e0a526;  // mostaza
+  --cal-color-2: #1d6b47;  // verde de estado
+  --cal-color-3: #9a2b1e;  // rojo de estado
+  --cal-color-4: #9a5326;  // terracota, derivada
+  --cal-color-5: #4a5f8a;  // azul pizarra, derivado
+  --cal-color-6: #5f6d2c;  // oliva, derivada
+  --cal-color-7: #6b6255;  // gris texto
+
+  // Texto sobre cada banda. Ninguna pareja baja de 4,5:1 y sobre la mostaza
+  // el texto va en tinta, nunca en blanco (§6).
+  --cal-on-0: #f4efe4;
+  --cal-on-1: #2a2622;
+  --cal-on-2: #f4efe4;
+  --cal-on-3: #f4efe4;
+  --cal-on-4: #f4efe4;
+  --cal-on-5: #f4efe4;
+  --cal-on-6: #f4efe4;
+  --cal-on-7: #f4efe4;
+
   --radius-sm: #{$radius-sm};
   --radius-md: #{$radius-md};
   --radius-lg: #{$radius-lg};
-  --shadow-sm: #{$shadow-sm};
-  --shadow-md: #{$shadow-md};
+  --nav-height: 64px;
+}
 
-  // Nav
-  --nav-bg:           #{$nav-bg};
-  --nav-text:         #{$nav-text};
-  --nav-text-bright:  #{$nav-text-bright};
-  --nav-accent:       #{$nav-accent};
-  --nav-avatar-bg:    #{$nav-avatar-bg};
-  --nav-dropdown-bg:  #{$nav-dropdown-bg};
-  --nav-border:       #{$nav-border};
-  --nav-height:       64px;
+// ── Tema oscuro — §5.2, la norma invertida. Por defecto en apm ──────────────
 
-  // Calendar apartment colors (0-indexed)
-  @each $color in $calendar-colors {
-    --cal-color-#{index($calendar-colors, $color) - 1}: #{$color};
-  }
+:root[data-theme='dark'] {
+  --bg:          #1f1c18;  // tinta profunda
+  --bg-soft:     #2b2621;
+  --card:        #241f1b;
+
+  --text:        #f4efe4;  // lino
+  --text-body:   #b8ada0;  // 7,7:1 sobre la superficie
+  --text-muted:  #9a9084;
+  --border:      #3a342d;
+  --border-dark: #4a4239;
+
+  --brand:         #007ffd;  // el logotipo conserva su azul
+  --accent:        #63aeff;
+  --accent-solid:  #007ffd;  // 4,41:1 sobre tinta profunda…
+  --on-accent:     #1f1c18;  // …con el texto en oscuro, nunca en blanco
+  --accent-dark:   #3d97ff;
+  --accent-light:  #16304d;
+  --secondary:     #e0a526;  // la mostaza no cambia — 7,74:1 sobre el fondo
+  --on-secondary:  #2a2622;
+
+  // Estado con texto y fondo invertidos, recomprobado el contraste
+  --success:       #6fc99a;
+  --success-light: #1b3229;
+  --warning:       #e8b544;
+  --warning-light: #33280f;
+  --danger:        #ef8a7a;
+  --danger-light:  #3a1e19;
+  --info:          #63aeff;
+  --info-light:    #16304d;
+
+  --overlay:      rgba(15, 13, 11, 0.66);
+  --veil-top:     rgba(15, 13, 11, 0.20);
+  --veil-bottom:  rgba(15, 13, 11, 0.88);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.40);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.38);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.35);
+
+  --nav-bg:          #241f1b;  // un escalón por encima del fondo, para separarla
+  --nav-text:        #b8ada0;
+  --nav-text-bright: #f4efe4;
+  --nav-accent:      #007ffd;
+  --nav-on-accent:   #1f1c18;  // el azul-logo solo admite texto oscuro (4,41:1)
+  --nav-avatar-bg:   #332c25;
+  --nav-dropdown-bg: #2b2621;
+  --nav-border:      rgba(244, 239, 228, 0.10);
+  --nav-hover:       rgba(244, 239, 228, 0.08);
+  --nav-active:      rgba(0, 127, 253, 0.20);
+
+  --cal-color-0: #63aeff;
+  --cal-color-1: #e8b544;
+  --cal-color-2: #6fc99a;
+  --cal-color-3: #ef8a7a;
+  --cal-color-4: #d99164;
+  --cal-color-5: #9db0dc;
+  --cal-color-6: #b3c46a;
+  --cal-color-7: #b8ada0;
+
+  // Sobre las bandas claras del tema oscuro el texto va siempre en tinta.
+  --cal-on-0: #2a2622;
+  --cal-on-1: #2a2622;
+  --cal-on-2: #2a2622;
+  --cal-on-3: #2a2622;
+  --cal-on-4: #2a2622;
+  --cal-on-5: #2a2622;
+  --cal-on-6: #2a2622;
+  --cal-on-7: #2a2622;
 }

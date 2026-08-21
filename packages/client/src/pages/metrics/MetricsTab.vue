@@ -73,11 +73,11 @@ const {
               <div class="ms__kpi-sub">{{ occupancyForYear.length }}&thinsp;months recorded</div>
             </div>
             <svg viewBox="0 0 80 80" class="ms__ring">
-              <circle cx="40" cy="40" :r="RING_R" fill="none" stroke="#e5e7eb" stroke-width="5" />
+              <circle cx="40" cy="40" :r="RING_R" fill="none" stroke="var(--border)" stroke-width="5" />
               <circle
                 cx="40" cy="40" :r="RING_R"
                 fill="none"
-                stroke="#16a34a"
+                stroke="var(--success)"
                 stroke-width="5"
                 stroke-linecap="round"
                 :stroke-dasharray="`${ringDash} ${ringGap}`"
@@ -100,16 +100,16 @@ const {
           <svg :viewBox="`0 0 ${CW} ${CH}`" class="ms__svg">
             <defs>
               <linearGradient id="ms-g-high" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#2563eb" />
-                <stop offset="100%" stop-color="#2563eb" stop-opacity="0.08" />
+                <stop offset="0%" stop-color="var(--accent)" />
+                <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.08" />
               </linearGradient>
               <linearGradient id="ms-g-mid" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#d97706" />
-                <stop offset="100%" stop-color="#d97706" stop-opacity="0.08" />
+                <stop offset="0%" stop-color="var(--warning)" />
+                <stop offset="100%" stop-color="var(--warning)" stop-opacity="0.08" />
               </linearGradient>
               <linearGradient id="ms-g-low" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#dc2626" />
-                <stop offset="100%" stop-color="#dc2626" stop-opacity="0.08" />
+                <stop offset="0%" stop-color="var(--danger)" />
+                <stop offset="100%" stop-color="var(--danger)" stop-opacity="0.08" />
               </linearGradient>
             </defs>
             <!-- Grid lines -->
@@ -145,8 +145,8 @@ const {
           <svg :viewBox="`0 0 ${CW} ${CH}`" class="ms__svg">
             <defs>
               <linearGradient id="ms-g-rev" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#16a34a" stop-opacity="0.55" />
-                <stop offset="100%" stop-color="#16a34a" stop-opacity="0.04" />
+                <stop offset="0%" stop-color="var(--success)" stop-opacity="0.55" />
+                <stop offset="100%" stop-color="var(--success)" stop-opacity="0.04" />
               </linearGradient>
             </defs>
             <!-- Grid lines -->
@@ -167,7 +167,7 @@ const {
             <path
               :d="cumLine.path"
               fill="none"
-              stroke="#16a34a"
+              stroke="var(--success)"
               stroke-width="2"
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -177,7 +177,7 @@ const {
               v-for="pt in cumLine.pts" :key="pt.x"
               :cx="pt.x" :cy="pt.y"
               r="2.5"
-              fill="#16a34a"
+              fill="var(--success)"
               :style="{ display: pt.cum > 0 ? '' : 'none' }"
             />
             <!-- Month labels -->
