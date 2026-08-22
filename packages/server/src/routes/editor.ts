@@ -1,10 +1,9 @@
 import { Hono } from 'hono'
-import { listApartments } from '../application/apartmentService.js'
-import { listBookings } from '../application/bookingService.js'
+import { listListings } from '../application/listingService.js'
+import { listReservations } from '../application/reservationService.js'
 import { listCalendarLinks } from '../application/calendarLinkService.js'
 import { listChannels } from '../application/channelService.js'
-import { listClients } from '../application/clientService.js'
-import { listProperties } from '../application/propertyService.js'
+import { listGuests } from '../application/guestService.js'
 import { getSelfProfile, updateSelfProfile, changeSelfPassword } from '../application/userService.js'
 import { authMiddleware } from '../middleware/auth.js'
 import { findUser } from '../infrastructure/settings.js'
@@ -15,23 +14,19 @@ const editorRoutes = new Hono()
 
 editorRoutes.use('/api/*', authMiddleware)
 
-editorRoutes.get('/api/apartments', (c) => {
-  return c.json(listApartments())
+editorRoutes.get('/api/listings', (c) => {
+  return c.json(listListings())
 })
 
-editorRoutes.get('/api/properties', (c) => {
-  return c.json(listProperties())
-})
-
-editorRoutes.get('/api/bookings', (c) => {
-  const apartmentId = c.req.query('apartmentId')
+editorRoutes.get('/api/reservations', (c) => {
+  const listingId = c.req.query('listingId')
   const from = c.req.query('from')
   const to = c.req.query('to')
-  return c.json(listBookings({ apartmentId, from, to }))
+  return c.json(listReservations({ listingId, from, to }))
 })
 
 editorRoutes.get('/api/clients', (c) => {
-  return c.json(listClients())
+  return c.json(listGuests())
 })
 
 editorRoutes.get('/api/channels', (c) => {

@@ -4,7 +4,7 @@ vi.mock('../../src/domain/metrics.js')
 
 import { getMetrics } from '../../src/application/metricsService.js'
 import { computeMetrics } from '../../src/domain/metrics.js'
-import { seedBase, seedBooking, useTestDb } from '../helpers/testDb.js'
+import { CHANNEL, seedBase, seedReservation, useTestDb } from '../helpers/testDb.js'
 
 useTestDb()
 
@@ -13,13 +13,18 @@ beforeEach(() => {
 })
 
 describe('getMetrics', () => {
-  it('calls computeMetrics with bookings, apartment count, and current year', () => {
+  it('calls computeMetrics with reservations, listing count, year and channel rates', () => {
     seedBase()
-    const booking = seedBooking()
+    const reservation = seedReservation()
 
     const result = getMetrics()
 
-    expect(computeMetrics).toHaveBeenCalledWith([booking], 1, new Date().getFullYear())
+    expect(computeMetrics).toHaveBeenCalledWith(
+      [reservation],
+      1,
+      new Date().getFullYear(),
+      new Map([[CHANNEL.id, CHANNEL.commissionRate]]),
+    )
     expect(result).toEqual({ occupancy: [], revenue: [] })
   })
 })

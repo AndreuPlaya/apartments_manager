@@ -1,0 +1,68 @@
+.guests-cell {
+  white-space: nowrap;
+}
+
+.crib-icon {
+  color: var(--text-muted);
+  vertical-align: middle;
+  margin-left: 0.25rem;
+}
+
+.status-cell {
+  // Wide enough for the status badge plus the arrival/departure marker, which
+  // answer different questions: what state the stay is in, and whether it moves
+  // today (docs/UX.md §3).
+  white-space: nowrap;
+  text-align: left;
+
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.status-icon {
+  color: var(--text-muted);
+  vertical-align: middle;
+}
+
+.day-badge {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-left: 0.15rem;
+  vertical-align: middle;
+}
+
+.detail-field--guest:hover {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border-color: var(--border);
+}
+
+.detail-field__guest-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-family: inherit;
+  text-align: left;
+  display: block;
+
+  &:hover { text-decoration: underline; }
+}
+
+.info-cell {
+  width: 1.5rem;
+  text-align: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.info-icon {
+  color: var(--text-muted);
+  vertical-align: middle;
+}
+
+.reservation-crib-cell {
+  min-width: 0;
+}

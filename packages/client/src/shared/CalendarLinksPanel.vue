@@ -1,25 +1,25 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { CalendarLink, Apartment, Channel } from '../api/client'
+import type { CalendarLink, Listing, Channel } from '../api/client'
 import AppIcon from './AppIcon.vue'
 
 const { t } = useI18n()
 
 const props = defineProps<{
-  /** Pre-filtered links for this channel or apartment */
+  /** Pre-filtered links for this channel or listing */
   links: CalendarLink[]
-  apartments: Apartment[]
+  listings: Listing[]
   channels: Channel[]
   isAdmin: boolean
-  /** 'by-apartment': contextId is a channelId, rows are apartments
-   *  'by-channel':   contextId is an apartmentId, rows are channels */
-  mode: 'by-apartment' | 'by-channel'
+  /** 'by-listing': contextId is a channelId, rows are listings
+   *  'by-channel':   contextId is an listingId, rows are channels */
+  mode: 'by-listing' | 'by-channel'
   contextId: string
 }>()
 
 const emit = defineEmits<{
-  save: [channelId: string, apartmentId: string, url: string]
+  save: [channelId: string, listingId: string, url: string]
   delete: [id: string]
 }>()
 
@@ -33,12 +33,12 @@ interface Row {
 
 const rows = computed((): Row[] => {
   const entities: { id: string; name: string }[] =
-    props.mode === 'by-apartment' ? props.apartments : props.channels
+    props.mode === 'by-listing' ? props.listings : props.channels
   return entities.map(entity => ({
     entityId: entity.id,
     entityName: entity.name,
     link: props.links.find(l =>
-      props.mode === 'by-apartment' ? l.apartmentId === entity.id : l.channelId === entity.id,
+      props.mode === 'by-listing' ? l.listingId === entity.id : l.channelId === entity.id,
     ),
   }))
 })
@@ -72,9 +72,9 @@ function commitEdit(row: Row) {
   const url = editingUrl.value.trim()
   if (!url) return
   if (url === row.link?.url) return
-  const channelId = props.mode === 'by-apartment' ? props.contextId : row.entityId
-  const apartmentId = props.mode === 'by-channel' ? props.contextId : row.entityId
-  emit('save', channelId, apartmentId, url)
+  const channelId = props.mode === 'by-listing' ? props.contextId : row.entityId
+  const listingId = props.mode === 'by-channel' ? props.contextId : row.entityId
+  emit('save', channelId, listingId, url)
 }
 
 function cancelEdit() {
@@ -93,7 +93,7 @@ function cancelEdit() {
     <table v-if="rows.length > 0" class="sub-table">
       <thead>
         <tr>
-          <th>{{ mode === 'by-apartment' ? t('calendar.apartment') : t('calendar.channel') }}</th>
+          <th>{{ mode === 'by-listing' ? t('calendar.listing') : t('calendar.channel') }}</th>
           <th>{{ t('calendar.urlCol') }}</th>
           <th v-if="props.isAdmin" />
         </tr>
@@ -147,7 +147,7 @@ function cancelEdit() {
     </table>
 
     <div v-else class="cal-empty">
-      {{ mode === 'by-apartment' ? t('calendar.noApartmentsConfig') : t('calendar.noChannelsConfig') }}
+      {{ mode === 'by-listing' ? t('calendar.noListingsConfig') : t('calendar.noChannelsConfig') }}
     </div>
   </div>
 </template>

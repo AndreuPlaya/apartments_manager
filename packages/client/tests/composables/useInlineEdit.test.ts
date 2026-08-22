@@ -21,7 +21,7 @@ describe('useInlineEdit', () => {
   it('startEdit converts non-string currentValue to string', async () => {
     const inputRef = ref<HTMLInputElement | null>(null)
     const { editingValue, startEdit } = useInlineEdit(inputRef)
-    await startEdit('price', 99)
+    await startEdit('nightlyRate', 99)
     expect(editingValue.value).toBe('99')
   })
 

@@ -24,7 +24,7 @@ const entry = (overrides: Partial<AuditEntry> = {}): AuditEntry => ({
   username: 'alice',
   isAdmin: true,
   action: 'create',
-  resource: 'booking',
+  resource: 'reservation',
   resourceId: 'b1',
   ...overrides,
 })

@@ -3,12 +3,12 @@ export function stripTime(isoString: string): string {
   return t === -1 ? isoString : isoString.slice(0, t)
 }
 
-export function isValidDateRange(fromDate: string, toDate: string): boolean {
-  return Date.parse(toDate) > Date.parse(fromDate)
+export function isValidDateRange(checkIn: string, checkOut: string): boolean {
+  return Date.parse(checkOut) > Date.parse(checkIn)
 }
 
-export function meetsMinNights(fromDate: string, toDate: string, minNights: number): boolean {
-  const nights = (Date.parse(toDate) - Date.parse(fromDate)) / 86_400_000
+export function meetsMinNights(checkIn: string, checkOut: string, minNights: number): boolean {
+  const nights = (Date.parse(checkOut) - Date.parse(checkIn)) / 86_400_000
   return nights >= minNights
 }
 

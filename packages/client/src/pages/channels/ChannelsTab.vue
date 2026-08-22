@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { Channel, Apartment, CalendarLink } from '../../api/client'
+import type { Channel, Listing, CalendarLink } from '../../api/client'
 import { api } from '../../api/client'
 import { useAsyncOp } from '../../composables/useAsyncOp'
 import { useToast } from '../../composables/useToast'
@@ -21,7 +21,7 @@ const { success } = useToast()
 const { confirm } = useConfirm()
 
 const channels = ref<Channel[]>([])
-const apartments = ref<Apartment[]>([])
+const listings = ref<Listing[]>([])
 const calendarLinks = ref<CalendarLink[]>([])
 const showForm = ref(false)
 
@@ -31,11 +31,11 @@ const form = ref(blank())
 async function load() {
   const [ch, apt, links] = await Promise.all([
     run(() => api.channels.list()),
-    run(() => api.apartments.list()),
+    run(() => api.listings.list()),
     run(() => api.calendarLinks.list()),
   ])
   if (ch) channels.value = ch
-  if (apt) apartments.value = apt
+  if (apt) listings.value = apt
   if (links) calendarLinks.value = links
 }
 
@@ -63,11 +63,11 @@ async function del(c: Channel) {
   if (res !== undefined) { await load(); success(t('channels.deleted')) }
 }
 
-async function saveCalendarLink(channelId: string, apartmentId: string, url: string) {
-  const res = await run(() => api.calendarLinks.upsert({ channelId, apartmentId, url }))
+async function saveCalendarLink(channelId: string, listingId: string, url: string) {
+  const res = await run(() => api.calendarLinks.upsert({ channelId, listingId, url }))
   if (res !== undefined) {
     const idx = calendarLinks.value.findIndex(
-      l => l.channelId === channelId && l.apartmentId === apartmentId
+      l => l.channelId === channelId && l.listingId === listingId
     )
     if (idx !== -1) {
       calendarLinks.value[idx] = res
@@ -105,7 +105,7 @@ async function deleteCalendarLink(id: string) {
         :key="c.id"
         :channel="c"
         :calendar-links="calendarLinks"
-        :apartments="apartments"
+        :listings="listings"
         :loading="loading"
         :is-admin="props.isAdmin"
         @update="updateField"

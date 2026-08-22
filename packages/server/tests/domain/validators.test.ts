@@ -12,7 +12,7 @@ describe('stripTime', () => {
 })
 
 describe('isValidDateRange', () => {
-  it('returns true when toDate is after fromDate', () => {
+  it('returns true when checkOut is after checkIn', () => {
     expect(isValidDateRange('2025-01-01', '2025-01-05')).toBe(true)
   })
 
@@ -20,7 +20,7 @@ describe('isValidDateRange', () => {
     expect(isValidDateRange('2025-01-01', '2025-01-01')).toBe(false)
   })
 
-  it('returns false when toDate is before fromDate', () => {
+  it('returns false when checkOut is before checkIn', () => {
     expect(isValidDateRange('2025-01-10', '2025-01-05')).toBe(false)
   })
 })

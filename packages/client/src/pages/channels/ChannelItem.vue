@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import type { Channel, CalendarLink, Apartment } from '../../api/client'
+import type { Channel, CalendarLink, Listing } from '../../api/client'
 import BaseItem from '../../shared/BaseItem.vue'
 import CalendarLinksPanel from '../../shared/CalendarLinksPanel.vue'
 import TextInput from '../../shared/fields/TextInput.vue'
@@ -12,7 +12,7 @@ const { t } = useI18n()
 const props = defineProps<{
   channel: Channel
   calendarLinks: CalendarLink[]
-  apartments: Apartment[]
+  listings: Listing[]
   loading?: boolean
   isAdmin?: boolean
 }>()
@@ -20,7 +20,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   update: [channel: Channel, patch: Partial<Omit<Channel, 'id'>>]
   delete: [channel: Channel]
-  saveCalendarLink: [channelId: string, apartmentId: string, url: string]
+  saveCalendarLink: [channelId: string, listingId: string, url: string]
   deleteCalendarLink: [id: string]
 }>()
 
@@ -84,10 +84,10 @@ const channelLinks = () => props.calendarLinks.filter(l => l.channelId === props
 
       <CalendarLinksPanel
         :links="channelLinks()"
-        :apartments="apartments"
+        :listings="listings"
         :channels="[]"
         :is-admin="isAdmin ?? false"
-        mode="by-apartment"
+        mode="by-listing"
         :context-id="channel.id"
         @save="(ch, ap, url) => emit('saveCalendarLink', ch, ap, url)"
         @delete="id => emit('deleteCalendarLink', id)"

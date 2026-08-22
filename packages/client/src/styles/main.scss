@@ -7,9 +7,10 @@
 @use 'profile-fields';
 @use 'calendar-links';
 @use 'trash-icon';
-@use 'booking-item';
-@use 'booking-views';
-@use 'clients';
+@use 'switch';
+@use 'reservation-item';
+@use 'reservation-views';
+@use 'guests';
 
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -53,6 +54,41 @@ h1, h2, h3, h4 { margin: 0 0 0.5rem; font-weight: 600; }
   &--inactive { background: var(--bg-soft); color: var(--text-muted); }
   &--enabled { background: var(--success-light); color: var(--success); }
   &--disabled { background: var(--danger-light); color: var(--danger); }
+
+  // Reservation lifecycle (docs/RESERVATION_LIFECYCLE.md §1). Every one of these
+  // is paired with an icon in the template — colour never carries a state alone
+  // (docs/UX.md §3).
+  //
+  // The weighting is deliberate: CheckedIn is the loudest because someone is in
+  // the unit right now, CheckedOut recedes because it is only history, and the
+  // two released states read as inert so a free week does not look occupied.
+  &--status-confirmed  { background: var(--info-light);    color: var(--info); }
+  &--status-checkedin  { background: var(--success);       color: var(--on-accent); }
+  &--status-checkedout { background: var(--bg-soft);       color: var(--text-muted); }
+  &--status-cancelled  { background: var(--bg-soft);       color: var(--text-muted); }
+  &--status-noshow     { background: var(--warning-light); color: var(--warning); }
+
+  svg { margin-right: 4px; }
+}
+
+// ── Reservation lifecycle actions ────────────────────────────────────────────
+//
+// Only the legal transitions are rendered, so this row is empty for a terminal
+// reservation and the sentence takes its place.
+
+.reservation-transitions {
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  &__final {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-style: italic;
+  }
 }
 
 // ── Cards ────────────────────────────────────────────────────────────────────
@@ -72,7 +108,7 @@ h1, h2, h3, h4 { margin: 0 0 0.5rem; font-weight: 600; }
   &__value { font-size: 2rem; font-weight: 700; color: var(--accent); }
   &__label { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; }
 
-  &__bookings {
+  &__reservations {
     list-style: none;
     margin: 0.5rem 0 0;
     padding: 0.4rem 0 0;
@@ -80,7 +116,7 @@ h1, h2, h3, h4 { margin: 0 0 0.5rem; font-weight: 600; }
     border-top: 1px solid var(--border);
   }
 
-  &__booking-item {
+  &__reservation-item {
     display: flex;
     gap: 0.4rem;
     padding: 0.15rem 0;
@@ -91,7 +127,7 @@ h1, h2, h3, h4 { margin: 0 0 0.5rem; font-weight: 600; }
   }
 
   &__apt   { font-weight: 600; color: var(--text); }
-  &__client { color: var(--text-muted); }
+  &__guest { color: var(--text-muted); }
 }
 
 // ── Tables ───────────────────────────────────────────────────────────────────
@@ -462,9 +498,9 @@ input[type="number"] { -moz-appearance: textfield; }
   }
 }
 
-// ── Booking calendar ──────────────────────────────────────────────────────────
+// ── Reservation calendar ──────────────────────────────────────────────────────────
 
-.booking-calendar {
+.reservation-calendar {
   margin-top: 0.25rem;
 
   &__nav {
@@ -505,6 +541,19 @@ input[type="number"] { -moz-appearance: textfield; }
 
 // ── Calendar block layout ──────────────────────────────────────────────────────
 
+.cal-scroll {
+  // El mes no se comprime por debajo de lo legible: en pantallas estrechas la
+  // rejilla se desplaza en horizontal en lugar de estrujar los nombres.
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.cal-grid {
+  min-width: 100%;
+}
+
 .cal-header {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -543,11 +592,14 @@ input[type="number"] { -moz-appearance: textfield; }
 }
 
 .cal-band {
+  // 14 medias columnas: cada día se parte en dos para que la salida de una
+  // reserva y la entrada de la siguiente compartan el día sin pisarse.
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  height: 28px;
+  grid-template-columns: repeat(14, 1fr);
+  grid-auto-rows: 24px;
+  row-gap: 2px;
+  min-height: 28px;
   padding: 2px 0;
-  overflow: hidden;
   border-bottom: 1px solid var(--border);
   border-right: 1px solid var(--border);
 }
@@ -579,10 +631,9 @@ input[type="number"] { -moz-appearance: textfield; }
   }
 }
 
-// ── Booking block ──────────────────────────────────────────────────────────────
+// ── Reservation block ──────────────────────────────────────────────────────────────
 
-.booking-block {
-  grid-row: 1;
+.reservation-block {
   height: 24px;
   background: var(--apt-color);
   display: flex;
@@ -598,12 +649,10 @@ input[type="number"] { -moz-appearance: textfield; }
   &--start {
     border-top-left-radius: 6px;
     border-bottom-left-radius: 6px;
-    margin-left: calc(100% / 14);
   }
   &--end {
     border-top-right-radius: 6px;
     border-bottom-right-radius: 6px;
-    margin-right: calc(100% / 14);
   }
 
   &--highlighted {
@@ -668,18 +717,33 @@ input[type="number"] { -moz-appearance: textfield; }
   &__surface:hover &__handle { opacity: 1; }
 }
 
-// ── Booking popup ──────────────────────────────────────────────────────────────
+// En móvil la rejilla mantiene un ancho mínimo legible (~88px por día) y las
+// bandas crecen un poco para que el bloque sea un objetivo táctil cómodo.
+@media (max-width: 720px) {
+  .cal-grid { min-width: 620px; }
 
-.booking-popup-overlay {
+  .cal-band {
+    grid-auto-rows: 26px;
+    min-height: 30px;
+  }
+
+  .reservation-block { height: 26px; }
+  .reservation-block__label { font-size: 0.75rem; }
+}
+
+// ── Reservation popup ──────────────────────────────────────────────────────────────
+
+.reservation-popup-overlay {
   position: fixed;
   inset: 0;
   z-index: 190;
 }
 
-.booking-popup {
+.reservation-popup {
   position: fixed;
   z-index: 200;
   width: 300px;
+  max-width: calc(100vw - 16px);
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -704,7 +768,7 @@ input[type="number"] { -moz-appearance: textfield; }
     &:hover { background: var(--bg); color: var(--text); }
   }
 
-  &__client {
+  &__guest {
     font-size: 1rem;
     font-weight: 700;
     text-transform: uppercase;

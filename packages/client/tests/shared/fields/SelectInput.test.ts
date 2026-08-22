@@ -7,8 +7,8 @@ import SelectInput from '../../../src/shared/fields/SelectInput.vue'
 enableAutoUnmount(afterEach)
 
 const OPTIONS = [
-  { value: 'a1', label: 'Apartment 1' },
-  { value: 'a2', label: 'Apartment 2' },
+  { value: 'a1', label: 'Listing 1' },
+  { value: 'a2', label: 'Listing 2' },
 ]
 
 const dropdown = () => document.querySelector('.select-dropdown')
@@ -22,23 +22,23 @@ function click(el: Element | null): Promise<void> {
 
 describe('SelectInput — inline mode (default)', () => {
   it('renders the label', () => {
-    const w = mount(SelectInput, { props: { text: 'Apartment', modelValue: 'a1', options: OPTIONS } })
-    expect(w.find('.detail-field__label').text()).toBe('Apartment')
+    const w = mount(SelectInput, { props: { text: 'Listing', modelValue: 'a1', options: OPTIONS } })
+    expect(w.find('.detail-field__label').text()).toBe('Listing')
   })
 
   it('shows the label of the matching option', () => {
-    const w = mount(SelectInput, { props: { text: 'Apartment', modelValue: 'a1', options: OPTIONS } })
-    expect(w.find('.detail-field__val').text()).toBe('Apartment 1')
+    const w = mount(SelectInput, { props: { text: 'Listing', modelValue: 'a1', options: OPTIONS } })
+    expect(w.find('.detail-field__val').text()).toBe('Listing 1')
   })
 
   it('shows — when modelValue has no matching option', () => {
-    const w = mount(SelectInput, { props: { text: 'Apartment', modelValue: '', options: OPTIONS } })
+    const w = mount(SelectInput, { props: { text: 'Listing', modelValue: '', options: OPTIONS } })
     expect(w.find('.detail-field__val').text()).toBe('—')
   })
 
   it('falls back to the placeholder when empty', () => {
     const w = mount(SelectInput, {
-      props: { text: 'Apartment', modelValue: '', options: OPTIONS, placeholder: 'Select…' },
+      props: { text: 'Listing', modelValue: '', options: OPTIONS, placeholder: 'Select…' },
     })
     expect(w.find('.detail-field__val').text()).toBe('Select…')
   })
@@ -60,27 +60,27 @@ describe('SelectInput — inline mode (default)', () => {
   })
 
   it('opens the dropdown on trigger click', async () => {
-    const w = mount(SelectInput, { props: { text: 'Apartment', modelValue: 'a1', options: OPTIONS } })
+    const w = mount(SelectInput, { props: { text: 'Listing', modelValue: 'a1', options: OPTIONS } })
     await w.find('.inline-select-trigger').trigger('click')
     expect(dropdown()).not.toBeNull()
     expect(w.find('.detail-field').classes()).toContain('select-field--open')
   })
 
   it('renders every option when open', async () => {
-    const w = mount(SelectInput, { props: { text: 'Apartment', modelValue: 'a1', options: OPTIONS } })
+    const w = mount(SelectInput, { props: { text: 'Listing', modelValue: 'a1', options: OPTIONS } })
     await w.find('.inline-select-trigger').trigger('click')
-    expect(options().map((o) => o.textContent)).toEqual(['Apartment 1', 'Apartment 2'])
+    expect(options().map((o) => o.textContent)).toEqual(['Listing 1', 'Listing 2'])
   })
 
   it('marks the selected option as active', async () => {
-    const w = mount(SelectInput, { props: { text: 'Apartment', modelValue: 'a2', options: OPTIONS } })
+    const w = mount(SelectInput, { props: { text: 'Listing', modelValue: 'a2', options: OPTIONS } })
     await w.find('.inline-select-trigger').trigger('click')
     expect(options()[1]!.classList.contains('select-option--active')).toBe(true)
     expect(options()[1]!.getAttribute('aria-selected')).toBe('true')
   })
 
   it('emits update:modelValue and closes when an option is picked', async () => {
-    const w = mount(SelectInput, { props: { text: 'Apartment', modelValue: 'a1', options: OPTIONS } })
+    const w = mount(SelectInput, { props: { text: 'Listing', modelValue: 'a1', options: OPTIONS } })
     await w.find('.inline-select-trigger').trigger('click')
     await click(options()[1]!)
     expect(w.emitted('update:modelValue')).toEqual([['a2']])
@@ -88,7 +88,7 @@ describe('SelectInput — inline mode (default)', () => {
   })
 
   it('closes without emitting when the current value is picked', async () => {
-    const w = mount(SelectInput, { props: { text: 'Apartment', modelValue: 'a1', options: OPTIONS } })
+    const w = mount(SelectInput, { props: { text: 'Listing', modelValue: 'a1', options: OPTIONS } })
     await w.find('.inline-select-trigger').trigger('click')
     await click(options()[0]!)
     expect(w.emitted('update:modelValue')).toBeFalsy()
@@ -96,7 +96,7 @@ describe('SelectInput — inline mode (default)', () => {
   })
 
   it('closes on backdrop click without emitting', async () => {
-    const w = mount(SelectInput, { props: { text: 'Apartment', modelValue: 'a1', options: OPTIONS } })
+    const w = mount(SelectInput, { props: { text: 'Listing', modelValue: 'a1', options: OPTIONS } })
     await w.find('.inline-select-trigger').trigger('click')
     await click(backdrop())
     expect(dropdown()).toBeNull()
@@ -104,7 +104,7 @@ describe('SelectInput — inline mode (default)', () => {
   })
 
   it('closes on scroll so the dropdown cannot detach from its trigger', async () => {
-    const w = mount(SelectInput, { props: { text: 'Apartment', modelValue: 'a1', options: OPTIONS } })
+    const w = mount(SelectInput, { props: { text: 'Listing', modelValue: 'a1', options: OPTIONS } })
     await w.find('.inline-select-trigger').trigger('click')
     expect(dropdown()).not.toBeNull()
 
@@ -133,10 +133,10 @@ describe('SelectInput — inline mode (default)', () => {
 describe('SelectInput — form mode', () => {
   it('renders .form-group with a label and a combobox trigger', () => {
     const w = mount(SelectInput, {
-      props: { text: 'Apartment', modelValue: 'a1', options: OPTIONS, mode: 'form' },
+      props: { text: 'Listing', modelValue: 'a1', options: OPTIONS, mode: 'form' },
     })
     expect(w.find('.form-group').exists()).toBe(true)
-    expect(w.find('label').text()).toBe('Apartment')
+    expect(w.find('label').text()).toBe('Listing')
 
     const trigger = w.find('.custom-select-trigger')
     expect(trigger.exists()).toBe(true)

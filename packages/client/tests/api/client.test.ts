@@ -33,7 +33,7 @@ describe('ApiError', () => {
 describe('request()', () => {
   it('returns parsed JSON for a 2xx response with JSON content-type', async () => {
     vi.stubGlobal('fetch', mockFetch(200, { data: 1 }))
-    const result = await api.apartments.list()
+    const result = await api.listings.list()
     expect(result).toEqual({ data: 1 })
   })
 
@@ -45,14 +45,14 @@ describe('request()', () => {
 
   it('throws ApiError for a non-2xx response with JSON error field', async () => {
     vi.stubGlobal('fetch', mockFetch(400, { error: 'Bad request' }))
-    await expect(api.apartments.list()).rejects.toThrow('Bad request')
-    await expect(api.apartments.list()).rejects.toBeInstanceOf(ApiError)
+    await expect(api.listings.list()).rejects.toThrow('Bad request')
+    await expect(api.listings.list()).rejects.toBeInstanceOf(ApiError)
   })
 
   it('throws ApiError with status set correctly', async () => {
     vi.stubGlobal('fetch', mockFetch(404, { error: 'Not found' }))
     try {
-      await api.apartments.list()
+      await api.listings.list()
     } catch (e) {
       expect((e as ApiError).status).toBe(404)
     }
@@ -66,12 +66,12 @@ describe('request()', () => {
       headers: { get: () => 'application/json' },
       text: () => Promise.resolve('not json'),
     }))
-    await expect(api.apartments.list()).rejects.toThrow('not json')
+    await expect(api.listings.list()).rejects.toThrow('not json')
   })
 
   it('uses raw text when JSON has no error field', async () => {
     vi.stubGlobal('fetch', mockFetch(400, { message: 'Bad request' }))
-    await expect(api.apartments.list()).rejects.toThrow('{"message":"Bad request"}')
+    await expect(api.listings.list()).rejects.toThrow('{"message":"Bad request"}')
   })
 
   it('returns undefined for a 2xx response with null content-type header', async () => {
@@ -80,7 +80,7 @@ describe('request()', () => {
       status: 200,
       headers: { get: () => null },
     }))
-    const result = await api.apartments.list()
+    const result = await api.listings.list()
     expect(result).toBeUndefined()
   })
 
@@ -92,29 +92,29 @@ describe('request()', () => {
       headers: { get: () => 'application/json' },
       text: () => Promise.reject(new Error('body error')),
     }))
-    await expect(api.apartments.list()).rejects.toThrow('Service Unavailable')
+    await expect(api.listings.list()).rejects.toThrow('Service Unavailable')
   })
 })
 
-describe('api.bookings.list()', () => {
+describe('api.reservations.list()', () => {
   it('uses no query string when no params', async () => {
     const fetchMock = mockFetch(200, [])
     vi.stubGlobal('fetch', fetchMock)
-    await api.bookings.list()
-    expect(fetchMock.mock.calls[0]![0]).toBe('/api/bookings')
+    await api.reservations.list()
+    expect(fetchMock.mock.calls[0]![0]).toBe('/api/reservations')
   })
 
-  it('appends apartmentId to query string', async () => {
+  it('appends listingId to query string', async () => {
     const fetchMock = mockFetch(200, [])
     vi.stubGlobal('fetch', fetchMock)
-    await api.bookings.list({ apartmentId: 'apt1' })
-    expect(fetchMock.mock.calls[0]![0]).toBe('/api/bookings?apartmentId=apt1')
+    await api.reservations.list({ listingId: 'apt1' })
+    expect(fetchMock.mock.calls[0]![0]).toBe('/api/reservations?listingId=apt1')
   })
 
   it('appends from and to to query string', async () => {
     const fetchMock = mockFetch(200, [])
     vi.stubGlobal('fetch', fetchMock)
-    await api.bookings.list({ from: '2025-06-01', to: '2025-06-30' })
+    await api.reservations.list({ from: '2025-06-01', to: '2025-06-30' })
     expect(fetchMock.mock.calls[0]![0]).toContain('from=2025-06-01')
     expect(fetchMock.mock.calls[0]![0]).toContain('to=2025-06-30')
   })
@@ -122,9 +122,9 @@ describe('api.bookings.list()', () => {
   it('appends all three params together', async () => {
     const fetchMock = mockFetch(200, [])
     vi.stubGlobal('fetch', fetchMock)
-    await api.bookings.list({ apartmentId: 'apt1', from: '2025-06-01', to: '2025-06-30' })
+    await api.reservations.list({ listingId: 'apt1', from: '2025-06-01', to: '2025-06-30' })
     const url = fetchMock.mock.calls[0]![0] as string
-    expect(url).toContain('apartmentId=apt1')
+    expect(url).toContain('listingId=apt1')
     expect(url).toContain('from=2025-06-01')
     expect(url).toContain('to=2025-06-30')
   })
@@ -158,62 +158,62 @@ describe('api.auth.setup()', () => {
   })
 })
 
-describe('api.apartments.*', () => {
-  const aptBody = { name: 'A', address: '1 St', floor: 1, door: 'A', price: 100, minNights: 1, maxGuests: 2, rooms: 1, bathrooms: 1, isAvailable: true }
+describe('api.listings.*', () => {
+  const aptBody = { name: 'A', address: '1 St', floor: 1, door: 'A', nightlyRate: 100, minNights: 1, maxGuests: 2, rooms: 1, bathrooms: 1, isActive: true }
   const apt = { id: 'apt1', ...aptBody }
-  it('create posts to /api/admin/apartments', async () => {
+  it('create posts to /api/admin/listings', async () => {
     vi.stubGlobal('fetch', mockFetch(201, apt))
-    expect(await api.apartments.create(aptBody)).toEqual(apt)
+    expect(await api.listings.create(aptBody)).toEqual(apt)
   })
-  it('update patches /api/admin/apartments/:id', async () => {
+  it('update patches /api/admin/listings/:id', async () => {
     vi.stubGlobal('fetch', mockFetch(200, apt))
-    expect(await api.apartments.update('apt1', { price: 120 })).toEqual(apt)
+    expect(await api.listings.update('apt1', { nightlyRate: 120 })).toEqual(apt)
   })
-  it('delete sends DELETE to /api/admin/apartments/:id', async () => {
+  it('delete sends DELETE to /api/admin/listings/:id', async () => {
     vi.stubGlobal('fetch', mockFetch(200, '', 'text/plain'))
-    await expect(api.apartments.delete('apt1')).resolves.toBeUndefined()
+    await expect(api.listings.delete('apt1')).resolves.toBeUndefined()
   })
 })
 
-describe('api.bookings.*', () => {
-  const bookingBody = { apartmentId: 'apt1', clientId: 'cli1', channelId: 'ch1', fromDate: '2025-06-01', toDate: '2025-06-05', adultCount: 2, childrenCount: 0, status: 'Active' as const, totalAmountDue: 400 }
-  const booking = { id: 'b1', ...bookingBody, createdAt: '2025-01-01T00:00:00Z' }
-  it('create posts to /api/admin/bookings', async () => {
-    vi.stubGlobal('fetch', mockFetch(201, booking))
-    expect(await api.bookings.create(bookingBody)).toEqual(booking)
+describe('api.reservations.*', () => {
+  const reservationBody = { listingId: 'apt1', guestId: 'cli1', channelId: 'ch1', checkIn: '2025-06-01', checkOut: '2025-06-05', adultCount: 2, childrenCount: 0, status: 'Active' as const, totalAmountDue: 400 }
+  const reservation = { id: 'b1', ...reservationBody, createdAt: '2025-01-01T00:00:00Z' }
+  it('create posts to /api/admin/reservations', async () => {
+    vi.stubGlobal('fetch', mockFetch(201, reservation))
+    expect(await api.reservations.create(reservationBody)).toEqual(reservation)
   })
-  it('update patches /api/admin/bookings/:id', async () => {
-    vi.stubGlobal('fetch', mockFetch(200, booking))
-    expect(await api.bookings.update('b1', { totalAmountDue: 500 })).toEqual(booking)
+  it('update patches /api/admin/reservations/:id', async () => {
+    vi.stubGlobal('fetch', mockFetch(200, reservation))
+    expect(await api.reservations.update('b1', { totalAmountDue: 500 })).toEqual(reservation)
   })
-  it('patch sends PATCH to /api/bookings/:id', async () => {
-    vi.stubGlobal('fetch', mockFetch(200, booking))
-    expect(await api.bookings.patch('b1', { comment: 'hi', paidDate: '2025-06-02' })).toEqual(booking)
+  it('patch sends PATCH to /api/reservations/:id', async () => {
+    vi.stubGlobal('fetch', mockFetch(200, reservation))
+    expect(await api.reservations.patch('b1', { comment: 'hi', paidDate: '2025-06-02' })).toEqual(reservation)
   })
-  it('delete sends DELETE to /api/admin/bookings/:id', async () => {
+  it('delete sends DELETE to /api/admin/reservations/:id', async () => {
     vi.stubGlobal('fetch', mockFetch(200, '', 'text/plain'))
-    await expect(api.bookings.delete('b1')).resolves.toBeUndefined()
+    await expect(api.reservations.delete('b1')).resolves.toBeUndefined()
   })
 })
 
-describe('api.clients.*', () => {
-  const clientBody = { name: 'Alice' }
-  const client = { id: 'cli1', ...clientBody }
+describe('api.guests.*', () => {
+  const guestBody = { name: 'Alice' }
+  const guest = { id: 'cli1', ...guestBody }
   it('list fetches /api/clients', async () => {
-    vi.stubGlobal('fetch', mockFetch(200, [client]))
-    expect(await api.clients.list()).toEqual([client])
+    vi.stubGlobal('fetch', mockFetch(200, [guest]))
+    expect(await api.guests.list()).toEqual([guest])
   })
-  it('create posts to /api/admin/clients', async () => {
-    vi.stubGlobal('fetch', mockFetch(201, client))
-    expect(await api.clients.create(clientBody)).toEqual(client)
+  it('create posts to /api/admin/guests', async () => {
+    vi.stubGlobal('fetch', mockFetch(201, guest))
+    expect(await api.guests.create(guestBody)).toEqual(guest)
   })
-  it('update patches /api/admin/clients/:id', async () => {
-    vi.stubGlobal('fetch', mockFetch(200, client))
-    expect(await api.clients.update('cli1', { name: 'Alicia' })).toEqual(client)
+  it('update patches /api/admin/guests/:id', async () => {
+    vi.stubGlobal('fetch', mockFetch(200, guest))
+    expect(await api.guests.update('cli1', { name: 'Alicia' })).toEqual(guest)
   })
-  it('delete sends DELETE to /api/admin/clients/:id', async () => {
+  it('delete sends DELETE to /api/admin/guests/:id', async () => {
     vi.stubGlobal('fetch', mockFetch(200, '', 'text/plain'))
-    await expect(api.clients.delete('cli1')).resolves.toBeUndefined()
+    await expect(api.guests.delete('cli1')).resolves.toBeUndefined()
   })
 })
 
@@ -259,7 +259,7 @@ describe('api.users.*', () => {
 })
 
 describe('api.calendarLinks.*', () => {
-  const linkBody = { channelId: 'ch1', apartmentId: 'apt1', url: 'https://example.com/ical.ics' }
+  const linkBody = { channelId: 'ch1', listingId: 'apt1', url: 'https://example.com/ical.ics' }
   const link = { id: 'cl1', ...linkBody }
   it('list fetches /api/calendar-links', async () => {
     const fetchMock = mockFetch(200, [link])

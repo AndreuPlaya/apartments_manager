@@ -95,6 +95,81 @@ export const MIGRATIONS: Migration[] = [
       );
     `,
   },
+  {
+    // docs/GLOSSARY.md: one word per concept, and the industry term wins.
+    // apartments -> listings, bookings -> reservations, clients -> guests.
+    //
+    // `properties` is dropped, not renamed: it was an inventory table nothing
+    // referenced and no route wrote to after the first release. A listing is the
+    // only unit this application knows (docs/GLOSSARY.md §1).
+    //
+    // `reservations` is rebuilt rather than renamed because its status CHECK
+    // constraint has to change, and SQLite cannot alter one in place.
+    id: '002_consolidate_vocabulary',
+    sql: `
+      DROP TABLE properties;
+
+      ALTER TABLE apartments RENAME TO listings;
+      ALTER TABLE listings RENAME COLUMN price TO nightlyRate;
+      ALTER TABLE listings RENAME COLUMN isAvailable TO isActive;
+      DROP INDEX idx_apartments_name;
+      CREATE UNIQUE INDEX idx_listings_name ON listings (lower(name));
+
+      ALTER TABLE clients RENAME TO guests;
+      DROP INDEX idx_clients_document;
+      DROP INDEX idx_clients_email;
+      CREATE UNIQUE INDEX idx_guests_document ON guests (upper(identityDocument));
+      CREATE UNIQUE INDEX idx_guests_email    ON guests (lower(email));
+
+      ALTER TABLE calendar_links RENAME COLUMN apartmentId TO listingId;
+
+      CREATE TABLE reservations (
+        id              TEXT PRIMARY KEY,
+        listingId       TEXT    NOT NULL REFERENCES listings (id) ON DELETE RESTRICT,
+        guestId         TEXT    NOT NULL REFERENCES guests (id)   ON DELETE RESTRICT,
+        channelId       TEXT    NOT NULL REFERENCES channels (id) ON DELETE RESTRICT,
+        checkIn         TEXT    NOT NULL,
+        checkOut        TEXT    NOT NULL,
+        adultCount      INTEGER NOT NULL,
+        childrenCount   INTEGER NOT NULL,
+        cribRequested   INTEGER CHECK (cribRequested IN (0, 1)),
+        status          TEXT    NOT NULL CHECK (
+                          status IN ('Confirmed', 'CheckedIn', 'CheckedOut', 'Cancelled', 'NoShow')
+                        ),
+        paidDate        TEXT,
+        totalAmountDue  REAL    NOT NULL,
+        comment         TEXT,
+        createdAt       TEXT    NOT NULL
+      );
+
+      -- The old model had one live state, so a finished stay and one starting
+      -- tomorrow were indistinguishable. Placing each stay by its own dates is
+      -- the only reading of 'Active' that leaves the register usable: without
+      -- it every past stay would land in reception's "arrival unconfirmed"
+      -- queue on the morning of the upgrade.
+      INSERT INTO reservations
+        (id, listingId, guestId, channelId, checkIn, checkOut, adultCount,
+         childrenCount, cribRequested, status, paidDate, totalAmountDue,
+         comment, createdAt)
+      SELECT
+        id, apartmentId, clientId, channelId, fromDate, toDate, adultCount,
+        childrenCount, cribRequested,
+        CASE
+          WHEN status = 'Cancelled'    THEN 'Cancelled'
+          WHEN toDate   <= date('now') THEN 'CheckedOut'
+          WHEN fromDate <= date('now') THEN 'CheckedIn'
+          ELSE 'Confirmed'
+        END,
+        paidDate, totalAmountDue, comment, createdAt
+      FROM bookings;
+
+      DROP TABLE bookings;
+
+      CREATE INDEX idx_reservations_listing_dates ON reservations (listingId, checkIn, checkOut);
+      CREATE INDEX idx_reservations_guest   ON reservations (guestId);
+      CREATE INDEX idx_reservations_channel ON reservations (channelId);
+    `,
+  },
 ]
 
 export function runMigrations(db: DatabaseSync): void {

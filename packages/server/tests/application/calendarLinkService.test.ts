@@ -4,21 +4,21 @@ import {
   listCalendarLinks,
   upsertCalendarLink,
 } from '../../src/application/calendarLinkService.js'
-import * as apartments from '../../src/infrastructure/repositories/apartments.js'
+import * as listings from '../../src/infrastructure/repositories/listings.js'
 import * as calendarLinks from '../../src/infrastructure/repositories/calendarLinks.js'
 import * as channels from '../../src/infrastructure/repositories/channels.js'
-import { APARTMENT, CHANNEL, seedBase, useTestDb } from '../helpers/testDb.js'
+import { LISTING, CHANNEL, seedBase, useTestDb } from '../helpers/testDb.js'
 
 useTestDb()
 
 beforeEach(() => {
   seedBase()
-  apartments.insert({ ...APARTMENT, id: 'apt2', name: 'Villa' })
+  listings.insert({ ...LISTING, id: 'apt2', name: 'Villa' })
   channels.insert({ ...CHANNEL, id: 'ch2', name: 'Airbnb' })
   calendarLinks.insert({
     id: 'cl1',
     channelId: 'ch1',
-    apartmentId: 'apt1',
+    listingId: 'apt1',
     url: 'https://example.com/old.ics',
   })
 })
@@ -26,16 +26,16 @@ beforeEach(() => {
 describe('listCalendarLinks', () => {
   it('returns the stored links', () => {
     expect(listCalendarLinks()).toEqual([
-      { id: 'cl1', channelId: 'ch1', apartmentId: 'apt1', url: 'https://example.com/old.ics' },
+      { id: 'cl1', channelId: 'ch1', listingId: 'apt1', url: 'https://example.com/old.ics' },
     ])
   })
 })
 
 describe('upsertCalendarLink', () => {
-  it('updates url when a link with same channel + apartment already exists', () => {
+  it('updates url when a link with same channel + listing already exists', () => {
     const result = upsertCalendarLink({
       channelId: 'ch1',
-      apartmentId: 'apt1',
+      listingId: 'apt1',
       url: 'https://example.com/new.ics',
     })
 
@@ -47,7 +47,7 @@ describe('upsertCalendarLink', () => {
   it('creates a new link with generated id when no match exists', () => {
     const result = upsertCalendarLink({
       channelId: 'ch2',
-      apartmentId: 'apt2',
+      listingId: 'apt2',
       url: 'https://example.com/fresh.ics',
     })
 
@@ -55,10 +55,10 @@ describe('upsertCalendarLink', () => {
     expect(calendarLinks.findById(result.id)).toEqual(result)
   })
 
-  it('creates a new link when only one of channel/apartment matches', () => {
+  it('creates a new link when only one of channel/listing matches', () => {
     const result = upsertCalendarLink({
       channelId: 'ch1',
-      apartmentId: 'apt2',
+      listingId: 'apt2',
       url: 'https://example.com/other.ics',
     })
 
@@ -69,7 +69,7 @@ describe('upsertCalendarLink', () => {
   it('accepts webcal urls', () => {
     const result = upsertCalendarLink({
       channelId: 'ch2',
-      apartmentId: 'apt1',
+      listingId: 'apt1',
       url: 'webcal://example.com/f.ics',
     })
 
@@ -78,13 +78,13 @@ describe('upsertCalendarLink', () => {
 
   it('rejects a malformed url', () => {
     expect(() =>
-      upsertCalendarLink({ channelId: 'ch1', apartmentId: 'apt1', url: 'not-a-url' }),
+      upsertCalendarLink({ channelId: 'ch1', listingId: 'apt1', url: 'not-a-url' }),
     ).toThrow('Invalid URL format')
   })
 
   it('rejects a disallowed protocol', () => {
     expect(() =>
-      upsertCalendarLink({ channelId: 'ch1', apartmentId: 'apt1', url: 'ftp://example.com/f.ics' }),
+      upsertCalendarLink({ channelId: 'ch1', listingId: 'apt1', url: 'ftp://example.com/f.ics' }),
     ).toThrow('protocol')
   })
 })
@@ -100,8 +100,8 @@ describe('deleteCalendarLink', () => {
     expect(() => deleteCalendarLink('ghost')).toThrow('not found')
   })
 
-  it('cascades when the referenced apartment is deleted', () => {
-    apartments.deleteById('apt1')
+  it('cascades when the referenced listing is deleted', () => {
+    listings.deleteById('apt1')
 
     expect(listCalendarLinks()).toEqual([])
   })

@@ -1,15 +1,15 @@
 import { Hono } from 'hono'
 import { rateLimiter } from 'hono-rate-limiter'
 import {
-  createApartment,
-  deleteApartment,
-  updateApartment,
-} from '../application/apartmentService.js'
+  createListing,
+  deleteListing,
+  updateListing,
+} from '../application/listingService.js'
 import {
-  createBooking,
-  deleteBooking,
-  updateBooking,
-} from '../application/bookingService.js'
+  createReservation,
+  deleteReservation,
+  updateReservation,
+} from '../application/reservationService.js'
 import {
   deleteCalendarLink,
   upsertCalendarLink,
@@ -20,16 +20,11 @@ import {
   updateChannel,
 } from '../application/channelService.js'
 import {
-  createClient,
-  deleteClient,
-  updateClient,
-} from '../application/clientService.js'
+  createGuest,
+  deleteGuest,
+  updateGuest,
+} from '../application/guestService.js'
 import { getMetrics } from '../application/metricsService.js'
-import {
-  createProperty,
-  deleteProperty,
-  updateProperty,
-} from '../application/propertyService.js'
 import {
   createUser,
   deleteUser,
@@ -41,18 +36,16 @@ import { adminMiddleware } from '../middleware/admin.js'
 import { authMiddleware } from '../middleware/auth.js'
 import { handleError } from './_utils.js'
 import type {
-  CreateApartmentRequest,
-  CreateBookingRequest,
+  CreateListingRequest,
+  CreateReservationRequest,
   CreateCalendarLinkRequest,
   CreateChannelRequest,
-  CreateClientRequest,
-  CreatePropertyRequest,
+  CreateGuestRequest,
   CreateUserRequest,
-  UpdateApartmentRequest,
-  UpdateBookingRequest,
+  UpdateListingRequest,
+  UpdateReservationRequest,
   UpdateChannelRequest,
-  UpdateClientRequest,
-  UpdatePropertyRequest,
+  UpdateGuestRequest,
   UpdateUserRequest,
 } from '../domain/models.js'
 
@@ -69,122 +62,96 @@ const writeLimiter = rateLimiter({
   keyGenerator: (c) => c.get('user')?.username ?? 'unknown',
 })
 
-// ── Apartments ─────────────────────────────────────────────────────────────
+// ── Listings ─────────────────────────────────────────────────────────────
 
-adminRoutes.post('/api/admin/apartments', writeLimiter, async (c) => {
+adminRoutes.post('/api/admin/listings', writeLimiter, async (c) => {
   try {
-    const body = await c.req.json<CreateApartmentRequest>()
-    const result = createApartment(body)
-    logAudit({ timestamp: new Date().toISOString(), username: c.get('user').username, isAdmin: true, action: 'create', resource: 'apartment', resourceId: result.id })
+    const body = await c.req.json<CreateListingRequest>()
+    const result = createListing(body)
+    logAudit({ timestamp: new Date().toISOString(), username: c.get('user').username, isAdmin: true, action: 'create', resource: 'listing', resourceId: result.id })
     return c.json(result, 201)
   } catch (err) { return handleError(err, c) }
 })
 
-adminRoutes.patch('/api/admin/apartments/:id', writeLimiter, async (c) => {
+adminRoutes.patch('/api/admin/listings/:id', writeLimiter, async (c) => {
   try {
     const id = c.req.param('id')
-    const body = await c.req.json<UpdateApartmentRequest>()
-    const result = updateApartment(id, body)
-    logAudit({ timestamp: new Date().toISOString(), username: c.get('user').username, isAdmin: true, action: 'update', resource: 'apartment', resourceId: id })
+    const body = await c.req.json<UpdateListingRequest>()
+    const result = updateListing(id, body)
+    logAudit({ timestamp: new Date().toISOString(), username: c.get('user').username, isAdmin: true, action: 'update', resource: 'listing', resourceId: id })
     return c.json(result)
   } catch (err) { return handleError(err, c) }
 })
 
-adminRoutes.delete('/api/admin/apartments/:id', writeLimiter, (c) => {
+adminRoutes.delete('/api/admin/listings/:id', writeLimiter, (c) => {
   try {
     const id = c.req.param('id')
-    deleteApartment(id)
-    logAudit({ timestamp: new Date().toISOString(), username: c.get('user').username, isAdmin: true, action: 'delete', resource: 'apartment', resourceId: id })
+    deleteListing(id)
+    logAudit({ timestamp: new Date().toISOString(), username: c.get('user').username, isAdmin: true, action: 'delete', resource: 'listing', resourceId: id })
     return c.json({ ok: true })
   } catch (err) { return handleError(err, c) }
 })
 
-// ── Properties ─────────────────────────────────────────────────────────────
+// ── Reservations ───────────────────────────────────────────────────────────────
 
-adminRoutes.post('/api/admin/properties', writeLimiter, async (c) => {
+adminRoutes.post('/api/admin/reservations', writeLimiter, async (c) => {
   try {
-    const body = await c.req.json<CreatePropertyRequest>()
-    const result = createProperty(body)
-    logAudit({ timestamp: new Date().toISOString(), username: c.get('user').username, isAdmin: true, action: 'create', resource: 'property', resourceId: result.id })
+    const body = await c.req.json<CreateReservationRequest>()
+    const result = createReservation(body)
+    logAudit({ timestamp: new Date().toISOString(), username: c.get('user').username, isAdmin: true, action: 'create', resource: 'reservation', resourceId: result.id })
     return c.json(result, 201)
   } catch (err) { return handleError(err, c) }
 })
 
-adminRoutes.patch('/api/admin/properties/:id', writeLimiter, async (c) => {
+// `?override=true` lifts the lifecycle graph (docs/RESERVATION_LIFECYCLE.md L4).
+// It is opt-in rather than implied by being an admin, so the ordinary edit still
+// gets refused for an illegal transition, and the override is audited apart.
+adminRoutes.patch('/api/admin/reservations/:id', writeLimiter, async (c) => {
   try {
     const id = c.req.param('id')
-    const body = await c.req.json<UpdatePropertyRequest>()
-    const result = updateProperty(id, body)
-    logAudit({ timestamp: new Date().toISOString(), username: c.get('user').username, isAdmin: true, action: 'update', resource: 'property', resourceId: id })
+    const override = c.req.query('override') === 'true'
+    const body = await c.req.json<UpdateReservationRequest>()
+    const result = updateReservation(id, body, { override })
+    logAudit({ timestamp: new Date().toISOString(), username: c.get('user').username, isAdmin: true, action: override ? 'override' : 'update', resource: 'reservation', resourceId: id })
     return c.json(result)
   } catch (err) { return handleError(err, c) }
 })
 
-adminRoutes.delete('/api/admin/properties/:id', writeLimiter, (c) => {
+adminRoutes.delete('/api/admin/reservations/:id', writeLimiter, (c) => {
   try {
     const id = c.req.param('id')
-    deleteProperty(id)
-    logAudit({ timestamp: new Date().toISOString(), username: c.get('user').username, isAdmin: true, action: 'delete', resource: 'property', resourceId: id })
+    deleteReservation(id)
+    logAudit({ timestamp: new Date().toISOString(), username: c.get('user').username, isAdmin: true, action: 'delete', resource: 'reservation', resourceId: id })
     return c.json({ ok: true })
   } catch (err) { return handleError(err, c) }
 })
 
-// ── Bookings ───────────────────────────────────────────────────────────────
+// ── Guests ────────────────────────────────────────────────────────────────
 
-adminRoutes.post('/api/admin/bookings', writeLimiter, async (c) => {
+adminRoutes.post('/api/admin/guests', writeLimiter, async (c) => {
   try {
-    const body = await c.req.json<CreateBookingRequest>()
-    const result = createBooking(body)
-    logAudit({ timestamp: new Date().toISOString(), username: c.get('user').username, isAdmin: true, action: 'create', resource: 'booking', resourceId: result.id })
+    const body = await c.req.json<CreateGuestRequest>()
+    const result = createGuest(body)
+    logAudit({ timestamp: new Date().toISOString(), username: c.get('user').username, isAdmin: true, action: 'create', resource: 'guest', resourceId: result.id })
     return c.json(result, 201)
   } catch (err) { return handleError(err, c) }
 })
 
-adminRoutes.patch('/api/admin/bookings/:id', writeLimiter, async (c) => {
+adminRoutes.patch('/api/admin/guests/:id', writeLimiter, async (c) => {
   try {
     const id = c.req.param('id')
-    const body = await c.req.json<UpdateBookingRequest>()
-    const result = updateBooking(id, body)
-    logAudit({ timestamp: new Date().toISOString(), username: c.get('user').username, isAdmin: true, action: 'update', resource: 'booking', resourceId: id })
+    const body = await c.req.json<UpdateGuestRequest>()
+    const result = updateGuest(id, body)
+    logAudit({ timestamp: new Date().toISOString(), username: c.get('user').username, isAdmin: true, action: 'update', resource: 'guest', resourceId: id })
     return c.json(result)
   } catch (err) { return handleError(err, c) }
 })
 
-adminRoutes.delete('/api/admin/bookings/:id', writeLimiter, (c) => {
+adminRoutes.delete('/api/admin/guests/:id', writeLimiter, (c) => {
   try {
     const id = c.req.param('id')
-    deleteBooking(id)
-    logAudit({ timestamp: new Date().toISOString(), username: c.get('user').username, isAdmin: true, action: 'delete', resource: 'booking', resourceId: id })
-    return c.json({ ok: true })
-  } catch (err) { return handleError(err, c) }
-})
-
-// ── Clients ────────────────────────────────────────────────────────────────
-
-adminRoutes.post('/api/admin/clients', writeLimiter, async (c) => {
-  try {
-    const body = await c.req.json<CreateClientRequest>()
-    const result = createClient(body)
-    logAudit({ timestamp: new Date().toISOString(), username: c.get('user').username, isAdmin: true, action: 'create', resource: 'client', resourceId: result.id })
-    return c.json(result, 201)
-  } catch (err) { return handleError(err, c) }
-})
-
-adminRoutes.patch('/api/admin/clients/:id', writeLimiter, async (c) => {
-  try {
-    const id = c.req.param('id')
-    const body = await c.req.json<UpdateClientRequest>()
-    const result = updateClient(id, body)
-    logAudit({ timestamp: new Date().toISOString(), username: c.get('user').username, isAdmin: true, action: 'update', resource: 'client', resourceId: id })
-    return c.json(result)
-  } catch (err) { return handleError(err, c) }
-})
-
-adminRoutes.delete('/api/admin/clients/:id', writeLimiter, (c) => {
-  try {
-    const id = c.req.param('id')
-    deleteClient(id)
-    logAudit({ timestamp: new Date().toISOString(), username: c.get('user').username, isAdmin: true, action: 'delete', resource: 'client', resourceId: id })
+    deleteGuest(id)
+    logAudit({ timestamp: new Date().toISOString(), username: c.get('user').username, isAdmin: true, action: 'delete', resource: 'guest', resourceId: id })
     return c.json({ ok: true })
   } catch (err) { return handleError(err, c) }
 })

@@ -7,7 +7,7 @@ import {
 } from '../../src/application/channelService.js'
 import type { Channel } from '../../src/domain/models.js'
 import * as channels from '../../src/infrastructure/repositories/channels.js'
-import { seedBase, seedBooking, useTestDb } from '../helpers/testDb.js'
+import { seedBase, seedReservation, useTestDb } from '../helpers/testDb.js'
 
 useTestDb()
 
@@ -67,7 +67,7 @@ describe('updateChannel', () => {
 })
 
 describe('deleteChannel', () => {
-  it('deletes a channel with no bookings', () => {
+  it('deletes a channel with no reservations', () => {
     deleteChannel('ch2')
 
     expect(listChannels().map((c) => c.id)).toEqual(['ch1'])
@@ -77,10 +77,10 @@ describe('deleteChannel', () => {
     expect(() => deleteChannel('ghost')).toThrow('not found')
   })
 
-  it('throws ConflictError when the channel has existing bookings', () => {
-    seedBooking()
+  it('throws ConflictError when the channel has existing reservations', () => {
+    seedReservation()
 
-    expect(() => deleteChannel('ch1')).toThrow('existing bookings')
+    expect(() => deleteChannel('ch1')).toThrow('existing reservations')
     expect(listChannels()).toHaveLength(2)
   })
 })

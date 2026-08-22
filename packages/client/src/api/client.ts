@@ -1,38 +1,44 @@
-export type BookingStatus = 'Active' | 'Cancelled'
+/** docs/RESERVATION_LIFECYCLE.md — ordered as the stay progresses. */
+export type ReservationStatus =
+  | 'Confirmed'
+  | 'CheckedIn'
+  | 'CheckedOut'
+  | 'Cancelled'
+  | 'NoShow'
 
-export interface Apartment {
+export interface Listing {
   id: string
   name: string
   address: string
   floor: number
   door: string
-  price: number
+  nightlyRate: number
   minNights: number
   maxGuests: number
   rooms: number
   bathrooms: number
-  isAvailable: boolean
+  isActive: boolean
   description?: string
 }
 
-export interface Booking {
+export interface Reservation {
   id: string
-  apartmentId: string
-  clientId: string
+  listingId: string
+  guestId: string
   channelId: string
-  fromDate: string
-  toDate: string
+  checkIn: string
+  checkOut: string
   adultCount: number
   childrenCount: number
   cribRequested?: boolean
-  status: BookingStatus
+  status: ReservationStatus
   paidDate?: string
   totalAmountDue: number
   comment?: string
   createdAt: string
 }
 
-export interface Client {
+export interface Guest {
   id: string
   identityDocument?: string
   name: string
@@ -55,7 +61,7 @@ export interface Channel {
 export interface CalendarLink {
   id: string
   channelId: string
-  apartmentId: string
+  listingId: string
   url: string
 }
 
@@ -78,7 +84,12 @@ export interface MonthlyOccupancy {
 export interface MonthlyRevenue {
   year: number
   month: number
+  /** Gross amount owed, channel commission included. */
   revenue: number
+  /** The channels' cut of `revenue`. Derived server-side, never stored. */
+  commission: number
+  /** `revenue - commission`. */
+  netRevenue: number
   cumulativeRevenue: number
 }
 
@@ -141,40 +152,51 @@ export const api = {
       json<{ ok: true }>('/api/auth/setup', 'POST', body),
   },
 
-  apartments: {
-    list: () => request<Apartment[]>('/api/apartments'),
-    create: (body: Omit<Apartment, 'id'>) =>
-      json<Apartment>('/api/admin/apartments', 'POST', body),
-    update: (id: string, body: Partial<Omit<Apartment, 'id'>>) =>
-      json<Apartment>(`/api/admin/apartments/${id}`, 'PATCH', body),
-    delete: (id: string) => request<void>(`/api/admin/apartments/${id}`, { method: 'DELETE' }),
+  listings: {
+    list: () => request<Listing[]>('/api/listings'),
+    create: (body: Omit<Listing, 'id'>) =>
+      json<Listing>('/api/admin/listings', 'POST', body),
+    update: (id: string, body: Partial<Omit<Listing, 'id'>>) =>
+      json<Listing>(`/api/admin/listings/${id}`, 'PATCH', body),
+    delete: (id: string) => request<void>(`/api/admin/listings/${id}`, { method: 'DELETE' }),
   },
 
-  bookings: {
-    list: (params?: { apartmentId?: string; from?: string; to?: string }) => {
+  reservations: {
+    list: (params?: { listingId?: string; from?: string; to?: string }) => {
       const q = new URLSearchParams()
-      if (params?.apartmentId) q.set('apartmentId', params.apartmentId)
+      if (params?.listingId) q.set('listingId', params.listingId)
       if (params?.from) q.set('from', params.from)
       if (params?.to) q.set('to', params.to)
       const qs = q.toString()
-      return request<Booking[]>(`/api/bookings${qs ? '?' + qs : ''}`)
+      return request<Reservation[]>(`/api/reservations${qs ? '?' + qs : ''}`)
     },
-    create: (body: Omit<Booking, 'id' | 'createdAt'>) =>
-      json<Booking>('/api/admin/bookings', 'POST', body),
-    update: (id: string, body: Partial<Omit<Booking, 'id' | 'createdAt'>>) =>
-      json<Booking>(`/api/admin/bookings/${id}`, 'PATCH', body),
-    patch: (id: string, body: { comment?: string; status?: BookingStatus; paidDate?: string }) =>
-      json<Booking>(`/api/admin/bookings/${id}`, 'PATCH', body),
-    delete: (id: string) => request<void>(`/api/admin/bookings/${id}`, { method: 'DELETE' }),
+    // Status is absent: every reservation is created Confirmed (lifecycle L1).
+    create: (body: Omit<Reservation, 'id' | 'createdAt' | 'status'>) =>
+      json<Reservation>('/api/admin/reservations', 'POST', body),
+    // `override` lifts the lifecycle graph. Admin-only, and never the default —
+    // an ordinary edit must still be refused for an illegal transition (L4).
+    update: (
+      id: string,
+      body: Partial<Omit<Reservation, 'id' | 'createdAt'>>,
+      opts?: { override?: boolean },
+    ) =>
+      json<Reservation>(
+        `/api/admin/reservations/${id}${opts?.override ? '?override=true' : ''}`,
+        'PATCH',
+        body,
+      ),
+    patch: (id: string, body: { comment?: string; status?: ReservationStatus; paidDate?: string }) =>
+      json<Reservation>(`/api/admin/reservations/${id}`, 'PATCH', body),
+    delete: (id: string) => request<void>(`/api/admin/reservations/${id}`, { method: 'DELETE' }),
   },
 
-  clients: {
-    list: () => request<Client[]>('/api/clients'),
-    create: (body: Omit<Client, 'id'>) =>
-      json<Client>('/api/admin/clients', 'POST', body),
-    update: (id: string, body: Partial<Omit<Client, 'id'>>) =>
-      json<Client>(`/api/admin/clients/${id}`, 'PATCH', body),
-    delete: (id: string) => request<void>(`/api/admin/clients/${id}`, { method: 'DELETE' }),
+  guests: {
+    list: () => request<Guest[]>('/api/clients'),
+    create: (body: Omit<Guest, 'id'>) =>
+      json<Guest>('/api/admin/guests', 'POST', body),
+    update: (id: string, body: Partial<Omit<Guest, 'id'>>) =>
+      json<Guest>(`/api/admin/guests/${id}`, 'PATCH', body),
+    delete: (id: string) => request<void>(`/api/admin/guests/${id}`, { method: 'DELETE' }),
   },
 
   channels: {

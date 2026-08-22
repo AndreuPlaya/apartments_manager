@@ -7,7 +7,7 @@ export interface AuditEntry {
   timestamp: string
   username: string
   isAdmin: boolean
-  action: 'create' | 'update' | 'delete'
+  action: 'create' | 'update' | 'delete' | 'override'
   resource: string
   resourceId?: string
 }

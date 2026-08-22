@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import type { Channel, CreateChannelRequest, UpdateChannelRequest } from '../domain/models.js'
 import { transaction } from '../infrastructure/db.js'
-import * as bookings from '../infrastructure/repositories/bookings.js'
+import * as reservations from '../infrastructure/repositories/reservations.js'
 import * as channels from '../infrastructure/repositories/channels.js'
 import { ConflictError, NotFoundError } from './errors.js'
 
@@ -38,8 +38,8 @@ export function updateChannel(id: string, req: UpdateChannelRequest): Channel {
 export function deleteChannel(id: string): void {
   transaction(() => {
     if (channels.findById(id) === null) throw new NotFoundError(`Channel '${id}' not found`)
-    if (bookings.existsForChannel(id)) {
-      throw new ConflictError('Cannot delete channel with existing bookings')
+    if (reservations.existsForChannel(id)) {
+      throw new ConflictError('Cannot delete channel with existing reservations')
     }
     channels.deleteById(id)
   })

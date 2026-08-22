@@ -394,9 +394,9 @@ Domain data lives in an embedded SQLite file rather than a database server. That
 
 What the move away from JSON files bought, and why it was made:
 
-- **Concurrency safety** — a JSON collection is rewritten whole on every save, so two concurrent writes lose one of them. SQLite serialises writers, and read-then-write sequences (the booking overlap check) run under `BEGIN IMMEDIATE`.
-- **Referential integrity** — foreign keys stop a booking from outliving its client; unique indexes stop duplicate names and documents.
-- **Indexed queries** — filtering bookings no longer means loading every booking into memory.
+- **Concurrency safety** — a JSON collection is rewritten whole on every save, so two concurrent writes lose one of them. SQLite serialises writers, and read-then-write sequences (the reservation overlap check) run under `BEGIN IMMEDIATE`.
+- **Referential integrity** — foreign keys stop a reservation from outliving its guest; unique indexes stop duplicate names and documents.
+- **Indexed queries** — filtering reservations no longer means loading every reservation into memory.
 - **Explicit schema changes** — versioned migrations replace remapping legacy shapes on every read.
 
 For a hot backup while the app is running, use `sqlite3 app.db ".backup out.db"` rather than copying the file mid-write.

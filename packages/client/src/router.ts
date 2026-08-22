@@ -24,17 +24,17 @@ const router = createRouter({
     },
     {
       path: '/calendar',
-      component: () => import('./pages/bookings/CalendarPage.vue'),
+      component: () => import('./pages/reservations/CalendarPage.vue'),
       meta: { requiresAuth: true },
     },
     {
-      path: '/bookings',
-      component: () => import('./pages/bookings/BookingsPage.vue'),
+      path: '/reservations',
+      component: () => import('./pages/reservations/ReservationsPage.vue'),
       meta: { requiresAuth: true },
     },
     {
-      path: '/clients',
-      component: () => import('./pages/clients/ClientsPage.vue'),
+      path: '/guests',
+      component: () => import('./pages/guests/GuestsPage.vue'),
       meta: { requiresAuth: true },
     },
     {
@@ -66,7 +66,7 @@ router.beforeEach(async (to) => {
     if (!cfg.ok) {
       // Not authenticated — check if first-run setup needed
       try {
-        await api.apartments.list()
+        await api.listings.list()
       } catch (e) {
         if (e instanceof ApiError && e.status === 503) return '/setup'
       }

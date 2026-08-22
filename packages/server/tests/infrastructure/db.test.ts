@@ -47,7 +47,7 @@ describe('openDatabase', () => {
     expect(() =>
       db
         .prepare(
-          `INSERT INTO calendar_links (id, channelId, apartmentId, url)
+          `INSERT INTO calendar_links (id, channelId, listingId, url)
            VALUES ('l1', 'missing', 'missing', 'https://x.test')`,
         )
         .run(),

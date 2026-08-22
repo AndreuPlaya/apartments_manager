@@ -12,13 +12,13 @@ import { clearCachedConfig } from '../../router'
 import ProfileTextField from '../../shared/fields/ProfileTextField.vue'
 import ProfilePasswordField from '../../shared/fields/ProfilePasswordField.vue'
 import ProfileLangField from '../../shared/fields/ProfileLangField.vue'
-import ProfileThemeField from '../../shared/fields/ProfileThemeField.vue'
+import AppSwitch from '../../shared/AppSwitch.vue'
 
 const { t } = useI18n()
 const router = useRouter()
 const { success, error } = useToast()
 const { currentLocale, setLocale } = useLocale()
-const { currentTheme, setTheme } = useTheme()
+const { isDark, setDark } = useTheme()
 
 const profile = ref<ProfileData | null>(null)
 const loading = ref(true)
@@ -28,7 +28,6 @@ const pw = reactive({ current: '', next: '', confirm: '' })
 const pwError = ref('')
 
 const langModel = ref<string>(currentLocale.value)
-const themeModel = ref<string>(currentTheme.value)
 
 const initials = computed(() => {
   const name = profile.value?.full_name || account.username || '?'
@@ -91,10 +90,6 @@ function onLangChange(val: string) {
   setLocale(val as 'en' | 'es')
 }
 
-function onThemeChange(val: string) {
-  themeModel.value = val
-  setTheme(val as 'dark' | 'light')
-}
 </script>
 
 <template>
@@ -198,10 +193,23 @@ function onThemeChange(val: string) {
               :model-value="langModel"
               @update:model-value="onLangChange"
             />
-            <ProfileThemeField
-              :text="t('profile.theme')"
-              :model-value="themeModel"
-              @update:model-value="onThemeChange"
+          </div>
+        </div>
+      </div>
+
+      <!-- Appearance -->
+      <div class="profile-panel">
+        <div class="details-panel">
+          <span class="panel-label">{{ t('profile.theme') }}</span>
+          <div class="pf-switch-row">
+            <div class="pf-switch-row__copy">
+              <span class="pf-switch-row__title">{{ t('profile.darkMode') }}</span>
+              <span class="pf-switch-row__hint">{{ t('profile.darkModeHint') }}</span>
+            </div>
+            <AppSwitch
+              :model-value="isDark"
+              :label="t('profile.darkMode')"
+              @update:model-value="setDark"
             />
           </div>
         </div>

@@ -11,9 +11,11 @@
 //   contrast    #2a2622  titulares            secundario  #e0a526  distintivos
 //   tinta       #1f1c18  cierres a contra     sobre-secundario #2a2622
 //
-// §5.2 «Aplicaciones internas»: para apm la norma se invierte — la tinta
-// profunda pasa a fondo y el lino a texto. Ese es el tema por defecto
-// (data-theme="dark"); el claro queda disponible en :root.
+// El tema por defecto es el claro: la norma tal cual la definen §2 y §3, la
+// misma paleta que la web pública, sin excepciones de contraste que arrastrar.
+// La variante invertida de §5.2 «Aplicaciones internas» —tinta profunda al
+// fondo, lino al texto— sigue disponible como modo oscuro y se activa desde las
+// preferencias del usuario (data-theme="dark").
 //
 // Ningún gris neutro y ningún negro puro: todo tono nuevo se deriva de los
 // once de la norma.
@@ -23,9 +25,15 @@ $radius-sm: 4px;
 $radius-md: 8px;
 $radius-lg: 12px;
 
-// ── Tema claro — la norma tal cual (§2, §3) ─────────────────────────────────
+// ── Tema claro — la norma tal cual (§2, §3). Por defecto en apm ─────────────
+//
+// Va en un mixin porque se aplica dos veces: en `:root` pelado, para quien
+// entra sin preferencia guardada, y en `[data-theme='light']`, para que el
+// conmutador gane también al volver del oscuro.
 
-:root {
+@mixin ixa-light {
+  color-scheme: light;
+
   // Superficies
   --bg:          #f7f2e7;  // base — lino
   --bg-soft:     #efe6d3;  // gris-suave — franjas, cabeceras de tabla
@@ -67,17 +75,19 @@ $radius-lg: 12px;
   --shadow-md: 0 4px 6px rgba(42, 38, 34, 0.09);
   --shadow-lg: 0 10px 30px rgba(42, 38, 34, 0.10);
 
-  // Barra de navegación — franja a contra en tinta profunda
-  --nav-bg:          #1f1c18;
-  --nav-text:        #b8ada0;
-  --nav-text-bright: #f4efe4;
-  --nav-accent:      #007ffd;  // sobre tinta profunda el azul-logo sí pesa (§5.2)
-  --nav-on-accent:   #1f1c18;  // el azul-logo solo admite texto oscuro (4,41:1)
-  --nav-avatar-bg:   #332c25;
-  --nav-dropdown-bg: #241f1b;
-  --nav-border:      rgba(244, 239, 228, 0.10);
-  --nav-hover:       rgba(244, 239, 228, 0.08);
-  --nav-active:      rgba(0, 127, 253, 0.18);
+  // Barra de navegación — blanco sobre lino, separada por el gris-borde. En
+  // claro el azul-logo no puede llevar peso funcional (§6: nunca texto, y
+  // 2,4:1 sobre blanco), así que la barra usa el azul de acción.
+  --nav-bg:          #ffffff;
+  --nav-text:        #6b6255;  // gris-texto — 5,6:1 sobre blanco
+  --nav-text-bright: #2a2622;  // contrast — activo y marca
+  --nav-accent:      #0062c4;  // azul de acción, no el del logo
+  --nav-on-accent:   #ffffff;  // 6,9:1 sobre el azul de acción
+  --nav-avatar-bg:   #efe6d3;  // gris-suave, con la inicial en contrast
+  --nav-dropdown-bg: #ffffff;
+  --nav-border:      #e8dfc9;
+  --nav-hover:       rgba(42, 38, 34, 0.05);
+  --nav-active:      rgba(0, 98, 196, 0.10);
 
   // Colores de apartamento del calendario. No son distintivos (§6): codifican
   // un dato, así que necesitan distinguirse entre sí. Los ocho salen de la
@@ -101,16 +111,32 @@ $radius-lg: 12px;
   --cal-on-5: #f4efe4;
   --cal-on-6: #f4efe4;
   --cal-on-7: #f4efe4;
+}
 
+:root { @include ixa-light; }
+:root[data-theme='light'] { @include ixa-light; }
+
+// ── Medidas, comunes a los dos temas ────────────────────────────────────────
+
+:root {
   --radius-sm: #{$radius-sm};
   --radius-md: #{$radius-md};
   --radius-lg: #{$radius-lg};
   --nav-height: 64px;
 }
 
-// ── Tema oscuro — §5.2, la norma invertida. Por defecto en apm ──────────────
+// ── Modo oscuro — §5.2, la norma invertida ──────────────────────────────────
+//
+// La tinta profunda pasa a fondo y el lino a texto. Es la única situación en la
+// que el azul del logo puede llevar peso funcional, porque sobre tinta profunda
+// alcanza 4,41:1 — con el texto del botón en oscuro, nunca en blanco. Las tres
+// reglas que no cambian: el logotipo conserva su azul, la mostaza sigue siendo
+// el único color de distintivo, y los colores de estado de §2.4 se usan con
+// texto y fondo invertidos, recomprobando el contraste.
 
 :root[data-theme='dark'] {
+  color-scheme: dark;
+
   --bg:          #1f1c18;  // tinta profunda
   --bg-soft:     #2b2621;
   --card:        #241f1b;

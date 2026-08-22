@@ -1,25 +1,22 @@
 import { existsSync, renameSync } from 'node:fs'
 import type {
-  Apartment,
-  Booking,
+  Listing,
+  Reservation,
   CalendarLink,
   Channel,
-  Client,
-  Property,
+  Guest,
 } from '../domain/models.js'
 import { transaction } from './db.js'
 import { readJson } from './fs.js'
 import { PATHS } from './paths.js'
-import * as apartments from './repositories/apartments.js'
-import * as bookings from './repositories/bookings.js'
+import * as listings from './repositories/listings.js'
+import * as reservations from './repositories/reservations.js'
 import * as calendarLinks from './repositories/calendarLinks.js'
 import * as channels from './repositories/channels.js'
-import * as clients from './repositories/clients.js'
-import * as properties from './repositories/properties.js'
+import * as guests from './repositories/guests.js'
 
 const JSON_FILES = [
   PATHS.apartmentsJson,
-  PATHS.propertiesJson,
   PATHS.clientsJson,
   PATHS.channelsJson,
   PATHS.bookingsJson,
@@ -32,33 +29,74 @@ export interface ImportResult {
 }
 
 /**
- * Legacy bookings predate the Active/Cancelled status pair. This is the only
- * place that remap survives — new rows are constrained by the schema.
- *
- * Some records predate the status field entirely; those are live reservations
- * that simply never carried one, so they import as Active rather than being
- * rejected for violating NOT NULL.
+ * The legacy JSON files speak the pre-consolidation vocabulary: `apartmentId`,
+ * `clientId`, `fromDate`, `toDate`, `price`, `isAvailable`. They are input from
+ * an application we no longer control, so their field names are not ours to
+ * rename — every legacy row is translated here into the canonical shape
+ * (docs/GLOSSARY.md §2) and nowhere else.
  */
-function readLegacyBookings(): Booking[] {
-  return readJson<Record<string, unknown>[]>(PATHS.bookingsJson, []).map((b): Booking => {
-    if (b['status'] === undefined || b['status'] === null || b['status'] === 'NotPaid') {
-      return { ...b, status: 'Active' } as Booking
+type LegacyRow = Record<string, unknown>
+
+function str(row: LegacyRow, key: string): string {
+  return row[key] as string
+}
+
+function readLegacyListings(): Listing[] {
+  return readJson<LegacyRow[]>(PATHS.apartmentsJson, []).map((a) => {
+    const { price, isAvailable, ...rest } = a
+    return { ...rest, nightlyRate: price, isActive: isAvailable } as unknown as Listing
+  })
+}
+
+function readLegacyCalendarLinks(): CalendarLink[] {
+  return readJson<LegacyRow[]>(PATHS.calendarLinksJson, []).map((l) => {
+    const { apartmentId, ...rest } = l
+    return { ...rest, listingId: apartmentId } as unknown as CalendarLink
+  })
+}
+
+/**
+ * Legacy reservations predate the current lifecycle. `Active`, `Paid` and
+ * `NotPaid` all described a live stay, so all three become `Confirmed` and the
+ * lifecycle takes over from there; `Paid` additionally carried its payment date
+ * in the status rather than in a field.
+ *
+ * Records that predate the status field entirely are live stays that simply
+ * never carried one, so they import as `Confirmed` rather than being rejected
+ * for violating NOT NULL.
+ *
+ * Unlike migration 002, this does not place a stay by its dates: these files
+ * come from an app that never tracked arrivals, so there is no arrival to
+ * preserve. Reception confirms them, which is rule L8 working as intended.
+ */
+function readLegacyReservations(): Reservation[] {
+  return readJson<LegacyRow[]>(PATHS.bookingsJson, []).map((b): Reservation => {
+    const { apartmentId, clientId, fromDate, toDate, status, ...rest } = b
+    const base = {
+      ...rest,
+      listingId: apartmentId,
+      guestId: clientId,
+      checkIn: fromDate,
+      checkOut: toDate,
     }
-    if (b['status'] === 'Paid') {
-      const paidDate = (b['paidDate'] as string | undefined) ?? String(b['createdAt']).split('T')[0]
-      return { ...b, status: 'Active', paidDate } as Booking
+
+    if (status === undefined || status === null || status === 'NotPaid' || status === 'Active') {
+      return { ...base, status: 'Confirmed' } as unknown as Reservation
     }
-    return b as unknown as Booking
+    if (status === 'Paid') {
+      const paidDate = (b['paidDate'] as string | undefined) ?? str(b, 'createdAt').split('T')[0]
+      return { ...base, status: 'Confirmed', paidDate } as unknown as Reservation
+    }
+    return { ...base, status } as unknown as Reservation
   })
 }
 
 function isDatabaseEmpty(): boolean {
   return (
-    apartments.list().length === 0 &&
-    properties.list().length === 0 &&
-    clients.list().length === 0 &&
+    listings.list().length === 0 &&
+    guests.list().length === 0 &&
     channels.list().length === 0 &&
-    bookings.list().length === 0 &&
+    reservations.list().length === 0 &&
     calendarLinks.list().length === 0
   )
 }
@@ -97,22 +135,16 @@ export function importLegacyJson(): ImportResult {
   const counts = transaction(() => {
     const result: Record<string, number> = {}
 
-    result['apartments'] = insertAll(
-      'apartment',
-      readJson<Apartment[]>(PATHS.apartmentsJson, []),
-      apartments.insert,
+    result['listings'] = insertAll(
+      'listing',
+      readLegacyListings(),
+      listings.insert,
       (a) => `${a.id} ('${a.name}')`,
     )
-    result['properties'] = insertAll(
-      'property',
-      readJson<Property[]>(PATHS.propertiesJson, []),
-      properties.insert,
-      (p) => `${p.id} ('${p.name}')`,
-    )
-    result['clients'] = insertAll(
-      'client',
-      readJson<Client[]>(PATHS.clientsJson, []),
-      clients.insert,
+    result['guests'] = insertAll(
+      'guest',
+      readJson<Guest[]>(PATHS.clientsJson, []),
+      guests.insert,
       (c) => `${c.id} ('${c.name}')`,
     )
     result['channels'] = insertAll(
@@ -121,15 +153,15 @@ export function importLegacyJson(): ImportResult {
       channels.insert,
       (c) => `${c.id} ('${c.name}')`,
     )
-    result['bookings'] = insertAll(
-      'booking',
-      readLegacyBookings(),
-      bookings.insert,
-      (b) => `${b.id} (${b.fromDate} – ${b.toDate})`,
+    result['reservations'] = insertAll(
+      'reservation',
+      readLegacyReservations(),
+      reservations.insert,
+      (b) => `${b.id} (${b.checkIn} – ${b.checkOut})`,
     )
     result['calendarLinks'] = insertAll(
       'calendar link',
-      readJson<CalendarLink[]>(PATHS.calendarLinksJson, []),
+      readLegacyCalendarLinks(),
       calendarLinks.insert,
       (l) => l.id,
     )

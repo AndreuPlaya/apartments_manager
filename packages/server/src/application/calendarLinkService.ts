@@ -26,7 +26,7 @@ export function upsertCalendarLink(req: CreateCalendarLinkRequest): CalendarLink
   validateCalendarUrl(req.url)
 
   return transaction(() => {
-    const existing = calendarLinks.findByChannelAndApartment(req.channelId, req.apartmentId)
+    const existing = calendarLinks.findByChannelAndListing(req.channelId, req.listingId)
 
     if (existing !== null) {
       calendarLinks.updateUrl(existing.id, req.url)

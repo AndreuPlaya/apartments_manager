@@ -1,50 +1,48 @@
-export type BookingStatus = 'Active' | 'Cancelled'
+/**
+ * The reservation lifecycle. Ordered as the stay progresses, terminal states
+ * last. See docs/RESERVATION_LIFECYCLE.md for the transition graph, and
+ * `domain/reservationStatus.ts` for the rules that read this type.
+ */
+export type ReservationStatus =
+  | 'Confirmed'
+  | 'CheckedIn'
+  | 'CheckedOut'
+  | 'Cancelled'
+  | 'NoShow'
 
-export interface Apartment {
+export interface Listing {
   id: string
   name: string
   address: string
   floor: number
   door: string
-  price: number
+  nightlyRate: number
   minNights: number
   maxGuests: number
   rooms: number
   bathrooms: number
-  isAvailable: boolean
+  isActive: boolean
   description?: string
 }
 
-export interface Property {
+export interface Reservation {
   id: string
-  name: string
-  address: string
-  city?: string
-  floor?: string
-  door?: string
-  rentalType: 'short-term' | 'long-term' | 'room'
-  isAvailable: boolean
-  comment?: string
-}
-
-export interface Booking {
-  id: string
-  apartmentId: string
-  clientId: string
+  listingId: string
+  guestId: string
   channelId: string
-  fromDate: string
-  toDate: string
+  checkIn: string
+  checkOut: string
   adultCount: number
   childrenCount: number
   cribRequested?: boolean
-  status: BookingStatus
+  status: ReservationStatus
   paidDate?: string
   totalAmountDue: number
   comment?: string
   createdAt: string
 }
 
-export interface Client {
+export interface Guest {
   id: string
   identityDocument?: string
   name: string
@@ -67,7 +65,7 @@ export interface Channel {
 export interface CalendarLink {
   id: string
   channelId: string
-  apartmentId: string
+  listingId: string
   url: string
 }
 
@@ -115,17 +113,15 @@ export interface AuthConfigResponse {
   username: string
 }
 
-export type CreateApartmentRequest = Omit<Apartment, 'id'>
-export type UpdateApartmentRequest = Partial<Omit<Apartment, 'id'>>
+export type CreateListingRequest = Omit<Listing, 'id'>
+export type UpdateListingRequest = Partial<Omit<Listing, 'id'>>
 
-export type CreatePropertyRequest = Omit<Property, 'id'>
-export type UpdatePropertyRequest = Partial<Omit<Property, 'id'>>
+/** Status is absent: every reservation is created `Confirmed` (lifecycle L1). */
+export type CreateReservationRequest = Omit<Reservation, 'id' | 'createdAt' | 'status'>
+export type UpdateReservationRequest = Partial<Omit<Reservation, 'id' | 'createdAt'>>
 
-export type CreateBookingRequest = Omit<Booking, 'id' | 'createdAt'>
-export type UpdateBookingRequest = Partial<Omit<Booking, 'id' | 'createdAt'>>
-
-export type CreateClientRequest = Omit<Client, 'id'>
-export type UpdateClientRequest = Partial<Omit<Client, 'id'>>
+export type CreateGuestRequest = Omit<Guest, 'id'>
+export type UpdateGuestRequest = Partial<Omit<Guest, 'id'>>
 
 export type CreateChannelRequest = Omit<Channel, 'id'>
 export type UpdateChannelRequest = Partial<Omit<Channel, 'id'>>
@@ -157,7 +153,13 @@ export interface MonthlyOccupancy {
 export interface MonthlyRevenue {
   year: number
   month: number
+  /** Gross amount owed, channel commission included. */
   revenue: number
+  /** The channels' cut of `revenue`. Derived, never stored. */
+  commission: number
+  /** `revenue - commission` — what the portfolio actually keeps. */
+  netRevenue: number
+  /** Gross, year to date. Restarts each January. */
   cumulativeRevenue: number
 }
 
@@ -166,8 +168,8 @@ export interface MetricsResponse {
   revenue: MonthlyRevenue[]
 }
 
-export interface BookingFilters {
-  apartmentId?: string
+export interface ReservationFilters {
+  listingId?: string
   from?: string
   to?: string
 }

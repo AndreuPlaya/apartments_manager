@@ -1,18 +1,19 @@
 import { computed, ref } from 'vue'
 
-export type SupportedTheme = 'dark' | 'light'
+export type SupportedTheme = 'light' | 'dark'
 
 const THEME_KEY = 'apt-mgr:theme'
 
-// §5.2 de la identidad cromática: en las aplicaciones internas la norma se
-// invierte y la tinta profunda pasa a fondo. El oscuro es el tema por defecto.
-const DEFAULT_THEME: SupportedTheme = 'dark'
+// La identidad cromática se aplica tal cual la definen §2 y §3: el claro es el
+// tema por defecto. El oscuro es la variante invertida de §5.2 y se elige a
+// mano desde las preferencias del usuario.
+const DEFAULT_THEME: SupportedTheme = 'light'
 
 // Se lee al cargar el módulo, así que no puede dar por hecho que haya
 // localStorage: en los tests el entorno no siempre lo provee.
 function readStoredTheme(): SupportedTheme {
   try {
-    return localStorage.getItem(THEME_KEY) === 'light' ? 'light' : DEFAULT_THEME
+    return localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : DEFAULT_THEME
   } catch {
     return DEFAULT_THEME
   }
@@ -26,6 +27,7 @@ export function applyTheme(next: SupportedTheme) {
 
 export function useTheme() {
   const currentTheme = computed(() => theme.value)
+  const isDark = computed(() => theme.value === 'dark')
 
   function setTheme(next: SupportedTheme) {
     theme.value = next
@@ -37,11 +39,15 @@ export function useTheme() {
     applyTheme(next)
   }
 
-  function toggleTheme() {
-    setTheme(theme.value === 'dark' ? 'light' : 'dark')
+  function setDark(next: boolean) {
+    setTheme(next ? 'dark' : 'light')
   }
 
-  return { currentTheme, setTheme, toggleTheme }
+  function toggleTheme() {
+    setDark(!isDark.value)
+  }
+
+  return { currentTheme, isDark, setTheme, setDark, toggleTheme }
 }
 
 export { theme }

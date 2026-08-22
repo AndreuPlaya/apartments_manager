@@ -6,7 +6,7 @@ vi.mock('../src/api/client', async (importActual) => {
     ...actual,
     api: {
       auth: { config: vi.fn() },
-      apartments: { list: vi.fn() },
+      listings: { list: vi.fn() },
     },
   }
 })
@@ -24,7 +24,7 @@ describe('clearCachedConfig', () => {
     setCachedConfig({ ok: true, is_admin: false, username: 'alice' })
     clearCachedConfig()
     vi.mocked(api.auth.config).mockResolvedValue({ ok: false })
-    vi.mocked(api.apartments.list).mockResolvedValue([])
+    vi.mocked(api.listings.list).mockResolvedValue([])
     await router.push('/')
     expect(api.auth.config).toHaveBeenCalled()
   })
@@ -51,16 +51,16 @@ describe('router beforeEach guard', () => {
     expect(router.currentRoute.value.path).toBe('/setup')
   })
 
-  it('redirects to /setup when not logged in and apartments returns 503', async () => {
+  it('redirects to /setup when not logged in and listings returns 503', async () => {
     vi.mocked(api.auth.config).mockResolvedValue({ ok: false })
-    vi.mocked(api.apartments.list).mockRejectedValue(new ApiError(503, 'Service Unavailable'))
+    vi.mocked(api.listings.list).mockRejectedValue(new ApiError(503, 'Service Unavailable'))
     await router.push('/')
     expect(router.currentRoute.value.path).toBe('/setup')
   })
 
-  it('redirects to /login when not logged in and apartments does not 503', async () => {
+  it('redirects to /login when not logged in and listings does not 503', async () => {
     vi.mocked(api.auth.config).mockResolvedValue({ ok: false })
-    vi.mocked(api.apartments.list).mockResolvedValue([])
+    vi.mocked(api.listings.list).mockResolvedValue([])
     await router.push('/')
     expect(router.currentRoute.value.path).toBe('/login')
   })
@@ -77,16 +77,16 @@ describe('router beforeEach guard', () => {
     expect(router.currentRoute.value.path).toBe('/calendar')
   })
 
-  it('allows a non-admin to access /bookings', async () => {
+  it('allows a non-admin to access /reservations', async () => {
     vi.mocked(api.auth.config).mockResolvedValue({ ok: true, is_admin: false, username: 'alice' })
-    await router.push('/bookings')
-    expect(router.currentRoute.value.path).toBe('/bookings')
+    await router.push('/reservations')
+    expect(router.currentRoute.value.path).toBe('/reservations')
   })
 
-  it('allows a non-admin to access /clients', async () => {
+  it('allows a non-admin to access /guests', async () => {
     vi.mocked(api.auth.config).mockResolvedValue({ ok: true, is_admin: false, username: 'alice' })
-    await router.push('/clients')
-    expect(router.currentRoute.value.path).toBe('/clients')
+    await router.push('/guests')
+    expect(router.currentRoute.value.path).toBe('/guests')
   })
 
   it('allows a non-admin to access /profile', async () => {

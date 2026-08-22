@@ -2,39 +2,39 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import ApartmentsTab from './apartments/ApartmentsTab.vue'
+import ListingsTab from './listings/ListingsTab.vue'
 import ChannelsTab from './channels/ChannelsTab.vue'
 import UsersTab from './users/UsersTab.vue'
 
 const { t } = useI18n()
 
-const tabs = ['Apartments', 'Channels', 'Users'] as const
+const tabs = ['Listings', 'Channels', 'Users'] as const
 type Tab = (typeof tabs)[number]
 
 const route = useRoute()
 const router = useRouter()
 
 const tabParamMap: Record<string, Tab> = {
-  apartments: 'Apartments',
+  listings: 'Listings',
   channels:   'Channels',
   users:      'Users',
 }
 
 const tabValueMap: Record<Tab, string> = {
-  Apartments: 'apartments',
+  Listings: 'listings',
   Channels:   'channels',
   Users:      'users',
 }
 
 const tabLabels = computed<Record<Tab, string>>(() => ({
-  Apartments: t('config.tabApartments'),
+  Listings: t('config.tabListings'),
   Channels:   t('config.tabChannels'),
   Users:      t('config.tabUsers'),
 }))
 
 const activeTab = computed<Tab>(() => {
   const param = route.query.tab as string | undefined
-  return (param && tabParamMap[param]) || 'Apartments'
+  return (param && tabParamMap[param]) || 'Listings'
 })
 
 function setTab(tab: Tab) {
@@ -55,7 +55,7 @@ function setTab(tab: Tab) {
         {{ tabLabels[tab] }}
       </button>
     </div>
-    <ApartmentsTab v-if="activeTab === 'Apartments'" :is-admin="true" />
+    <ListingsTab v-if="activeTab === 'Listings'" :is-admin="true" />
     <ChannelsTab v-else-if="activeTab === 'Channels'" :is-admin="true" />
     <UsersTab v-else-if="activeTab === 'Users'" />
   </div>

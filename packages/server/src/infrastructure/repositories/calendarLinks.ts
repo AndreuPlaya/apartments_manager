@@ -2,13 +2,13 @@ import type { CalendarLink } from '../../domain/models.js'
 import { getDb } from '../db.js'
 import type { Row } from './mapping.js'
 
-const COLUMNS = 'id, channelId, apartmentId, url'
+const COLUMNS = 'id, channelId, listingId, url'
 
 export function toCalendarLink(row: Row): CalendarLink {
   return {
     id: row['id'] as string,
     channelId: row['channelId'] as string,
-    apartmentId: row['apartmentId'] as string,
+    listingId: row['listingId'] as string,
     url: row['url'] as string,
   }
 }
@@ -22,17 +22,17 @@ export function findById(id: string): CalendarLink | null {
   return row === undefined ? null : toCalendarLink(row)
 }
 
-export function findByChannelAndApartment(channelId: string, apartmentId: string): CalendarLink | null {
+export function findByChannelAndListing(channelId: string, listingId: string): CalendarLink | null {
   const row = getDb()
-    .prepare(`SELECT ${COLUMNS} FROM calendar_links WHERE channelId = ? AND apartmentId = ?`)
-    .get(channelId, apartmentId)
+    .prepare(`SELECT ${COLUMNS} FROM calendar_links WHERE channelId = ? AND listingId = ?`)
+    .get(channelId, listingId)
   return row === undefined ? null : toCalendarLink(row)
 }
 
 export function insert(link: CalendarLink): void {
   getDb()
     .prepare(`INSERT INTO calendar_links (${COLUMNS}) VALUES (?, ?, ?, ?)`)
-    .run(link.id, link.channelId, link.apartmentId, link.url)
+    .run(link.id, link.channelId, link.listingId, link.url)
 }
 
 export function updateUrl(id: string, url: string): void {

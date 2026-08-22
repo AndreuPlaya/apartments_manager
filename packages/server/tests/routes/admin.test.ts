@@ -11,22 +11,20 @@ vi.mock('../../src/middleware/admin.js', () => ({
   adminMiddleware: async (_c: any, next: any) => { await next() },
 }))
 vi.mock('../../src/infrastructure/audit.js')
-vi.mock('../../src/application/apartmentService.js')
-vi.mock('../../src/application/bookingService.js')
+vi.mock('../../src/application/listingService.js')
+vi.mock('../../src/application/reservationService.js')
 vi.mock('../../src/application/calendarLinkService.js')
 vi.mock('../../src/application/channelService.js')
-vi.mock('../../src/application/clientService.js')
+vi.mock('../../src/application/guestService.js')
 vi.mock('../../src/application/metricsService.js')
-vi.mock('../../src/application/propertyService.js')
 vi.mock('../../src/application/userService.js')
 
-import { createApartment, deleteApartment, updateApartment } from '../../src/application/apartmentService.js'
-import { createBooking, deleteBooking, updateBooking } from '../../src/application/bookingService.js'
+import { createListing, deleteListing, updateListing } from '../../src/application/listingService.js'
+import { createReservation, deleteReservation, updateReservation } from '../../src/application/reservationService.js'
 import { deleteCalendarLink, upsertCalendarLink } from '../../src/application/calendarLinkService.js'
 import { createChannel, deleteChannel, updateChannel } from '../../src/application/channelService.js'
-import { createClient, deleteClient, updateClient } from '../../src/application/clientService.js'
+import { createGuest, deleteGuest, updateGuest } from '../../src/application/guestService.js'
 import { getMetrics } from '../../src/application/metricsService.js'
-import { createProperty, deleteProperty, updateProperty } from '../../src/application/propertyService.js'
 import { createUser, deleteUser, listUsers, updateUser } from '../../src/application/userService.js'
 import { ConflictError, NotFoundError } from '../../src/application/errors.js'
 
@@ -44,218 +42,183 @@ function makeApp() {
   return app
 }
 
-// ── Apartments ────────────────────────────────────────────────────────────────
+// ── Listings ────────────────────────────────────────────────────────────────
 
-describe('Apartments admin routes', () => {
+describe('Listings admin routes', () => {
   const aptBody = {
     name: 'Beach House', address: '1 Ocean', floor: 1, door: 'A',
-    price: 100, minNights: 2, maxGuests: 4, rooms: 2, bathrooms: 1, isAvailable: true,
+    nightlyRate: 100, minNights: 2, maxGuests: 4, rooms: 2, bathrooms: 1, isActive: true,
   }
   const apt = { id: 'apt1', ...aptBody }
 
-  it('POST /api/admin/apartments returns 201 on success', async () => {
-    vi.mocked(createApartment).mockReturnValue(apt as any)
-    const res = await makeApp().request('/api/admin/apartments', {
+  it('POST /api/admin/listings returns 201 on success', async () => {
+    vi.mocked(createListing).mockReturnValue(apt as any)
+    const res = await makeApp().request('/api/admin/listings', {
       method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(aptBody),
     })
     expect(res.status).toBe(201)
     expect(await res.json()).toEqual(apt)
   })
 
-  it('POST /api/admin/apartments returns error status on AppError', async () => {
-    vi.mocked(createApartment).mockImplementation(() => { throw new ConflictError('Already exists') })
-    const res = await makeApp().request('/api/admin/apartments', {
+  it('POST /api/admin/listings returns error status on AppError', async () => {
+    vi.mocked(createListing).mockImplementation(() => { throw new ConflictError('Already exists') })
+    const res = await makeApp().request('/api/admin/listings', {
       method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(aptBody),
     })
     expect(res.status).toBe(409)
   })
 
-  it('PATCH /api/admin/apartments/:id returns 200 on success', async () => {
-    vi.mocked(updateApartment).mockReturnValue(apt as any)
-    const res = await makeApp().request('/api/admin/apartments/apt1', {
-      method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ price: 120 }),
+  it('PATCH /api/admin/listings/:id returns 200 on success', async () => {
+    vi.mocked(updateListing).mockReturnValue(apt as any)
+    const res = await makeApp().request('/api/admin/listings/apt1', {
+      method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ nightlyRate: 120 }),
     })
     expect(res.status).toBe(200)
   })
 
-  it('PATCH /api/admin/apartments/:id returns error status on AppError', async () => {
-    vi.mocked(updateApartment).mockImplementation(() => { throw new NotFoundError('Not found') })
-    const res = await makeApp().request('/api/admin/apartments/ghost', {
+  it('PATCH /api/admin/listings/:id returns error status on AppError', async () => {
+    vi.mocked(updateListing).mockImplementation(() => { throw new NotFoundError('Not found') })
+    const res = await makeApp().request('/api/admin/listings/ghost', {
       method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({}),
     })
     expect(res.status).toBe(404)
   })
 
-  it('DELETE /api/admin/apartments/:id returns { ok: true } on success', async () => {
-    vi.mocked(deleteApartment).mockImplementation(() => undefined)
-    const res = await makeApp().request('/api/admin/apartments/apt1', { method: 'DELETE' })
+  it('DELETE /api/admin/listings/:id returns { ok: true } on success', async () => {
+    vi.mocked(deleteListing).mockImplementation(() => undefined)
+    const res = await makeApp().request('/api/admin/listings/apt1', { method: 'DELETE' })
     expect(res.status).toBe(200)
     expect((await res.json()).ok).toBe(true)
   })
 
-  it('DELETE /api/admin/apartments/:id returns error status on AppError', async () => {
-    vi.mocked(deleteApartment).mockImplementation(() => { throw new ConflictError('Has bookings') })
-    const res = await makeApp().request('/api/admin/apartments/apt1', { method: 'DELETE' })
+  it('DELETE /api/admin/listings/:id returns error status on AppError', async () => {
+    vi.mocked(deleteListing).mockImplementation(() => { throw new ConflictError('Has reservations') })
+    const res = await makeApp().request('/api/admin/listings/apt1', { method: 'DELETE' })
     expect(res.status).toBe(409)
   })
 })
 
-// ── Properties ────────────────────────────────────────────────────────────────
+// ── Reservations ──────────────────────────────────────────────────────────────────
 
-describe('Properties admin routes', () => {
-  const propBody = { name: 'Block A' }
-  const prop = { id: 'p1', ...propBody }
-
-  it('POST /api/admin/properties returns 201', async () => {
-    vi.mocked(createProperty).mockReturnValue(prop as any)
-    const res = await makeApp().request('/api/admin/properties', {
-      method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(propBody),
-    })
-    expect(res.status).toBe(201)
-  })
-
-  it('POST /api/admin/properties returns error on AppError', async () => {
-    vi.mocked(createProperty).mockImplementation(() => { throw new ConflictError('Exists') })
-    const res = await makeApp().request('/api/admin/properties', {
-      method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(propBody),
-    })
-    expect(res.status).toBe(409)
-  })
-
-  it('PATCH /api/admin/properties/:id returns 200', async () => {
-    vi.mocked(updateProperty).mockReturnValue(prop as any)
-    const res = await makeApp().request('/api/admin/properties/p1', {
-      method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ name: 'Block B' }),
-    })
-    expect(res.status).toBe(200)
-  })
-
-  it('PATCH /api/admin/properties/:id returns error on AppError', async () => {
-    vi.mocked(updateProperty).mockImplementation(() => { throw new NotFoundError() })
-    const res = await makeApp().request('/api/admin/properties/ghost', {
-      method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({}),
-    })
-    expect(res.status).toBe(404)
-  })
-
-  it('DELETE /api/admin/properties/:id returns { ok: true }', async () => {
-    vi.mocked(deleteProperty).mockImplementation(() => undefined)
-    const res = await makeApp().request('/api/admin/properties/p1', { method: 'DELETE' })
-    expect(res.status).toBe(200)
-    expect((await res.json()).ok).toBe(true)
-  })
-
-  it('DELETE /api/admin/properties/:id returns error on AppError', async () => {
-    vi.mocked(deleteProperty).mockImplementation(() => { throw new NotFoundError() })
-    const res = await makeApp().request('/api/admin/properties/ghost', { method: 'DELETE' })
-    expect(res.status).toBe(404)
-  })
-})
-
-// ── Bookings ──────────────────────────────────────────────────────────────────
-
-describe('Bookings admin routes', () => {
-  const bookingBody = {
-    apartmentId: 'apt1', clientId: 'cli1', channelId: 'ch1',
-    fromDate: '2025-06-01', toDate: '2025-06-05',
-    adultCount: 2, childrenCount: 0, status: 'Active', totalAmountDue: 400,
+describe('Reservations admin routes', () => {
+  const reservationBody = {
+    listingId: 'apt1', guestId: 'cli1', channelId: 'ch1',
+    checkIn: '2025-06-01', checkOut: '2025-06-05',
+    adultCount: 2, childrenCount: 0, totalAmountDue: 400,
   }
-  const booking = { id: 'b1', ...bookingBody, createdAt: '2025-01-01T00:00:00Z' }
+  const reservation = { id: 'b1', ...reservationBody, createdAt: '2025-01-01T00:00:00Z' }
 
-  it('POST /api/admin/bookings returns 201', async () => {
-    vi.mocked(createBooking).mockReturnValue(booking as any)
-    const res = await makeApp().request('/api/admin/bookings', {
-      method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(bookingBody),
+  it('POST /api/admin/reservations returns 201', async () => {
+    vi.mocked(createReservation).mockReturnValue(reservation as any)
+    const res = await makeApp().request('/api/admin/reservations', {
+      method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(reservationBody),
     })
     expect(res.status).toBe(201)
   })
 
-  it('POST /api/admin/bookings returns error on AppError', async () => {
-    vi.mocked(createBooking).mockImplementation(() => { throw new ConflictError('Overlap') })
-    const res = await makeApp().request('/api/admin/bookings', {
-      method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(bookingBody),
+  it('POST /api/admin/reservations returns error on AppError', async () => {
+    vi.mocked(createReservation).mockImplementation(() => { throw new ConflictError('Overlap') })
+    const res = await makeApp().request('/api/admin/reservations', {
+      method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(reservationBody),
     })
     expect(res.status).toBe(409)
   })
 
-  it('PATCH /api/admin/bookings/:id returns 200', async () => {
-    vi.mocked(updateBooking).mockReturnValue(booking as any)
-    const res = await makeApp().request('/api/admin/bookings/b1', {
+  it('PATCH /api/admin/reservations/:id returns 200', async () => {
+    vi.mocked(updateReservation).mockReturnValue(reservation as any)
+    const res = await makeApp().request('/api/admin/reservations/b1', {
       method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ totalAmountDue: 500 }),
     })
     expect(res.status).toBe(200)
   })
 
-  it('PATCH /api/admin/bookings/:id returns error on AppError', async () => {
-    vi.mocked(updateBooking).mockImplementation(() => { throw new NotFoundError() })
-    const res = await makeApp().request('/api/admin/bookings/ghost', {
+  it('PATCH /api/admin/reservations/:id passes no override by default', async () => {
+    vi.mocked(updateReservation).mockReturnValue(reservation as any)
+    await makeApp().request('/api/admin/reservations/b1', {
+      method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ status: 'CheckedIn' }),
+    })
+    expect(updateReservation).toHaveBeenCalledWith('b1', { status: 'CheckedIn' }, { override: false })
+  })
+
+  it('PATCH /api/admin/reservations/:id?override=true passes the override through', async () => {
+    vi.mocked(updateReservation).mockReturnValue(reservation as any)
+    const res = await makeApp().request('/api/admin/reservations/b1?override=true', {
+      method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ status: 'Confirmed' }),
+    })
+    expect(res.status).toBe(200)
+    expect(updateReservation).toHaveBeenCalledWith('b1', { status: 'Confirmed' }, { override: true })
+  })
+
+  it('PATCH /api/admin/reservations/:id returns error on AppError', async () => {
+    vi.mocked(updateReservation).mockImplementation(() => { throw new NotFoundError() })
+    const res = await makeApp().request('/api/admin/reservations/ghost', {
       method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({}),
     })
     expect(res.status).toBe(404)
   })
 
-  it('DELETE /api/admin/bookings/:id returns { ok: true }', async () => {
-    vi.mocked(deleteBooking).mockImplementation(() => undefined)
-    const res = await makeApp().request('/api/admin/bookings/b1', { method: 'DELETE' })
+  it('DELETE /api/admin/reservations/:id returns { ok: true }', async () => {
+    vi.mocked(deleteReservation).mockImplementation(() => undefined)
+    const res = await makeApp().request('/api/admin/reservations/b1', { method: 'DELETE' })
     expect(res.status).toBe(200)
     expect((await res.json()).ok).toBe(true)
   })
 
-  it('DELETE /api/admin/bookings/:id returns error on AppError', async () => {
-    vi.mocked(deleteBooking).mockImplementation(() => { throw new NotFoundError() })
-    const res = await makeApp().request('/api/admin/bookings/ghost', { method: 'DELETE' })
+  it('DELETE /api/admin/reservations/:id returns error on AppError', async () => {
+    vi.mocked(deleteReservation).mockImplementation(() => { throw new NotFoundError() })
+    const res = await makeApp().request('/api/admin/reservations/ghost', { method: 'DELETE' })
     expect(res.status).toBe(404)
   })
 })
 
-// ── Clients ───────────────────────────────────────────────────────────────────
+// ── Guests ───────────────────────────────────────────────────────────────────
 
-describe('Clients admin routes', () => {
-  const clientBody = { name: 'Alice' }
-  const client = { id: 'cli1', ...clientBody }
+describe('Guests admin routes', () => {
+  const guestBody = { name: 'Alice' }
+  const guest = { id: 'cli1', ...guestBody }
 
-  it('POST /api/admin/clients returns 201', async () => {
-    vi.mocked(createClient).mockReturnValue(client as any)
-    const res = await makeApp().request('/api/admin/clients', {
-      method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(clientBody),
+  it('POST /api/admin/guests returns 201', async () => {
+    vi.mocked(createGuest).mockReturnValue(guest as any)
+    const res = await makeApp().request('/api/admin/guests', {
+      method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(guestBody),
     })
     expect(res.status).toBe(201)
   })
 
-  it('POST /api/admin/clients returns error on AppError', async () => {
-    vi.mocked(createClient).mockImplementation(() => { throw new ConflictError('Dup doc') })
-    const res = await makeApp().request('/api/admin/clients', {
-      method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(clientBody),
+  it('POST /api/admin/guests returns error on AppError', async () => {
+    vi.mocked(createGuest).mockImplementation(() => { throw new ConflictError('Dup doc') })
+    const res = await makeApp().request('/api/admin/guests', {
+      method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(guestBody),
     })
     expect(res.status).toBe(409)
   })
 
-  it('PATCH /api/admin/clients/:id returns 200', async () => {
-    vi.mocked(updateClient).mockReturnValue(client as any)
-    const res = await makeApp().request('/api/admin/clients/cli1', {
+  it('PATCH /api/admin/guests/:id returns 200', async () => {
+    vi.mocked(updateGuest).mockReturnValue(guest as any)
+    const res = await makeApp().request('/api/admin/guests/cli1', {
       method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ name: 'Alicia' }),
     })
     expect(res.status).toBe(200)
   })
 
-  it('PATCH /api/admin/clients/:id returns error on AppError', async () => {
-    vi.mocked(updateClient).mockImplementation(() => { throw new NotFoundError() })
-    const res = await makeApp().request('/api/admin/clients/ghost', {
+  it('PATCH /api/admin/guests/:id returns error on AppError', async () => {
+    vi.mocked(updateGuest).mockImplementation(() => { throw new NotFoundError() })
+    const res = await makeApp().request('/api/admin/guests/ghost', {
       method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({}),
     })
     expect(res.status).toBe(404)
   })
 
-  it('DELETE /api/admin/clients/:id returns { ok: true }', async () => {
-    vi.mocked(deleteClient).mockImplementation(() => undefined)
-    const res = await makeApp().request('/api/admin/clients/cli1', { method: 'DELETE' })
+  it('DELETE /api/admin/guests/:id returns { ok: true }', async () => {
+    vi.mocked(deleteGuest).mockImplementation(() => undefined)
+    const res = await makeApp().request('/api/admin/guests/cli1', { method: 'DELETE' })
     expect(res.status).toBe(200)
     expect((await res.json()).ok).toBe(true)
   })
 
-  it('DELETE /api/admin/clients/:id returns error on AppError', async () => {
-    vi.mocked(deleteClient).mockImplementation(() => { throw new ConflictError('Has bookings') })
-    const res = await makeApp().request('/api/admin/clients/cli1', { method: 'DELETE' })
+  it('DELETE /api/admin/guests/:id returns error on AppError', async () => {
+    vi.mocked(deleteGuest).mockImplementation(() => { throw new ConflictError('Has reservations') })
+    const res = await makeApp().request('/api/admin/guests/cli1', { method: 'DELETE' })
     expect(res.status).toBe(409)
   })
 })
@@ -306,7 +269,7 @@ describe('Channels admin routes', () => {
   })
 
   it('DELETE /api/admin/channels/:id returns error on AppError', async () => {
-    vi.mocked(deleteChannel).mockImplementation(() => { throw new ConflictError('Has bookings') })
+    vi.mocked(deleteChannel).mockImplementation(() => { throw new ConflictError('Has reservations') })
     const res = await makeApp().request('/api/admin/channels/ch1', { method: 'DELETE' })
     expect(res.status).toBe(409)
   })
@@ -375,7 +338,7 @@ describe('Users admin routes', () => {
 // ── Calendar Links ────────────────────────────────────────────────────────────
 
 describe('Calendar links admin routes', () => {
-  const linkBody = { channelId: 'ch1', apartmentId: 'apt1', url: 'https://example.com/ical.ics' }
+  const linkBody = { channelId: 'ch1', listingId: 'apt1', url: 'https://example.com/ical.ics' }
   const link = { id: 'cl1', ...linkBody }
 
   it('POST /api/admin/calendar-links returns 200 with upserted link', async () => {
@@ -431,9 +394,9 @@ describe('GET /api/admin/metrics', () => {
 
 describe('handleError', () => {
   it('re-throws non-AppError exceptions (Hono returns 500)', async () => {
-    vi.mocked(createApartment).mockImplementation(() => { throw new Error('Unexpected!') })
+    vi.mocked(createListing).mockImplementation(() => { throw new Error('Unexpected!') })
     const app = makeApp()
-    const res = await app.request('/api/admin/apartments', {
+    const res = await app.request('/api/admin/listings', {
       method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({}),
     })
     expect(res.status).toBe(500)

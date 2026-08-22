@@ -11,22 +11,20 @@ vi.mock('../../src/middleware/auth.js', () => ({
     await next()
   },
 }))
-vi.mock('../../src/application/apartmentService.js')
-vi.mock('../../src/application/propertyService.js')
-vi.mock('../../src/application/bookingService.js')
-vi.mock('../../src/application/clientService.js')
+vi.mock('../../src/application/listingService.js')
+vi.mock('../../src/application/reservationService.js')
+vi.mock('../../src/application/guestService.js')
 vi.mock('../../src/application/channelService.js')
 vi.mock('../../src/application/calendarLinkService.js')
 vi.mock('../../src/application/userService.js')
 vi.mock('../../src/infrastructure/settings.js')
 vi.mock('../../src/routes/auth.js', () => ({ issueSessionCookie: vi.fn() }))
 
-import { listApartments } from '../../src/application/apartmentService.js'
-import { listBookings } from '../../src/application/bookingService.js'
+import { listListings } from '../../src/application/listingService.js'
+import { listReservations } from '../../src/application/reservationService.js'
 import { listCalendarLinks } from '../../src/application/calendarLinkService.js'
 import { listChannels } from '../../src/application/channelService.js'
-import { listClients } from '../../src/application/clientService.js'
-import { listProperties } from '../../src/application/propertyService.js'
+import { listGuests } from '../../src/application/guestService.js'
 import { getSelfProfile, updateSelfProfile, changeSelfPassword } from '../../src/application/userService.js'
 import { findUser } from '../../src/infrastructure/settings.js'
 import { issueSessionCookie } from '../../src/routes/auth.js'
@@ -39,10 +37,9 @@ const defaultProfile = { username: 'admin', full_name: 'Admin', email: undefined
 beforeEach(() => {
   vi.clearAllMocks()
   authState.user = { username: 'admin', isAdmin: true, resourceId: null }
-  vi.mocked(listApartments).mockReturnValue([])
-  vi.mocked(listProperties).mockReturnValue([])
-  vi.mocked(listBookings).mockReturnValue([])
-  vi.mocked(listClients).mockReturnValue([])
+  vi.mocked(listListings).mockReturnValue([])
+  vi.mocked(listReservations).mockReturnValue([])
+  vi.mocked(listGuests).mockReturnValue([])
   vi.mocked(listChannels).mockReturnValue([])
   vi.mocked(listCalendarLinks).mockReturnValue([])
   vi.mocked(getSelfProfile).mockResolvedValue(defaultProfile)
@@ -58,41 +55,32 @@ function makeApp() {
   return app
 }
 
-describe('GET /api/apartments', () => {
-  it('returns apartment list', async () => {
-    vi.mocked(listApartments).mockReturnValue([{ id: 'apt1' } as any])
-    const res = await makeApp().request('/api/apartments')
+describe('GET /api/listings', () => {
+  it('returns listing list', async () => {
+    vi.mocked(listListings).mockReturnValue([{ id: 'apt1' } as any])
+    const res = await makeApp().request('/api/listings')
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body).toEqual([{ id: 'apt1' }])
   })
 })
 
-describe('GET /api/properties', () => {
-  it('returns property list', async () => {
-    vi.mocked(listProperties).mockReturnValue([{ id: 'p1' } as any])
-    const res = await makeApp().request('/api/properties')
+describe('GET /api/reservations', () => {
+  it('calls listReservations with no filters when no query params', async () => {
+    const res = await makeApp().request('/api/reservations')
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual([{ id: 'p1' }])
-  })
-})
-
-describe('GET /api/bookings', () => {
-  it('calls listBookings with no filters when no query params', async () => {
-    const res = await makeApp().request('/api/bookings')
-    expect(res.status).toBe(200)
-    expect(listBookings).toHaveBeenCalledWith({ apartmentId: undefined, from: undefined, to: undefined })
+    expect(listReservations).toHaveBeenCalledWith({ listingId: undefined, from: undefined, to: undefined })
   })
 
   it('passes query params as filters', async () => {
-    await makeApp().request('/api/bookings?apartmentId=apt1&from=2025-06-01&to=2025-06-30')
-    expect(listBookings).toHaveBeenCalledWith({ apartmentId: 'apt1', from: '2025-06-01', to: '2025-06-30' })
+    await makeApp().request('/api/reservations?listingId=apt1&from=2025-06-01&to=2025-06-30')
+    expect(listReservations).toHaveBeenCalledWith({ listingId: 'apt1', from: '2025-06-01', to: '2025-06-30' })
   })
 })
 
 describe('GET /api/clients', () => {
-  it('returns client list', async () => {
-    vi.mocked(listClients).mockReturnValue([{ id: 'cli1', name: 'Alice' } as any])
+  it('returns guest list', async () => {
+    vi.mocked(listGuests).mockReturnValue([{ id: 'cli1', name: 'Alice' } as any])
     const res = await makeApp().request('/api/clients')
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual([{ id: 'cli1', name: 'Alice' }])
@@ -110,10 +98,10 @@ describe('GET /api/channels', () => {
 
 describe('GET /api/calendar-links', () => {
   it('returns calendar link list', async () => {
-    vi.mocked(listCalendarLinks).mockReturnValue([{ id: 'cl1', channelId: 'ch1', apartmentId: 'apt1', url: 'https://x' } as any])
+    vi.mocked(listCalendarLinks).mockReturnValue([{ id: 'cl1', channelId: 'ch1', listingId: 'apt1', url: 'https://x' } as any])
     const res = await makeApp().request('/api/calendar-links')
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual([{ id: 'cl1', channelId: 'ch1', apartmentId: 'apt1', url: 'https://x' }])
+    expect(await res.json()).toEqual([{ id: 'cl1', channelId: 'ch1', listingId: 'apt1', url: 'https://x' }])
   })
 })
 

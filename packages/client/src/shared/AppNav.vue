@@ -61,14 +61,14 @@ async function logout() {
           {{ t('nav.calendar') }}
         </RouterLink>
 
-        <RouterLink to="/bookings" class="app-nav__link" active-class="app-nav__link--active">
+        <RouterLink to="/reservations" class="app-nav__link" active-class="app-nav__link--active">
           <AppIcon name="list" :size="15" />
-          {{ t('nav.bookings') }}
+          {{ t('nav.reservations') }}
         </RouterLink>
 
-        <RouterLink to="/clients" class="app-nav__link" active-class="app-nav__link--active">
+        <RouterLink to="/guests" class="app-nav__link" active-class="app-nav__link--active">
           <AppIcon name="users" :size="15" />
-          {{ t('nav.clients') }}
+          {{ t('nav.guests') }}
         </RouterLink>
 
         <template v-if="props.isAdmin">
@@ -119,13 +119,13 @@ async function logout() {
         <AppIcon name="calendar" :size="15" />
         {{ t('nav.calendar') }}
       </RouterLink>
-      <RouterLink to="/bookings" class="app-nav__link" active-class="app-nav__link--active" @click="mobileOpen = false">
+      <RouterLink to="/reservations" class="app-nav__link" active-class="app-nav__link--active" @click="mobileOpen = false">
         <AppIcon name="list" :size="15" />
-        {{ t('nav.bookings') }}
+        {{ t('nav.reservations') }}
       </RouterLink>
-      <RouterLink to="/clients" class="app-nav__link" active-class="app-nav__link--active" @click="mobileOpen = false">
+      <RouterLink to="/guests" class="app-nav__link" active-class="app-nav__link--active" @click="mobileOpen = false">
         <AppIcon name="users" :size="15" />
-        {{ t('nav.clients') }}
+        {{ t('nav.guests') }}
       </RouterLink>
 
       <template v-if="props.isAdmin">

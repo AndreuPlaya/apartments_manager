@@ -32,7 +32,9 @@
   }
 
   &__brand-sep {
-    color: var(--nav-border);
+    // Un glifo, no un filete: el gris-borde se pierde sobre el blanco de la
+    // barra clara, así que va un escalón más marcado en los dos temas.
+    color: var(--border-dark);
     font-weight: 300;
   }
 
@@ -120,8 +122,9 @@
 
     &--active {
       background: var(--nav-active);
-      // Sobre el azul del logo el texto va en tinta profunda, no en lino:
-      // es la pareja de 4,41:1 que autoriza §5.2 de la identidad cromática.
+      // El par azul/texto lo fija cada tema: en claro el azul de acción con
+      // texto en blanco; en oscuro el azul del logo con texto en tinta, la
+      // pareja de 4,41:1 que autoriza §5.2 de la identidad cromática.
       .app-nav__avatar {
         background: var(--nav-accent);
         color: var(--nav-on-accent);

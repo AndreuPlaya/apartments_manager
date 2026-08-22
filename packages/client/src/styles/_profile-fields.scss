@@ -185,16 +185,38 @@
   flex-shrink: 0;
 }
 
-.pf-theme-swatch {
-  width: 0.9rem;
-  height: 0.9rem;
-  border-radius: 50%;
-  border: 1px solid var(--border-dark);
-  flex-shrink: 0;
-}
-
 .pf-lang-option {
   display: flex;
   align-items: center;
   gap: 0.6rem;
+}
+
+// ── Appearance switch row ─────────────────────────────────────────────────────
+
+.pf-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+
+  &__copy {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+  }
+
+  &__title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  &__hint {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
 }

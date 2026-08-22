@@ -12,7 +12,7 @@ const authLimiter = rateLimiter({
   windowMs: 15 * 60 * 1000,
   limit: 20,
   // Not the raw X-Forwarded-For header: only the hops our own proxies appended
-  // are trustworthy, otherwise a client can forge a fresh IP per request and
+  // are trustworthy, otherwise a guest can forge a fresh IP per request and
   // walk straight past this limit. See clientIp().
   keyGenerator: clientIp,
 })

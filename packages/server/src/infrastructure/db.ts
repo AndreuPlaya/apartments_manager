@@ -49,7 +49,7 @@ export function closeDb(): void {
 
 /**
  * Runs `fn` inside an immediate transaction. BEGIN IMMEDIATE takes the write
- * lock up front, so a read-then-write sequence (such as the booking overlap
+ * lock up front, so a read-then-write sequence (such as the reservation overlap
  * check) cannot interleave with another writer.
  */
 export function transaction<T>(fn: (db: DatabaseSync) => T): T {

@@ -7,7 +7,6 @@ export const PATHS = {
   auditLogJsonl: join(DATA_DIR, 'config', 'audit.jsonl'),
   dbFile: join(DATA_DIR, 'database', 'app.db'),
   apartmentsJson: join(DATA_DIR, 'database', 'apartments.json'),
-  propertiesJson: join(DATA_DIR, 'database', 'properties.json'),
   bookingsJson: join(DATA_DIR, 'database', 'bookings.json'),
   clientsJson: join(DATA_DIR, 'database', 'clients.json'),
   channelsJson: join(DATA_DIR, 'database', 'channels.json'),
