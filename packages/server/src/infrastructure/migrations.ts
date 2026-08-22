@@ -110,6 +110,45 @@ export const MIGRATIONS: Migration[] = [
   },
 ]
 
+/**
+ * Tables every migration in the list above is expected to have created.
+ *
+ * A database that recorded `001_initial` under an *earlier* definition of it
+ * skips the migration and then fails on every query — and it fails late, one
+ * request at a time, with `no such table`. While the list is editable
+ * (see MIGRATIONS) that is a real possibility, so the mismatch is turned into a
+ * refusal to start: a container that will not boot is a signal, a container that
+ * boots and 500s on everything is not.
+ *
+ * Once the list is append-only this check costs one query and never fires.
+ */
+const EXPECTED_TABLES = [
+  'calendar_links',
+  'channels',
+  'guests',
+  'listings',
+  'reservations',
+] as const
+
+function assertSchemaIsCurrent(db: DatabaseSync): void {
+  const present = new Set(
+    db
+      .prepare(`SELECT name FROM sqlite_master WHERE type = 'table'`)
+      .all()
+      .map((row) => row['name'] as string),
+  )
+  const missing = EXPECTED_TABLES.filter((t) => !present.has(t))
+  if (missing.length === 0) return
+
+  throw new Error(
+    `Database schema is out of date: missing table(s) ${missing.join(', ')}.\n` +
+      `Every migration is recorded as applied, so nothing will fix this on its own.\n` +
+      `Before launch the answer is to start over: delete the database file (and its\n` +
+      `-wal/-shm siblings), rename any *.json.migrated back to *.json, and restart —\n` +
+      `the legacy import will repopulate it. See docs/DOMAIN.md section 8.`,
+  )
+}
+
 export function runMigrations(db: DatabaseSync): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -137,4 +176,6 @@ export function runMigrations(db: DatabaseSync): void {
       throw new Error(`Migration '${migration.id}' failed: ${(err as Error).message}`, { cause: err })
     }
   }
+
+  assertSchemaIsCurrent(db)
 }

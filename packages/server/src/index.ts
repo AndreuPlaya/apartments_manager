@@ -44,15 +44,15 @@ app.route('/', adminRoutes)
 // Static files + SPA fallback (production only — in dev the Vite server handles this)
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = join(__filename, '..')
-// Go up 3 levels: dist → server → packages → repo root, then into packages/guest/dist
+// Go up 3 levels: dist → server → packages → repo root, then into packages/client/dist
 // This works both in local dev (packages/server/dist) and Docker (packages/server/dist)
-const GUEST_DIST = join(__dirname, '..', '..', '..', 'packages', 'guest', 'dist')
+const CLIENT_DIST = join(__dirname, '..', '..', '..', 'packages', 'client', 'dist')
 
 try {
-  app.use('/assets/*', serveStatic({ root: GUEST_DIST }))
+  app.use('/assets/*', serveStatic({ root: CLIENT_DIST }))
   app.get('*', (c) => {
     try {
-      const html = readFileSync(join(GUEST_DIST, 'index.html'), 'utf8')
+      const html = readFileSync(join(CLIENT_DIST, 'index.html'), 'utf8')
       return c.html(html)
     } catch {
       return c.text('Frontend not built. Run: pnpm build', 503)

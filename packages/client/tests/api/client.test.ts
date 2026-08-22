@@ -199,7 +199,7 @@ describe('api.reservations.*', () => {
 describe('api.guests.*', () => {
   const guestBody = { name: 'Alice' }
   const guest = { id: 'cli1', ...guestBody }
-  it('list fetches /api/clients', async () => {
+  it('list fetches /api/guests', async () => {
     vi.stubGlobal('fetch', mockFetch(200, [guest]))
     expect(await api.guests.list()).toEqual([guest])
   })

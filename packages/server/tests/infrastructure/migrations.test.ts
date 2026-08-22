@@ -1,7 +1,13 @@
+import { createRequire } from 'node:module'
 import type { DatabaseSync } from 'node:sqlite'
 import { describe, expect, it } from 'vitest'
 import { openDatabase } from '../../src/infrastructure/db.js'
 import { MIGRATIONS, runMigrations } from '../../src/infrastructure/migrations.js'
+
+// Same reason as infrastructure/db.ts: `node:sqlite` is a prefix-only builtin,
+// so a value import gets resolved from disk by the bundler. These tests need a
+// raw connection, which openDatabase cannot hand out.
+const sqlite = createRequire(import.meta.url)('node:sqlite') as typeof import('node:sqlite')
 
 function names(db: DatabaseSync, type: 'table' | 'index'): string[] {
   return db
@@ -84,6 +90,37 @@ describe('runMigrations', () => {
     } finally {
       MIGRATIONS.pop()
     }
+  })
+})
+
+describe('the stale-database guard', () => {
+  it('refuses to start when a recorded migration left the schema behind', () => {
+    // The shape a pre-launch edit of 001_initial leaves behind: the id is on
+    // record, so nothing will re-run, and every query would fail one at a time.
+    const db = new sqlite.DatabaseSync(':memory:')
+    db.exec(`
+      CREATE TABLE schema_migrations (id TEXT PRIMARY KEY, applied_at TEXT NOT NULL);
+      INSERT INTO schema_migrations (id, applied_at) VALUES ('001_initial', 'then');
+      CREATE TABLE apartments (id TEXT PRIMARY KEY);
+    `)
+
+    expect(() => runMigrations(db)).toThrow(/schema is out of date/)
+  })
+
+  it('names every missing table and how to recover', () => {
+    const db = new sqlite.DatabaseSync(':memory:')
+    db.exec(`
+      CREATE TABLE schema_migrations (id TEXT PRIMARY KEY, applied_at TEXT NOT NULL);
+      INSERT INTO schema_migrations (id, applied_at) VALUES ('001_initial', 'then');
+    `)
+
+    expect(() => runMigrations(db)).toThrow(/listings/)
+    expect(() => runMigrations(db)).toThrow(/reservations/)
+    expect(() => runMigrations(db)).toThrow(/json\.migrated/)
+  })
+
+  it('passes silently on a database the migrations actually built', () => {
+    expect(() => openDatabase(':memory:')).not.toThrow()
   })
 })
 

@@ -25,7 +25,7 @@ editorRoutes.get('/api/reservations', (c) => {
   return c.json(listReservations({ listingId, from, to }))
 })
 
-editorRoutes.get('/api/clients', (c) => {
+editorRoutes.get('/api/guests', (c) => {
   return c.json(listGuests())
 })
 

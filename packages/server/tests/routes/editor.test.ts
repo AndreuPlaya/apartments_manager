@@ -78,10 +78,10 @@ describe('GET /api/reservations', () => {
   })
 })
 
-describe('GET /api/clients', () => {
+describe('GET /api/guests', () => {
   it('returns guest list', async () => {
     vi.mocked(listGuests).mockReturnValue([{ id: 'cli1', name: 'Alice' } as any])
-    const res = await makeApp().request('/api/clients')
+    const res = await makeApp().request('/api/guests')
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual([{ id: 'cli1', name: 'Alice' }])
   })

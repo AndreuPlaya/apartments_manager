@@ -191,7 +191,7 @@ export const api = {
   },
 
   guests: {
-    list: () => request<Guest[]>('/api/clients'),
+    list: () => request<Guest[]>('/api/guests'),
     create: (body: Omit<Guest, 'id'>) =>
       json<Guest>('/api/admin/guests', 'POST', body),
     update: (id: string, body: Partial<Omit<Guest, 'id'>>) =>
