@@ -1,0 +1,114 @@
+# Servidor de DESARROLLO de pms: el último commit de master, con una copia de
+# los datos de producción, en http://10.10.0.30:5001.
+#
+# Se dispara en cada push a master. No hace falta etiquetar nada: lo que hay en
+# master es lo que corre.
+#
+# Qué hace, en orden:
+#   1. construye la imagen y la publica como `dev-<sha corto>`
+#   2. rehace el /data de desarrollo con una copia fresca de la base de
+#      producción (VACUUM INTO; producción no se para ni se toca)
+#   3. apunta el stack `ixa-apps-dev` de Portainer a la imagen nueva
+#   4. espera al healthcheck y falla si no se pone sano
+#
+# ── En qué se diferencia del despliegue de producción (deploy.yml) ───────────
+#
+#   · Dispara con un push a master, no con una etiqueta `v*`.
+#   · NO corre los tests. Es a propósito: esto es para ver el último commit
+#     funcionando, y un test en rojo no debería impedir mirarlo. La red de
+#     seguridad aquí es el healthcheck del paso 4.
+#   · Siembra el /data en cada pasada, así que los datos de desarrollo son
+#     desechables y las migraciones nuevas se prueban contra datos reales —que
+#     es media razón para tener esto.
+#   · El puerto 5001 está atado a 10.10.0.30: LAN y WireGuard, nada de Caddy ni
+#     de DuckDNS. Lleva los clientes reales.
+#
+# Los dos workflows comparten runner, y el runner corre UN job a la vez
+# (`capacity: 1` en su config.yml): un push a master mientras se despliega una
+# versión espera su turno, no construye en paralelo. Es lo que evita tener dos
+# builds de Node comiendo memoria a la vez en una VM de 8,9 GB.
+#
+# Secretos del repositorio: los mismos que deploy.yml.
+
+name: desarrollo
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  REGISTRY: 10.10.0.30:3000
+  IMAGEN: 10.10.0.30:3000/rnukes/pms
+
+jobs:
+  desarrollo:
+    runs-on: docker-host
+    steps:
+      - name: Traer el último commit
+        run: |
+          set -eu
+          git init -q .
+          git remote add origin "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
+          # Se pide la RAMA, no el sha: traer un sha suelto depende de que el
+          # servidor permita `allowReachableSHA1InWant`, y la rama siempre va.
+          # El runner inyecta el token del job; basta para clonar este repo.
+          git -c http.extraheader="Authorization: basic $(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 -w0)" \
+              fetch --depth 1 origin "$GITHUB_REF"
+          git checkout -q FETCH_HEAD
+          # La versión sale de lo que se ha traído de verdad, no de GITHUB_SHA:
+          # si han empujado otra vez mientras el job esperaba turno, lo que se
+          # despliega es lo nuevo y la etiqueta tiene que decirlo.
+          VERSION="dev-$(git rev-parse --short=7 HEAD)"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "desarrollo $VERSION desde $(git log -1 --pretty='%h %s')"
+
+      - name: Construir la imagen
+        # Mismo techo de heap que en producción: quien se dispara en el build es
+        # vite/tsup, y esta VM no va sobrada de memoria.
+        run: |
+          docker build \
+            --build-arg NODE_OPTIONS=--max-old-space-size=768 \
+            -t "$IMAGEN:$VERSION" .
+
+      - name: Publicar en el registro de Forgejo
+        run: |
+          echo "${{ secrets.REGISTRY_TOKEN }}" \
+            | docker login "$REGISTRY" -u "${{ secrets.REGISTRY_USER }}" --password-stdin
+          docker push "$IMAGEN:$VERSION"
+          docker logout "$REGISTRY"
+
+      - name: Sembrar el /data de desarrollo desde producción
+        run: sh .forgejo/scripts/sembrar-dev.sh "$IMAGEN:$VERSION"
+
+      - name: Redesplegar ixa-apps-dev en Portainer
+        env:
+          PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
+          PORTAINER_USER: ${{ secrets.PORTAINER_USER }}
+          PORTAINER_PASSWORD: ${{ secrets.PORTAINER_PASSWORD }}
+          FORGEJO_USER: ${{ secrets.STACK_GIT_USER }}
+          FORGEJO_TOKEN: ${{ secrets.STACK_GIT_TOKEN }}
+        run: |
+          apk add --no-cache python3 >/dev/null
+          python3 .forgejo/scripts/redesplegar.py ixa-apps-dev "PMS_DEV_VERSION=$VERSION"
+
+      - name: Esperar a que pms-dev esté sano
+        run: |
+          for i in $(seq 1 60); do
+            estado=$(docker inspect -f '{{.State.Health.Status}}' pms-dev 2>/dev/null || echo ausente)
+            case "$estado" in
+              healthy)   echo "pms-dev sano en el intento $i"; exit 0 ;;
+              unhealthy) echo "pms-dev arrancó ENFERMO"; docker logs --tail 50 pms-dev; exit 1 ;;
+            esac
+            sleep 5
+          done
+          echo "pms-dev no llegó a sano en 5 minutos"
+          docker logs --tail 50 pms-dev
+          exit 1
+
+      - name: Confirmar lo que ha quedado corriendo
+        run: |
+          corriendo=$(docker inspect -f '{{.Config.Image}}' pms-dev)
+          echo "pms-dev corre $corriendo — http://10.10.0.30:5001"
+          [ "$corriendo" = "$IMAGEN:$VERSION" ] || {
+            echo "esperaba $IMAGEN:$VERSION"; exit 1; }
