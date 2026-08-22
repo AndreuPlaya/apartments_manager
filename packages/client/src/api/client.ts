@@ -117,6 +117,24 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * This bundle asked for an endpoint the server does not have — so this bundle
+ * is older than the server it is talking to. A tab left open across a deploy
+ * that renamed a route keeps running its loaded code, and the shell being
+ * `no-store` (routes/spa.ts) only helps once someone reloads.
+ *
+ * Told apart from an ordinary 404 (a record that does not exist) by the message
+ * the unknown-endpoint handler sends, so the UI can say "reload" instead of
+ * reporting a data error the user cannot act on.
+ */
+export class StaleClientError extends ApiError {
+  constructor(public readonly endpoint: string) {
+    super(404, `Unknown API endpoint: ${endpoint}`)
+  }
+}
+
+const UNKNOWN_ENDPOINT = 'Unknown API endpoint: '
+
 // ── Base fetch ───────────────────────────────────────────────────────────────
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' }
@@ -127,6 +145,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const text = await res.text().catch(() => res.statusText)
     let msg = text
     try { msg = JSON.parse(text).error ?? text } catch { /* keep raw */ }
+    if (res.status === 404 && msg.startsWith(UNKNOWN_ENDPOINT)) {
+      throw new StaleClientError(msg.slice(UNKNOWN_ENDPOINT.length))
+    }
     throw new ApiError(res.status, msg)
   }
   const ct = res.headers.get('content-type') ?? ''

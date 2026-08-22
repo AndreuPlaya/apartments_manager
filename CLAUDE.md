@@ -126,6 +126,7 @@ Key invariants:
 - **Application services** receive plain data arguments (never Hono `Context`) so they are testable without HTTP.
 - **Routes** map request → service call → response. No business logic.
 - **Middleware** `auth.ts` sets `c.get('user')`; `admin.ts` checks `user.isAdmin`. Admin routes stack both.
+- **`routes/spa.ts`** serves the built client and owns the cache policy that keeps a deploy from being half-applied in a browser: the shell is `no-store` (its name never changes, so it must always be revalidated), `/assets/*` is `immutable` for a year (content-hashed, so a change is a new URL). It also 404s any unmatched `/api/*` instead of letting the HTML fallback answer it with a 200.
 
 ---
 
@@ -198,6 +199,7 @@ If any record is rejected (duplicate name, missing foreign key), the whole impor
 - **`composables/usePageData.ts`**: loads all page data in parallel (`Promise.all`), exposes mutation helpers.
 - **`router.ts` guard**: calls `GET /api/auth/config`, caches result in module scope, clears on login/logout. Redirects unauthenticated users to `/login` (or `/setup` if no admin exists).
 - **Theming**: CSS custom properties defined in `styles/_variables.scss`; theme switching via `document.documentElement.setAttribute('data-theme', theme)`.
+- **Stale tabs**: an unmatched `/api/*` comes back as `Unknown API endpoint`, which `api/client.ts` turns into `StaleClientError` and `useAsyncOp` reports as "reload the page". This is how a tab left open across a route-renaming deploy tells on itself instead of showing an unactionable error.
 - **`shared/reservationStatus.ts`**: the client-side mirror of the server's lifecycle rules, so the UI offers only transitions the server will accept. A courtesy, never an enforcement — `docs/UX.md` §5.
 
 ---

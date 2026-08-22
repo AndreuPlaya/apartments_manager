@@ -275,6 +275,7 @@ const es: Messages = {
   },
   errors: {
     unexpectedError: 'Ha ocurrido un error inesperado',
+    staleClient: 'Esta pestaña ejecuta una versión antigua de la aplicación. Recarga la página para continuar.',
   },
 }
 

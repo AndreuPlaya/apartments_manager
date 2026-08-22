@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, api } from '../../src/api/client'
+import { ApiError, StaleClientError, api } from '../../src/api/client'
 
 function mockFetch(status: number, body: unknown, contentType = 'application/json') {
   const bodyStr = typeof body === 'string' ? body : JSON.stringify(body)
@@ -27,6 +27,35 @@ describe('ApiError', () => {
     expect(err.status).toBe(404)
     expect(err.message).toBe('Not found')
     expect(err).toBeInstanceOf(Error)
+  })
+})
+
+describe('StaleClientError', () => {
+  it('is raised when the server does not know an endpoint this bundle calls', async () => {
+    vi.stubGlobal('fetch', mockFetch(404, { error: 'Unknown API endpoint: /api/apartments' }))
+
+    const err = await api.listings.list().catch((e) => e)
+
+    expect(err).toBeInstanceOf(StaleClientError)
+    expect(err.endpoint).toBe('/api/apartments')
+    expect(err.status).toBe(404)
+  })
+
+  it('is not raised by an ordinary 404 — a record that does not exist', async () => {
+    vi.stubGlobal('fetch', mockFetch(404, { error: 'Reservation not found' }))
+
+    const err = await api.listings.list().catch((e) => e)
+
+    expect(err).toBeInstanceOf(ApiError)
+    expect(err).not.toBeInstanceOf(StaleClientError)
+  })
+
+  it('is not raised by that message on any other status', async () => {
+    vi.stubGlobal('fetch', mockFetch(500, { error: 'Unknown API endpoint: /api/apartments' }))
+
+    const err = await api.listings.list().catch((e) => e)
+
+    expect(err).not.toBeInstanceOf(StaleClientError)
   })
 })
 

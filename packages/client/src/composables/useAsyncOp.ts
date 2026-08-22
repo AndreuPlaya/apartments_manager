@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { ApiError } from '../api/client'
+import { ApiError, StaleClientError } from '../api/client'
 import { i18n } from '../i18n'
 import { useToast } from './useToast'
 
@@ -12,7 +12,11 @@ export function useAsyncOp() {
     try {
       return await fn()
     } catch (e) {
-      if (e instanceof ApiError) {
+      if (e instanceof StaleClientError) {
+        // The server's message names an endpoint, which means nothing to whoever
+        // is at the desk. What they can act on is: reload.
+        error(i18n.global.t('errors.staleClient'))
+      } else if (e instanceof ApiError) {
         error(e.message || `Request failed (${e.status})`)
       } else if (e instanceof Error) {
         error(e.message)

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiError } from '../../src/api/client'
+import { ApiError, StaleClientError } from '../../src/api/client'
 
 const mockErrorFn = vi.hoisted(() => vi.fn())
 
@@ -43,6 +43,17 @@ describe('useAsyncOp', () => {
     const result = await run(() => Promise.reject(new ApiError(404, 'Not found')))
     expect(result).toBeUndefined()
     expect(mockErrorFn).toHaveBeenCalledWith('Not found')
+  })
+
+  it('tells the user to reload on StaleClientError, not the endpoint name', async () => {
+    const { run } = useAsyncOp()
+
+    const result = await run(() => Promise.reject(new StaleClientError('/api/apartments')))
+
+    expect(result).toBeUndefined()
+    const [message] = mockErrorFn.mock.calls[0] as [string]
+    expect(message).toMatch(/reload/i)
+    expect(message).not.toContain('/api/apartments')
   })
 
   it('shows status fallback when ApiError has no message', async () => {

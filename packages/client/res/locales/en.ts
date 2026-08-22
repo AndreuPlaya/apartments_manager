@@ -273,6 +273,7 @@ const en = {
   },
   errors: {
     unexpectedError: 'An unexpected error occurred',
+    staleClient: 'This tab is running an older version of the application. Reload the page to continue.',
   },
 }
 

@@ -1,9 +1,7 @@
 import { serve } from '@hono/node-server'
-import { serveStatic } from '@hono/node-server/serve-static'
 import { Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
 import { secureHeaders } from 'hono/secure-headers'
-import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { importLegacyJson } from './infrastructure/importJson.js'
@@ -11,6 +9,7 @@ import { ensureSecretKey, isFirstRun } from './infrastructure/settings.js'
 import adminRoutes from './routes/admin.js'
 import authRoutes from './routes/auth.js'
 import editorRoutes from './routes/editor.js'
+import { mountClientApp } from './routes/spa.js'
 
 ensureSecretKey()
 
@@ -48,19 +47,7 @@ const __dirname = join(__filename, '..')
 // This works both in local dev (packages/server/dist) and Docker (packages/server/dist)
 const CLIENT_DIST = join(__dirname, '..', '..', '..', 'packages', 'client', 'dist')
 
-try {
-  app.use('/assets/*', serveStatic({ root: CLIENT_DIST }))
-  app.get('*', (c) => {
-    try {
-      const html = readFileSync(join(CLIENT_DIST, 'index.html'), 'utf8')
-      return c.html(html)
-    } catch {
-      return c.text('Frontend not built. Run: pnpm build', 503)
-    }
-  })
-} catch {
-  // serveStatic may fail if dist doesn't exist; SPA fallback handles it gracefully
-}
+mountClientApp(app, CLIENT_DIST)
 
 const PORT = Number(process.env['PORT'] ?? 5000)
 serve({ fetch: app.fetch, port: PORT, hostname: '0.0.0.0' })

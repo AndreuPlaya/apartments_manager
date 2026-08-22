@@ -154,6 +154,11 @@ something.
   (`usePageData`) and show what has arrived.
 - **Empty states carry the next action.** "No reservations this month" plus a
   *new reservation* button, not just the sentence.
+- **A tab older than the server says so.** A deploy can rename a route under a
+  tab that has been open since yesterday. When the server answers *unknown
+  endpoint*, the operator gets "reload the page", not the endpoint name and not a
+  data error they cannot act on. The shell is served `no-store`
+  (`routes/spa.ts`), so reloading is genuinely the fix.
 
 ---
 
@@ -200,3 +205,5 @@ Concrete, checkable claims — if any is false, the UX has regressed:
 6. No screen has a control that the current role's request would be refused for.
 7. Every state is distinguishable with colour vision removed.
 8. Both themes are legible on every screen.
+9. Reloading the page after a deploy is enough to be running the deployed
+   version — no cache clearing, no hard refresh.
