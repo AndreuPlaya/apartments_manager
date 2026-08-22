@@ -121,7 +121,8 @@ Routes (HTTP contract only)
 Key invariants:
 - **Domain** (`domain/models.ts`): interfaces only, no classes. Pure transform functions beside them.
 - **Infrastructure**: `infrastructure/repositories/*.ts` hold every SQL statement, one module per entity, each exposing `list` / `findById` / `insert` / `update` / `deleteById` plus the lookups its service needs. `infrastructure/db.ts` owns the connection, the pragmas (`WAL`, `foreign_keys`, `busy_timeout`) and the `transaction()` helper. `infrastructure/settings.ts` still writes `settings.json` with the atomic temp+rename pattern.
-- **Schema changes** go in `infrastructure/migrations.ts` as a new append-only entry — never edit an applied migration. They run automatically on the first `getDb()`.
+- **Schema changes** go in `infrastructure/migrations.ts`, applied on the first `getDb()`. **Until launch there is one entry, `001_initial`, and it is editable** — no deployed database exists, so a schema change belongs in it rather than in a migration that upgrades a database nobody has. A developer holding a stale `app.db` deletes it. **From launch onwards the list is append-only** and an applied entry is never touched again.
+- **The one legacy path that stays** is `importJson.ts`. The JSON files from the previous application are real data with real field names, and they are translated at the boundary whatever the current schema looks like.
 - **Application services** receive plain data arguments (never Hono `Context`) so they are testable without HTTP.
 - **Routes** map request → service call → response. No business logic.
 - **Middleware** `auth.ts` sets `c.get('user')`; `admin.ts` checks `user.isAdmin`. Admin routes stack both.

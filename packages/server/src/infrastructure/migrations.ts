@@ -6,44 +6,47 @@ export interface Migration {
 }
 
 /**
- * Ordered, append-only list of schema migrations. Never edit an applied entry —
- * add a new one. SQL is inlined rather than read from .sql files so the bundled
- * server needs no runtime assets.
+ * Schema migrations, applied in order on the first `getDb()`.
+ *
+ * **Until launch there is one entry and it is editable.** No deployed database
+ * exists to preserve, so a schema change belongs *in* `001_initial` rather than
+ * in a migration that upgrades a database nobody has. Any developer holding a
+ * stale `app.db` deletes it; that is cheaper than carrying upgrade steps for a
+ * shape the application never shipped.
+ *
+ * **From launch onwards this list is append-only.** Once a real database exists,
+ * editing an applied entry silently diverges the schema from what is recorded in
+ * `schema_migrations`, and the divergence surfaces as a constraint error months
+ * later. Add a new entry instead, and never touch this one again.
+ *
+ * The one legacy path that *is* maintained is `importJson.ts`: the JSON files
+ * from the previous application are real data with real field names, and they
+ * are translated at the boundary regardless of what this schema looks like.
+ *
+ * SQL is inlined rather than read from .sql files so the bundled server needs no
+ * runtime assets.
  */
 export const MIGRATIONS: Migration[] = [
   {
     id: '001_initial',
     sql: `
-      CREATE TABLE apartments (
+      CREATE TABLE listings (
         id           TEXT PRIMARY KEY,
         name         TEXT    NOT NULL,
         address      TEXT    NOT NULL,
         floor        INTEGER NOT NULL,
         door         TEXT    NOT NULL,
-        price        REAL    NOT NULL,
+        nightlyRate  REAL    NOT NULL,
         minNights    INTEGER NOT NULL,
         maxGuests    INTEGER NOT NULL,
         rooms        INTEGER NOT NULL,
         bathrooms    INTEGER NOT NULL,
-        isAvailable  INTEGER NOT NULL CHECK (isAvailable IN (0, 1)),
+        isActive     INTEGER NOT NULL CHECK (isActive IN (0, 1)),
         description  TEXT
       );
-      CREATE UNIQUE INDEX idx_apartments_name ON apartments (lower(name));
+      CREATE UNIQUE INDEX idx_listings_name ON listings (lower(name));
 
-      CREATE TABLE properties (
-        id           TEXT PRIMARY KEY,
-        name         TEXT    NOT NULL,
-        address      TEXT    NOT NULL,
-        city         TEXT,
-        floor        TEXT,
-        door         TEXT,
-        rentalType   TEXT    NOT NULL CHECK (rentalType IN ('short-term', 'long-term', 'room')),
-        isAvailable  INTEGER NOT NULL CHECK (isAvailable IN (0, 1)),
-        comment      TEXT
-      );
-      CREATE UNIQUE INDEX idx_properties_name ON properties (lower(name));
-
-      CREATE TABLE clients (
+      CREATE TABLE guests (
         id                TEXT PRIMARY KEY,
         identityDocument  TEXT,
         name              TEXT NOT NULL,
@@ -55,8 +58,11 @@ export const MIGRATIONS: Migration[] = [
         zipCode           TEXT,
         comment           TEXT
       );
-      CREATE UNIQUE INDEX idx_clients_document ON clients (upper(identityDocument));
-      CREATE UNIQUE INDEX idx_clients_email    ON clients (lower(email));
+      -- A blank document or email means "not provided", so the service maps it to
+      -- NULL before insert — SQLite treats NULLs as distinct, which is what lets
+      -- many guests share the absence of a document.
+      CREATE UNIQUE INDEX idx_guests_document ON guests (upper(identityDocument));
+      CREATE UNIQUE INDEX idx_guests_email    ON guests (lower(email));
 
       CREATE TABLE channels (
         id              TEXT PRIMARY KEY,
@@ -65,63 +71,6 @@ export const MIGRATIONS: Migration[] = [
         isActive        INTEGER NOT NULL CHECK (isActive IN (0, 1))
       );
       CREATE UNIQUE INDEX idx_channels_name ON channels (lower(name));
-
-      CREATE TABLE bookings (
-        id              TEXT PRIMARY KEY,
-        apartmentId     TEXT    NOT NULL REFERENCES apartments (id) ON DELETE RESTRICT,
-        clientId        TEXT    NOT NULL REFERENCES clients (id)    ON DELETE RESTRICT,
-        channelId       TEXT    NOT NULL REFERENCES channels (id)   ON DELETE RESTRICT,
-        fromDate        TEXT    NOT NULL,
-        toDate          TEXT    NOT NULL,
-        adultCount      INTEGER NOT NULL,
-        childrenCount   INTEGER NOT NULL,
-        cribRequested   INTEGER CHECK (cribRequested IN (0, 1)),
-        status          TEXT    NOT NULL CHECK (status IN ('Active', 'Cancelled')),
-        paidDate        TEXT,
-        totalAmountDue  REAL    NOT NULL,
-        comment         TEXT,
-        createdAt       TEXT    NOT NULL
-      );
-      CREATE INDEX idx_bookings_apartment_dates ON bookings (apartmentId, fromDate, toDate);
-      CREATE INDEX idx_bookings_client  ON bookings (clientId);
-      CREATE INDEX idx_bookings_channel ON bookings (channelId);
-
-      CREATE TABLE calendar_links (
-        id           TEXT PRIMARY KEY,
-        channelId    TEXT NOT NULL REFERENCES channels (id)   ON DELETE CASCADE,
-        apartmentId  TEXT NOT NULL REFERENCES apartments (id) ON DELETE CASCADE,
-        url          TEXT NOT NULL,
-        UNIQUE (channelId, apartmentId)
-      );
-    `,
-  },
-  {
-    // docs/GLOSSARY.md: one word per concept, and the industry term wins.
-    // apartments -> listings, bookings -> reservations, clients -> guests.
-    //
-    // `properties` is dropped, not renamed: it was an inventory table nothing
-    // referenced and no route wrote to after the first release. A listing is the
-    // only unit this application knows (docs/GLOSSARY.md §1).
-    //
-    // `reservations` is rebuilt rather than renamed because its status CHECK
-    // constraint has to change, and SQLite cannot alter one in place.
-    id: '002_consolidate_vocabulary',
-    sql: `
-      DROP TABLE properties;
-
-      ALTER TABLE apartments RENAME TO listings;
-      ALTER TABLE listings RENAME COLUMN price TO nightlyRate;
-      ALTER TABLE listings RENAME COLUMN isAvailable TO isActive;
-      DROP INDEX idx_apartments_name;
-      CREATE UNIQUE INDEX idx_listings_name ON listings (lower(name));
-
-      ALTER TABLE clients RENAME TO guests;
-      DROP INDEX idx_clients_document;
-      DROP INDEX idx_clients_email;
-      CREATE UNIQUE INDEX idx_guests_document ON guests (upper(identityDocument));
-      CREATE UNIQUE INDEX idx_guests_email    ON guests (lower(email));
-
-      ALTER TABLE calendar_links RENAME COLUMN apartmentId TO listingId;
 
       CREATE TABLE reservations (
         id              TEXT PRIMARY KEY,
@@ -133,6 +82,9 @@ export const MIGRATIONS: Migration[] = [
         adultCount      INTEGER NOT NULL,
         childrenCount   INTEGER NOT NULL,
         cribRequested   INTEGER CHECK (cribRequested IN (0, 1)),
+        -- docs/RESERVATION_LIFECYCLE.md §1. RESTRICT above rather than CASCADE:
+        -- a stay outliving its listing or guest is a data-entry error to be
+        -- refused, not a cleanup to be performed.
         status          TEXT    NOT NULL CHECK (
                           status IN ('Confirmed', 'CheckedIn', 'CheckedOut', 'Cancelled', 'NoShow')
                         ),
@@ -141,33 +93,19 @@ export const MIGRATIONS: Migration[] = [
         comment         TEXT,
         createdAt       TEXT    NOT NULL
       );
-
-      -- The old model had one live state, so a finished stay and one starting
-      -- tomorrow were indistinguishable. Placing each stay by its own dates is
-      -- the only reading of 'Active' that leaves the register usable: without
-      -- it every past stay would land in reception's "arrival unconfirmed"
-      -- queue on the morning of the upgrade.
-      INSERT INTO reservations
-        (id, listingId, guestId, channelId, checkIn, checkOut, adultCount,
-         childrenCount, cribRequested, status, paidDate, totalAmountDue,
-         comment, createdAt)
-      SELECT
-        id, apartmentId, clientId, channelId, fromDate, toDate, adultCount,
-        childrenCount, cribRequested,
-        CASE
-          WHEN status = 'Cancelled'    THEN 'Cancelled'
-          WHEN toDate   <= date('now') THEN 'CheckedOut'
-          WHEN fromDate <= date('now') THEN 'CheckedIn'
-          ELSE 'Confirmed'
-        END,
-        paidDate, totalAmountDue, comment, createdAt
-      FROM bookings;
-
-      DROP TABLE bookings;
-
       CREATE INDEX idx_reservations_listing_dates ON reservations (listingId, checkIn, checkOut);
       CREATE INDEX idx_reservations_guest   ON reservations (guestId);
       CREATE INDEX idx_reservations_channel ON reservations (channelId);
+
+      CREATE TABLE calendar_links (
+        id         TEXT PRIMARY KEY,
+        channelId  TEXT NOT NULL REFERENCES channels (id) ON DELETE CASCADE,
+        listingId  TEXT NOT NULL REFERENCES listings (id) ON DELETE CASCADE,
+        url        TEXT NOT NULL,
+        -- CASCADE here, unlike reservations: a sync URL carries no history worth
+        -- protecting once the thing it synced is gone.
+        UNIQUE (channelId, listingId)
+      );
     `,
   },
 ]

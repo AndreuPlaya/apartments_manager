@@ -110,7 +110,7 @@ Defined in [ACCESS_LEVELS.md](ACCESS_LEVELS.md).
 
 | Layer | Before | After |
 |---|---|---|
-| SQL tables | `apartments`, `bookings`, `clients`, `properties` | `listings`, `reservations`, `guests` (properties dropped) |
+| SQL tables | `apartments`, `bookings`, `clients`, `properties` | `listings`, `reservations`, `guests` (`properties` gone) |
 | Read routes | `/api/apartments`, `/api/bookings`, `/api/clients`, `/api/properties` | `/api/listings`, `/api/reservations`, `/api/guests` |
 | Write routes | `/api/admin/{apartments,bookings,clients,properties}` | `/api/admin/{listings,reservations,guests}` |
 | Types | `Apartment`, `Booking`, `Client`, `Property` | `Listing`, `Reservation`, `Guest` |

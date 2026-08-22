@@ -136,7 +136,7 @@ export interface ChangeRecord {
 
 - `settings.ts` — `loadSettings()` / `saveSettings()` / `ensureSecretKey()` / `findUser()`. Reads and writes `config/settings.json`.
 - `db.ts` — owns the SQLite connection, the pragmas (`WAL`, `foreign_keys`, `busy_timeout`) and the `transaction()` helper.
-- `migrations.ts` — the append-only list of schema migrations, applied on the first `getDb()`.
+- `migrations.ts` — the list of schema migrations, applied on the first `getDb()`. Pre-launch it holds a single editable entry; from launch onwards it is append-only. See `docs/DOMAIN.md` §8.
 - `repositories/*.ts` — one module per entity; every SQL statement in the codebase lives here. Each exposes `list` / `findById` / `insert` / `update` / `deleteById` plus the lookups its service needs.
 - `reporter.ts` (optional) — formatting helpers (dates, durations, display values). Pure output-formatting, no decisions.
 

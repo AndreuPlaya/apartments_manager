@@ -45,7 +45,7 @@ how much is owed.**
 
 `Property` was removed. It was an inventory table nothing referenced, with no
 relation to listings and no writer after the first release; keeping it meant two
-answers to "what do we rent". Migration `002_consolidate_vocabulary` drops it.
+answers to "what do we rent".
 
 **A reservation is always a reservation, never an inquiry.** There is no held or
 pending state — see §4.
@@ -247,9 +247,14 @@ questions.
 
 ## 8. Migrating in
 
-Two separate paths, both one-shot.
+The application is **pre-launch**: no deployed database exists, so there is
+exactly one schema migration (`001_initial`) and it is the current shape rather
+than a step towards it. A schema change edits it; a developer holding a stale
+`app.db` deletes the file. From launch onwards `migrations.ts` becomes
+append-only and that entry is frozen.
 
-### From the legacy JSON files
+The one migration path that is genuinely maintained is the **legacy JSON
+import**, because those files hold real data from the previous application.
 
 `infrastructure/importJson.ts` runs on every boot and does nothing unless legacy
 JSON files are present *and* the database is empty.
@@ -259,27 +264,20 @@ JSON files are present *and* the database is empty.
   `toDate`, `price`, `isAvailable`). They are input from an application we no
   longer control, so their names are not ours to rename: `readLegacyListings`,
   `readLegacyReservations` and `readLegacyCalendarLinks` translate them, and
-  nothing else in the codebase knows the old words.
+  nothing else in the codebase knows the old words. This holds regardless of what
+  the current schema looks like — it is the one place the old vocabulary is
+  allowed to appear.
 - **B31 — Legacy statuses collapse to `Confirmed`.** `Active`, `NotPaid`, `Paid`
   and a missing status all described a live stay. `Paid` additionally carried its
   payment date in the status, which becomes `paidDate` (falling back to the
   creation day). `Cancelled` passes through.
 - **B32 — All or nothing.** One rejected record rolls back the whole import,
   leaves the JSON untouched and fails startup with every offending record named.
-
-### From a database at migration 001
-
-`002_consolidate_vocabulary` renames the tables and columns, drops `properties`,
-and rebuilds `reservations` — a rebuild rather than a rename because SQLite
-cannot alter a `CHECK` constraint in place.
-
-- **B33 — Live stays are placed by their own dates.** The old model had one live
-  state, so a finished stay and one starting tomorrow were indistinguishable.
-  `Active` becomes `CheckedOut`, `CheckedIn` or `Confirmed` according to the
-  stay's dates. Without this, every past stay would land in reception's
-  *arrival unconfirmed* queue on the morning of the upgrade.
-
----
+  Fix the JSON and restart.
+- **B33 — Imported stays start `Confirmed`, not placed by their dates.** The old
+  application never tracked arrivals, so there is no arrival to preserve and
+  inventing one would fabricate a statement nobody made. Reception confirms them,
+  which is lifecycle rule L8 working as intended.
 
 ## 9. Remaining divergences from the reference
 
