@@ -28,8 +28,10 @@
 # Secretos del repositorio (Configuración → Actions → Secrets):
 #   REGISTRY_USER        usuario de Forgejo con write:package
 #   REGISTRY_TOKEN       su token de acceso
-#   FORGEJO_USER         usuario máquina que lee el repo del stack (docker-host)
-#   FORGEJO_TOKEN        su token de sólo lectura
+#   STACK_GIT_USER       usuario máquina que lee el repo del stack (docker-host)
+#   STACK_GIT_TOKEN      su token de sólo lectura
+#                        (no pueden llamarse FORGEJO_*: la forja reserva ese
+#                         prefijo y rechaza el alta con «invalid secret name»)
 #   PORTAINER_URL        p.ej. https://10.10.0.30:9443
 #   PORTAINER_USER       usuario de Portainer
 #   PORTAINER_PASSWORD   su contraseña
@@ -90,8 +92,8 @@ jobs:
           # stack, y eso pide lectura de repositorio; el token del registro sólo
           # tiene `write:package`. Va el usuario máquina `docker-host`, que es
           # el que ya usa el relanzado de los domingos.
-          FORGEJO_USER: ${{ secrets.FORGEJO_USER }}
-          FORGEJO_TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+          FORGEJO_USER: ${{ secrets.STACK_GIT_USER }}
+          FORGEJO_TOKEN: ${{ secrets.STACK_GIT_TOKEN }}
         run: |
           apk add --no-cache python3 >/dev/null
           python3 .forgejo/scripts/redesplegar.py ixa-apps "PMS_VERSION=$VERSION"
