@@ -40,3 +40,7 @@ Thumbs.db
 
 # Raw MongoDB dump taken before decommissioning the cluster (contains PII)
 mongo-archive/
+
+# Bytecode de los scripts de CI
+__pycache__/
+*.pyc
