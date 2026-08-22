@@ -58,7 +58,7 @@ Uniqueness and referential integrity are enforced by the schema
 (`infrastructure/migrations.ts`), not by services, so no service re-checks them.
 
 ### Listing
-`name, address, floor, door, nightlyRate, minNights, maxGuests, rooms, bathrooms, isActive, description?`
+`name, address, floor, door, nightlyRate, minNights, maxAdults, rooms, bathrooms, isActive, description?`
 
 - **E1** Name is unique, case-insensitively (`lower(name)`).
 - **E2** `isActive` marks the listing as lettable at all. See B3.
@@ -136,8 +136,9 @@ authority; the rules the code enforces are:
 ## 5. Availability rules
 
 Checked by `reservationService.assertStayIsBookable` / `assertNoOverlap` on
-create, and on update whenever the listing, either date, or either guest count
-changes.
+create, and on update whenever the listing, either date, or the adult count
+changes. Changing only the children count revalidates nothing, because nothing
+validates against it.
 
 - **B5 — Listing must be active.** A listing with `isActive = false` accepts no
   reservations.
@@ -148,8 +149,15 @@ changes.
 - **B8 — Guest must exist.** Checked explicitly, ahead of the foreign key, so
   the operator gets a domain error rather than a constraint violation.
 - **B9 — Minimum nights.** `nights >= listing.minNights` (reference A1).
-- **B10 — Maximum guests.** `adultCount + childrenCount <= listing.maxGuests`
-  (reference A7). The refusal names the limit and the number asked for.
+- **B10 — Maximum adults.** `adultCount <= listing.maxAdults` (reference A7).
+  The refusal names the limit and the number asked for.
+
+  Children do not count. The field was called `maxGuests` and read as total
+  occupancy until the real portfolio was checked: every one of the fifteen
+  over-capacity stays was *exactly* one over, and every one of them had children.
+  The operator's rule is beds for adults, with a child sharing or in a crib — so
+  counting a child against a bed would refuse stays the business takes every
+  week. The column was renamed to say what it does.
 - **B11 — No overlap.** Within one listing, no two stays that hold their dates
   may intersect. Stays are **half-open**
   (`checkIn < other.checkOut AND checkOut > other.checkIn`), so a checkout day is
@@ -294,6 +302,6 @@ Named so their absence is a decision, not an oversight.
 
 Everything in the previous revision's divergence table that produced wrong
 numbers or accepted wrong data is now fixed: cancelled stays release their dates
-(B12) and leave the metrics (B18, B19), guest counts are checked against
+(B12) and leave the metrics (B18, B19), the adult count is checked against
 capacity (B10), the inline-edit path validates transitions (B2), revenue is
 spread across its nights (B19), and commission is applied (B15).

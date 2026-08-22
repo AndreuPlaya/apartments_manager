@@ -3,7 +3,7 @@ import { getDb } from '../db.js'
 import { opt, toBool, toParam, type Row } from './mapping.js'
 
 const COLUMNS =
-  'id, name, address, floor, door, nightlyRate, minNights, maxGuests, rooms, bathrooms, isActive, description'
+  'id, name, address, floor, door, nightlyRate, minNights, maxAdults, rooms, bathrooms, isActive, description'
 const PLACEHOLDERS = COLUMNS.split(', ').map(() => '?').join(', ')
 
 export function toListing(row: Row): Listing {
@@ -15,7 +15,7 @@ export function toListing(row: Row): Listing {
     door: row['door'] as string,
     nightlyRate: row['nightlyRate'] as number,
     minNights: row['minNights'] as number,
-    maxGuests: row['maxGuests'] as number,
+    maxAdults: row['maxAdults'] as number,
     rooms: row['rooms'] as number,
     bathrooms: row['bathrooms'] as number,
     isActive: toBool(row['isActive']),
@@ -26,7 +26,7 @@ export function toListing(row: Row): Listing {
 function params(a: Listing): ReturnType<typeof toParam>[] {
   return [
     a.id, a.name, a.address, a.floor, a.door, a.nightlyRate,
-    a.minNights, a.maxGuests, a.rooms, a.bathrooms,
+    a.minNights, a.maxAdults, a.rooms, a.bathrooms,
     a.isActive, a.description,
   ].map(toParam)
 }
@@ -62,7 +62,7 @@ export function update(listing: Listing): void {
     .prepare(
       `UPDATE listings SET
          name = ?, address = ?, floor = ?, door = ?, nightlyRate = ?, minNights = ?,
-         maxGuests = ?, rooms = ?, bathrooms = ?, isActive = ?, description = ?
+         maxAdults = ?, rooms = ?, bathrooms = ?, isActive = ?, description = ?
        WHERE id = ?`,
     )
     .run(...params(listing).slice(1), listing.id)

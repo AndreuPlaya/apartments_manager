@@ -14,7 +14,7 @@ export interface Listing {
   door: string
   nightlyRate: number
   minNights: number
-  maxGuests: number
+  maxAdults: number
   rooms: number
   bathrooms: number
   isActive: boolean

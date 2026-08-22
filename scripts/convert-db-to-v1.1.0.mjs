@@ -3,9 +3,9 @@
  * One-off conversion of a v1.0.x application database to the v1.1.0 schema.
  *
  * v1.1.0 consolidated the domain vocabulary (docs/GLOSSARY.md): apartments
- * became listings, bookings became reservations, clients became guests, and
- * reservations gained the five-state lifecycle (docs/RESERVATION_LIFECYCLE.md).
- * `properties` was dropped.
+ * became listings, bookings became reservations, clients became guests,
+ * `maxGuests` became `maxAdults`, and reservations gained the five-state
+ * lifecycle (docs/RESERVATION_LIFECYCLE.md). `properties` was dropped.
  *
  * This is deliberately **not** a migration in `infrastructure/migrations.ts`.
  * Pre-launch that list holds a single editable entry describing the current
@@ -130,6 +130,10 @@ try {
     ALTER TABLE apartments RENAME TO listings;
     ALTER TABLE listings RENAME COLUMN price TO nightlyRate;
     ALTER TABLE listings RENAME COLUMN isAvailable TO isActive;
+    -- maxGuests only ever limited adults in practice: every over-capacity stay
+    -- in production was exactly maxGuests + 1 and every one of them had
+    -- children. The column is renamed to say what it does.
+    ALTER TABLE listings RENAME COLUMN maxGuests TO maxAdults;
     DROP INDEX IF EXISTS idx_apartments_name;
     CREATE UNIQUE INDEX idx_listings_name ON listings (lower(name));
 

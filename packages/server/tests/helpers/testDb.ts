@@ -29,7 +29,7 @@ export const LISTING: Listing = {
   door: 'A',
   nightlyRate: 100,
   minNights: 2,
-  maxGuests: 4,
+  maxAdults: 4,
   rooms: 2,
   bathrooms: 1,
   isActive: true,

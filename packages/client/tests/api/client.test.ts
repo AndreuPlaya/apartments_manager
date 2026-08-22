@@ -159,7 +159,7 @@ describe('api.auth.setup()', () => {
 })
 
 describe('api.listings.*', () => {
-  const aptBody = { name: 'A', address: '1 St', floor: 1, door: 'A', nightlyRate: 100, minNights: 1, maxGuests: 2, rooms: 1, bathrooms: 1, isActive: true }
+  const aptBody = { name: 'A', address: '1 St', floor: 1, door: 'A', nightlyRate: 100, minNights: 1, maxAdults: 2, rooms: 1, bathrooms: 1, isActive: true }
   const apt = { id: 'apt1', ...aptBody }
   it('create posts to /api/admin/listings', async () => {
     vi.stubGlobal('fetch', mockFetch(201, apt))

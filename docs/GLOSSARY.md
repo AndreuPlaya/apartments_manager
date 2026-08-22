@@ -43,11 +43,11 @@ codebase from claiming every rentable thing is a flat.
 | `nightlyRate` | `price` | The listing's reference rate **per night**. `price` never said of what. |
 | `isActive` | `isAvailable` (listing) | Whether the listing is being let at all. Renamed because *availability* now means "are these dates free", which is a different question. Matches `Channel.isActive`. |
 | `minNights` | `minNights` | Reference term (rule A1). Kept. |
-| `maxGuests` | `maxGuests` | Reference term (rule A7). Kept. |
+| `maxAdults` | `maxGuests` | How many **adults** the listing sleeps. Renamed because it never limited children: see DOMAIN.md B10. Answers reference rule A7. |
 | `totalAmountDue` | `totalAmountDue` | Gross amount the guest owes, channel commission included. |
 | `paidDate` | `paidDate` | Present means settled; absent means outstanding. |
 | `commissionRate` | `commissionRate` | The channel's cut, as a percentage of `totalAmountDue`. |
-| `adultCount` / `childrenCount` | unchanged | Together they are the *guest count*, checked against `maxGuests`. |
+| `adultCount` / `childrenCount` | unchanged | Together they are the *guest count*, but only `adultCount` is checked against `maxAdults`. |
 | `cribRequested` | unchanged | |
 | `identityDocument` | unchanged | |
 
@@ -117,3 +117,5 @@ Defined in [ACCESS_LEVELS.md](ACCESS_LEVELS.md).
 | Services | `apartmentService`, `bookingService`, `clientService`, `propertyService` | `listingService`, `reservationService`, `guestService` |
 | Client routes | `/bookings`, `/clients` | `/reservations`, `/guests` |
 | i18n keys | `bookings.*`, `clients.*`, `apartments.*` | `reservations.*`, `guests.*`, `listings.*` |
+| Listing columns | `price`, `isAvailable`, `maxGuests` | `nightlyRate`, `isActive`, `maxAdults` |
+| Reservation columns | `apartmentId`, `clientId`, `fromDate`, `toDate` | `listingId`, `guestId`, `checkIn`, `checkOut` |

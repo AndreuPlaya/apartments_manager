@@ -29,7 +29,7 @@ const showForm = ref(false)
 
 const blank = (): Omit<Listing, 'id'> => ({
   name: '', address: '', floor: 0, door: '', nightlyRate: 0, minNights: 1,
-  maxGuests: 2, rooms: 1, bathrooms: 1, isActive: true, description: '',
+  maxAdults: 2, rooms: 1, bathrooms: 1, isActive: true, description: '',
 })
 const form = ref(blank())
 
@@ -57,7 +57,7 @@ async function save() {
     floor: Number(form.value.floor),
     nightlyRate: Number(form.value.nightlyRate),
     minNights: Number(form.value.minNights),
-    maxGuests: Number(form.value.maxGuests),
+    maxAdults: Number(form.value.maxAdults),
     rooms: Number(form.value.rooms),
     bathrooms: Number(form.value.bathrooms),
   }
@@ -158,7 +158,7 @@ async function deleteCalendarLink(id: string) {
                 <NumberInput mode="form" :text="t('listings.minNights')" v-model="form.minNights" :min="1" />
               </div>
               <div class="form-row">
-                <NumberInput mode="form" :text="t('listings.maxGuests')" v-model="form.maxGuests" :min="1" />
+                <NumberInput mode="form" :text="t('listings.maxAdults')" v-model="form.maxAdults" :min="1" />
                 <NumberInput mode="form" :text="t('listings.rooms')" v-model="form.rooms" :min="1" />
               </div>
               <div class="form-row">

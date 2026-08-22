@@ -42,7 +42,7 @@ working roles they least resemble.
 | Resource | admin | manager | reception | viewer |
 |---|---|---|---|---|
 | **Listings** | R W D | R W D | R | R |
-| Listing `nightlyRate`, `minNights`, `maxGuests` | R W | R W | R | R |
+| Listing `nightlyRate`, `minNights`, `maxAdults` | R W | R W | R | R |
 | Listing `isActive` | R W | R W | — | R |
 | **Channels** | R W D | R W D | R | R |
 | Channel `commissionRate` | R W | R W | — | — |

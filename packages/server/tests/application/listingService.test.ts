@@ -21,7 +21,7 @@ const req = {
   door: 'B',
   nightlyRate: 80,
   minNights: 1,
-  maxGuests: 2,
+  maxAdults: 2,
   rooms: 1,
   bathrooms: 1,
   isActive: true,

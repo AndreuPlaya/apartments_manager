@@ -30,10 +30,10 @@ export interface ImportResult {
 
 /**
  * The legacy JSON files speak the pre-consolidation vocabulary: `apartmentId`,
- * `clientId`, `fromDate`, `toDate`, `price`, `isAvailable`. They are input from
- * an application we no longer control, so their field names are not ours to
- * rename — every legacy row is translated here into the canonical shape
- * (docs/GLOSSARY.md §2) and nowhere else.
+ * `clientId`, `fromDate`, `toDate`, `price`, `isAvailable`, `maxGuests`. They
+ * are input from an application we no longer control, so their field names are
+ * not ours to rename — every legacy row is translated here into the canonical
+ * shape (docs/GLOSSARY.md §2) and nowhere else.
  */
 type LegacyRow = Record<string, unknown>
 
@@ -43,8 +43,13 @@ function str(row: LegacyRow, key: string): string {
 
 function readLegacyListings(): Listing[] {
   return readJson<LegacyRow[]>(PATHS.apartmentsJson, []).map((a) => {
-    const { price, isAvailable, ...rest } = a
-    return { ...rest, nightlyRate: price, isActive: isAvailable } as unknown as Listing
+    const { price, isAvailable, maxGuests, ...rest } = a
+    return {
+      ...rest,
+      nightlyRate: price,
+      isActive: isAvailable,
+      maxAdults: maxGuests,
+    } as unknown as Listing
   })
 }
 
@@ -65,9 +70,10 @@ function readLegacyCalendarLinks(): CalendarLink[] {
  * never carried one, so they import as `Confirmed` rather than being rejected
  * for violating NOT NULL.
  *
- * Unlike migration 002, this does not place a stay by its dates: these files
- * come from an app that never tracked arrivals, so there is no arrival to
- * preserve. Reception confirms them, which is rule L8 working as intended.
+ * Every imported stay starts `Confirmed` rather than being placed by its dates:
+ * these files come from an app that never tracked arrivals, so there is no
+ * arrival to preserve and inventing one would fabricate a statement nobody made.
+ * Reception confirms them, which is rule L8 working as intended.
  */
 function readLegacyReservations(): Reservation[] {
   return readJson<LegacyRow[]>(PATHS.bookingsJson, []).map((b): Reservation => {

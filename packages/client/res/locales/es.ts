@@ -177,7 +177,7 @@ const es: Messages = {
     door: 'Puerta',
     nightlyRate: 'Precio / noche (€)',
     minNights: 'Mín. noches',
-    maxGuests: 'Máx. huéspedes',
+    maxAdults: 'Máx. adultos',
     rooms: 'Habitaciones',
     bathrooms: 'Baños',
     activeForReservations: 'Activo — acepta reservas',

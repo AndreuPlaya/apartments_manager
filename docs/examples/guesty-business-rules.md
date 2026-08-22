@@ -89,7 +89,9 @@ satisfy all of them.
   confirmed reservation are blocked automatically for turnover.
 - **A6 — Check-in window.** New check-ins can be restricted to a window after a
   previous check-out.
-- **A7 — Occupancy.** Guest count may not exceed the listing's capacity.
+- **A7 — Occupancy.** Guest count may not exceed the listing's capacity. What
+  counts as a guest is the operator's to define: ours counts adults only, since
+  a child shares a bed or takes a crib (see DOMAIN.md B10).
 - **A8 — Manual override.** A reservation created by hand may be confirmed
   regardless of A1–A7. The operator's judgement outranks the rule set.
 

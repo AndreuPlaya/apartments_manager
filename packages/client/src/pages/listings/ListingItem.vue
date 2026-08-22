@@ -104,11 +104,11 @@ const listingLinks = () => props.calendarLinks.filter(l => l.listingId === props
           />
 
           <NumberInput
-            :text="t('listings.maxGuests')"
-            :model-value="listing.maxGuests"
+            :text="t('listings.maxAdults')"
+            :model-value="listing.maxAdults"
             :min="1"
             :rights="isAdmin ?? false"
-            @update:model-value="updateField('maxGuests', $event)"
+            @update:model-value="updateField('maxAdults', $event)"
           />
 
           <NumberInput

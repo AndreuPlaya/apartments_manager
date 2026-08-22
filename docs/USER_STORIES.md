@@ -80,7 +80,7 @@ exactly which record is wrong.*
 nightly rate, so it can start taking reservations.*
 
 - Name is unique, case-insensitively (E1).
-- Address, floor, door, `nightlyRate`, `minNights`, `maxGuests`, rooms and
+- Address, floor, door, `nightlyRate`, `minNights`, `maxAdults`, rooms and
   bathrooms are all required — a listing with unknown capacity cannot be
   validated against.
 - A new listing is `isActive` by default.
@@ -99,7 +99,8 @@ reservation lands on it while its past stays remain intact.*
 guests, so the desk cannot accept a stay we do not want.*
 
 - `minNights` is enforced on every reservation whose dates change (B7).
-- `maxGuests` is enforced against `adultCount + childrenCount` (B-new).
+- `maxAdults` is enforced against `adultCount` only — children do not consume a
+  bed (B10).
 - `nightlyRate` is reference information: it does not compute
   `totalAmountDue` (B11). Changing it never rewrites a recorded amount.
 
@@ -199,7 +200,7 @@ dates before someone else books them.*
 - Listing, guest, channel, `checkIn` and `checkOut` are all required (E14).
 - Refused if the listing is inactive (B3), the dates are invalid (B4), the
   channel is inactive (B5), the guest does not exist (B6), the stay is under
-  `minNights` (B7), the guest count is over `maxGuests`, or the dates overlap an
+  `minNights` (B7), the adult count is over `maxAdults`, or the dates overlap an
   existing stay on that listing (B8).
 - The overlap check and the write share one immediate transaction, so two people
   taking calls at once cannot both book the same week (B10).

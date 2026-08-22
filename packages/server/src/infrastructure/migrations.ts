@@ -38,7 +38,7 @@ export const MIGRATIONS: Migration[] = [
         door         TEXT    NOT NULL,
         nightlyRate  REAL    NOT NULL,
         minNights    INTEGER NOT NULL,
-        maxGuests    INTEGER NOT NULL,
+        maxAdults    INTEGER NOT NULL,
         rooms        INTEGER NOT NULL,
         bathrooms    INTEGER NOT NULL,
         isActive     INTEGER NOT NULL CHECK (isActive IN (0, 1)),

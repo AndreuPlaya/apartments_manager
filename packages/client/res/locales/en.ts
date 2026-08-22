@@ -175,7 +175,7 @@ const en = {
     door: 'Door',
     nightlyRate: 'Price / night (€)',
     minNights: 'Min nights',
-    maxGuests: 'Max guests',
+    maxAdults: 'Max adults',
     rooms: 'Rooms',
     bathrooms: 'Bathrooms',
     activeForReservations: 'Active — accepting reservations',

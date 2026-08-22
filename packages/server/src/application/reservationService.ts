@@ -20,7 +20,7 @@ function assertStayIsBookable(
   listingId: string,
   checkIn: string,
   checkOut: string,
-  guestCount: number,
+  adultCount: number,
 ): void {
   if (!isValidDateRange(checkIn, checkOut)) {
     throw new ValidationError('checkOut must be after checkIn')
@@ -36,16 +36,11 @@ function assertStayIsBookable(
   if (!meetsMinNights(checkIn, checkOut, listing.minNights)) {
     throw new ValidationError(`Minimum ${listing.minNights} night(s) required for '${listing.name}'`)
   }
-  if (guestCount > listing.maxGuests) {
+  if (adultCount > listing.maxAdults) {
     throw new ValidationError(
-      `Maximum ${listing.maxGuests} guest(s) for '${listing.name}' (${guestCount} requested)`,
+      `Maximum ${listing.maxAdults} adult(s) for '${listing.name}' (${adultCount} requested)`,
     )
   }
-}
-
-/** Adults and children together are the guest count checked against `maxGuests`. */
-function guestCountOf(r: { adultCount: number; childrenCount: number }): number {
-  return r.adultCount + r.childrenCount
 }
 
 /**
@@ -85,7 +80,7 @@ export function createReservation(req: CreateReservationRequest): Reservation {
   // The overlap check and the insert share one immediate transaction, so two
   // concurrent requests cannot both pass the check for the same dates.
   return transaction(() => {
-    assertStayIsBookable(req.listingId, checkIn, checkOut, guestCountOf(req))
+    assertStayIsBookable(req.listingId, checkIn, checkOut, req.adultCount)
     assertGuestExists(req.guestId)
     assertChannelIsUsable(req.channelId)
     assertNoOverlap(req.listingId, checkIn, checkOut)
@@ -127,11 +122,10 @@ export function updateReservation(
       req.checkIn !== undefined ||
       req.checkOut !== undefined ||
       req.listingId !== undefined ||
-      req.adultCount !== undefined ||
-      req.childrenCount !== undefined
+      req.adultCount !== undefined
 
     if (stayChanged) {
-      assertStayIsBookable(merged.listingId, merged.checkIn, merged.checkOut, guestCountOf(merged))
+      assertStayIsBookable(merged.listingId, merged.checkIn, merged.checkOut, merged.adultCount)
       assertNoOverlap(merged.listingId, merged.checkIn, merged.checkOut, id)
     }
 

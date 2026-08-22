@@ -47,7 +47,7 @@ function makeApp() {
 describe('Listings admin routes', () => {
   const aptBody = {
     name: 'Beach House', address: '1 Ocean', floor: 1, door: 'A',
-    nightlyRate: 100, minNights: 2, maxGuests: 4, rooms: 2, bathrooms: 1, isActive: true,
+    nightlyRate: 100, minNights: 2, maxAdults: 4, rooms: 2, bathrooms: 1, isActive: true,
   }
   const apt = { id: 'apt1', ...aptBody }
 

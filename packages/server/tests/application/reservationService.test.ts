@@ -264,27 +264,34 @@ describe('patchReservationFields', () => {
   })
 })
 
-describe('maxGuests', () => {
-  it('rejects a guest count over the listing capacity', () => {
+describe('maxAdults', () => {
+  it('rejects more adults than the listing sleeps', () => {
     expect(() => createReservation({ ...validReq, adultCount: 5, childrenCount: 0 })).toThrow(
-      'Maximum 4 guest(s)',
+      'Maximum 4 adult(s)',
     )
   })
 
-  it('counts children towards the capacity', () => {
-    expect(() => createReservation({ ...validReq, adultCount: 3, childrenCount: 2 })).toThrow(
-      'Maximum 4 guest(s)',
-    )
+  // The capacity is adults only. Every over-capacity stay in the real portfolio
+  // was exactly one over and every one of them had children, so counting a child
+  // against a bed would refuse stays the business takes every week.
+  it('does not count children towards the capacity', () => {
+    expect(createReservation({ ...validReq, adultCount: 4, childrenCount: 3 }).childrenCount).toBe(3)
   })
 
-  it('accepts a guest count exactly at the capacity', () => {
-    expect(createReservation({ ...validReq, adultCount: 2, childrenCount: 2 }).adultCount).toBe(2)
+  it('accepts exactly as many adults as the listing sleeps', () => {
+    expect(createReservation({ ...validReq, adultCount: 4 }).adultCount).toBe(4)
   })
 
-  it('revalidates the capacity when only the guest count changes', () => {
+  it('revalidates the capacity when only the adult count changes', () => {
     seedReservation()
 
-    expect(() => updateReservation('b1', { adultCount: 9 })).toThrow('Maximum 4 guest(s)')
+    expect(() => updateReservation('b1', { adultCount: 9 })).toThrow('Maximum 4 adult(s)')
+  })
+
+  it('does not revalidate the stay when only the children count changes', () => {
+    seedReservation()
+
+    expect(updateReservation('b1', { childrenCount: 9 }).childrenCount).toBe(9)
   })
 })
 

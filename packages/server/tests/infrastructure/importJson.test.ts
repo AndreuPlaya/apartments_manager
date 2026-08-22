@@ -37,15 +37,15 @@ function write(file: string, data: unknown): void {
 }
 
 // The fixtures below are deliberately in the *legacy* vocabulary — `price`,
-// `isAvailable`, `apartmentId`, `clientId`, `fromDate`, `toDate` — because that
-// is what the files on disk contain. The expectations are canonical.
+// `isAvailable`, `maxGuests`, `apartmentId`, `clientId`, `fromDate`, `toDate` —
+// because that is what the files on disk contain. The expectations are canonical.
 const LEGACY_APARTMENT = {
   id: 'apt1', name: 'Beach House', address: '1 Ocean Ave', floor: 1, door: 'A',
   price: 100, minNights: 2, maxGuests: 4, rooms: 2, bathrooms: 1, isAvailable: true,
 }
 const LISTING = {
   id: 'apt1', name: 'Beach House', address: '1 Ocean Ave', floor: 1, door: 'A',
-  nightlyRate: 100, minNights: 2, maxGuests: 4, rooms: 2, bathrooms: 1, isActive: true,
+  nightlyRate: 100, minNights: 2, maxAdults: 4, rooms: 2, bathrooms: 1, isActive: true,
   description: undefined,
 }
 const GUEST = { id: 'cli1', name: 'Alice', email: 'alice@example.com' }

@@ -19,7 +19,7 @@ function names(db: DatabaseSync, type: 'table' | 'index'): string[] {
 function seedBase(db: DatabaseSync): void {
   db.exec(`
     INSERT INTO listings
-      (id, name, address, floor, door, nightlyRate, minNights, maxGuests, rooms, bathrooms, isActive)
+      (id, name, address, floor, door, nightlyRate, minNights, maxAdults, rooms, bathrooms, isActive)
     VALUES ('l1', 'Beach House', '1 Ocean Ave', 1, 'A', 100, 2, 4, 2, 1, 1);
 
     INSERT INTO guests (id, name) VALUES ('g1', 'Alice');
@@ -153,7 +153,7 @@ describe('schema invariants', () => {
 
     expect(() =>
       db.exec(`INSERT INTO listings
-                 (id, name, address, floor, door, nightlyRate, minNights, maxGuests, rooms, bathrooms, isActive)
+                 (id, name, address, floor, door, nightlyRate, minNights, maxAdults, rooms, bathrooms, isActive)
                VALUES ('l2', 'beach house', '2 Ocean Ave', 2, 'B', 90, 1, 2, 1, 1, 1)`),
     ).toThrow()
     expect(() =>

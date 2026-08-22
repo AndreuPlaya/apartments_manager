@@ -146,7 +146,7 @@ First-run flow: `ensureSecretKey()` generates the secret on startup. If no admin
 ## Domain Model
 
 Entities the application manages:
-- **Listing**: the bookable unit (name, address, floor, door, nightlyRate, minNights, maxGuests, rooms, bathrooms, isActive)
+- **Listing**: the bookable unit (name, address, floor, door, nightlyRate, minNights, maxAdults, rooms, bathrooms, isActive)
 - **Reservation**: a committed stay (listing ref, guest ref, channel ref, checkIn, checkOut, adultCount, childrenCount, status, totalAmountDue). Validated for overlap, minimum nights and maximum guests.
 - **Guest**: the person the stay belongs to (identityDocument, name, email, phoneNumber, address fields)
 - **Channel**: where the reservation came from (name, commissionRate, isActive) — e.g. Airbnb, Booking.com, direct
