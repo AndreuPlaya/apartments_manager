@@ -199,6 +199,7 @@ If any record is rejected (duplicate name, missing foreign key), the whole impor
 - **`composables/usePageData.ts`**: loads all page data in parallel (`Promise.all`), exposes mutation helpers.
 - **`router.ts` guard**: calls `GET /api/auth/config`, caches result in module scope, clears on login/logout. Redirects unauthenticated users to `/login` (or `/setup` if no admin exists).
 - **Theming**: CSS custom properties defined in `styles/_variables.scss`; theme switching via `document.documentElement.setAttribute('data-theme', theme)`.
+- **Dead sessions**: a 401 from any route other than `/api/auth/*` becomes `SessionExpiredError`, and the handler the router installs clears the cached config and returns to `/login`. Pages must never render a refused request as zeros — `reportError` in `useAsyncOp.ts` is the one place that turns a caught error into a message.
 - **Stale tabs**: an unmatched `/api/*` comes back as `Unknown API endpoint`, which `api/client.ts` turns into `StaleClientError` and `useAsyncOp` reports as "reload the page". This is how a tab left open across a route-renaming deploy tells on itself instead of showing an unactionable error.
 - **`shared/reservationStatus.ts`**: the client-side mirror of the server's lifecycle rules, so the UI offers only transitions the server will accept. A courtesy, never an enforcement — `docs/UX.md` §5.
 

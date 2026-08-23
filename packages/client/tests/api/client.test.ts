@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, StaleClientError, api } from '../../src/api/client'
+import {
+  ApiError,
+  SessionExpiredError,
+  StaleClientError,
+  api,
+  setSessionExpiredHandler,
+} from '../../src/api/client'
 
 function mockFetch(status: number, body: unknown, contentType = 'application/json') {
   const bodyStr = typeof body === 'string' ? body : JSON.stringify(body)
@@ -56,6 +62,58 @@ describe('StaleClientError', () => {
     const err = await api.listings.list().catch((e) => e)
 
     expect(err).not.toBeInstanceOf(StaleClientError)
+  })
+})
+
+describe('SessionExpiredError', () => {
+  afterEach(() => {
+    setSessionExpiredHandler(null)
+  })
+
+  it('is raised on a 401 from a data route, and tells the handler', async () => {
+    const onExpired = vi.fn()
+    setSessionExpiredHandler(onExpired)
+    vi.stubGlobal('fetch', mockFetch(401, { error: 'Unauthorized' }))
+
+    const err = await api.listings.list().catch((e) => e)
+
+    expect(err).toBeInstanceOf(SessionExpiredError)
+    expect(onExpired).toHaveBeenCalledOnce()
+  })
+
+  it('leaves a refused login alone — that 401 means the password was wrong', async () => {
+    const onExpired = vi.fn()
+    setSessionExpiredHandler(onExpired)
+    vi.stubGlobal('fetch', mockFetch(401, { error: 'Invalid credentials' }))
+
+    const err = await api.auth.login({ username: 'a', password: 'b' }).catch((e) => e)
+
+    expect(err).not.toBeInstanceOf(SessionExpiredError)
+    expect(err.message).toBe('Invalid credentials')
+    expect(onExpired).not.toHaveBeenCalled()
+  })
+
+  it('does not need a handler to be installed', async () => {
+    vi.stubGlobal('fetch', mockFetch(401, { error: 'Unauthorized' }))
+
+    await expect(api.listings.list()).rejects.toBeInstanceOf(SessionExpiredError)
+  })
+})
+
+describe('api.auth.setupRequired()', () => {
+  it('is true only for the 503 the first-run guard sends', async () => {
+    vi.stubGlobal('fetch', mockFetch(503, { setupRequired: true }))
+    await expect(api.auth.setupRequired()).resolves.toBe(true)
+  })
+
+  it('is false for an anonymous 401, without reporting a dead session', async () => {
+    const onExpired = vi.fn()
+    setSessionExpiredHandler(onExpired)
+    vi.stubGlobal('fetch', mockFetch(401, { error: 'Unauthorized' }))
+
+    await expect(api.auth.setupRequired()).resolves.toBe(false)
+    expect(onExpired).not.toHaveBeenCalled()
+    setSessionExpiredHandler(null)
   })
 })
 

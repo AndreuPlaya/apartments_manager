@@ -135,6 +135,29 @@ export class StaleClientError extends ApiError {
 
 const UNKNOWN_ENDPOINT = 'Unknown API endpoint: '
 
+/**
+ * The session is gone — expired, or signed with a secret this server no longer
+ * has. Distinct from a rejected login, which is also a 401 but means the
+ * password was wrong.
+ */
+export class SessionExpiredError extends ApiError {
+  constructor() {
+    super(401, 'Session expired')
+  }
+}
+
+let onSessionExpired: (() => void) | null = null
+
+/**
+ * Installed by the router. Without it a dead session showed up as a toast
+ * saying "Unauthorized" over a page rendering zeros — a Today screen claiming
+ * no arrivals when it simply was not allowed to ask. Zeros are a statement;
+ * this makes the app go back to the login screen instead of making it.
+ */
+export function setSessionExpiredHandler(fn: (() => void) | null): void {
+  onSessionExpired = fn
+}
+
 // ── Base fetch ───────────────────────────────────────────────────────────────
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' }
@@ -147,6 +170,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     try { msg = JSON.parse(text).error ?? text } catch { /* keep raw */ }
     if (res.status === 404 && msg.startsWith(UNKNOWN_ENDPOINT)) {
       throw new StaleClientError(msg.slice(UNKNOWN_ENDPOINT.length))
+    }
+    // `/api/auth/*` is excluded on purpose: a refused login is a 401 too, and
+    // it means "wrong password", not "your session died".
+    if (res.status === 401 && !path.startsWith('/api/auth/')) {
+      onSessionExpired?.()
+      throw new SessionExpiredError()
     }
     throw new ApiError(res.status, msg)
   }
@@ -171,6 +200,16 @@ export const api = {
     logout: () => request<void>('/api/auth/logout', { method: 'POST' }),
     setup: (body: { username: string; password: string; full_name: string }) =>
       json<{ ok: true }>('/api/auth/setup', 'POST', body),
+    /**
+     * Whether the server has no admin yet. Told apart from "not logged in" by
+     * the status: the first-run guard answers 503 on every non-auth route until
+     * an admin exists. Raw fetch, so an anonymous 401 here is an answer rather
+     * than a dead session.
+     */
+    setupRequired: async (): Promise<boolean> => {
+      const res = await fetch('/api/listings', { credentials: 'same-origin' })
+      return res.status === 503
+    },
   },
 
   listings: {

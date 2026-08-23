@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { AuthConfig } from './api/client'
-import { api, ApiError } from './api/client'
+import { api, setSessionExpiredHandler } from './api/client'
+import { useToast } from './composables/useToast'
+import { i18n } from './i18n'
 
 let cachedConfig: (AuthConfig & { ok: true }) | null = null
 
@@ -64,13 +66,7 @@ router.beforeEach(async (to) => {
   if (!cachedConfig) {
     const cfg = await api.auth.config()
     if (!cfg.ok) {
-      // Not authenticated — check if first-run setup needed
-      try {
-        await api.listings.list()
-      } catch (e) {
-        if (e instanceof ApiError && e.status === 503) return '/setup'
-      }
-      return '/login'
+      return (await api.auth.setupRequired()) ? '/setup' : '/login'
     }
     cachedConfig = cfg
   }
@@ -79,4 +75,20 @@ router.beforeEach(async (to) => {
   return true
 })
 
+/**
+ * A 401 on any data call means this session is over — most often because the
+ * server was redeployed with a new signing secret, which is what the
+ * development server does on every push. Send the operator to the login screen
+ * and say why, instead of leaving a mounted page showing zeros it was never
+ * allowed to fill.
+ */
+setSessionExpiredHandler(() => {
+  clearCachedConfig()
+  if (router.currentRoute.value.path !== '/login') {
+    useToast().error(i18n.global.t('errors.sessionExpired'))
+    void router.replace('/login')
+  }
+})
+
 export default router
+

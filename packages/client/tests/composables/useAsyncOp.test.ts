@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, StaleClientError } from '../../src/api/client'
+import { ApiError, SessionExpiredError, StaleClientError } from '../../src/api/client'
 
 const mockErrorFn = vi.hoisted(() => vi.fn())
 
@@ -54,6 +54,15 @@ describe('useAsyncOp', () => {
     const [message] = mockErrorFn.mock.calls[0] as [string]
     expect(message).toMatch(/reload/i)
     expect(message).not.toContain('/api/apartments')
+  })
+
+  it('says nothing on SessionExpiredError — the router already redirects', async () => {
+    const { run } = useAsyncOp()
+
+    const result = await run(() => Promise.reject(new SessionExpiredError()))
+
+    expect(result).toBeUndefined()
+    expect(mockErrorFn).not.toHaveBeenCalled()
   })
 
   it('shows status fallback when ApiError has no message', async () => {

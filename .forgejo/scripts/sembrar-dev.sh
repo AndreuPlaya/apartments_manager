@@ -68,6 +68,11 @@ echo "-- secret_key propio para desarrollo"
 # arrancar (infrastructure/settings.ts). Así las sesiones abiertas en producción
 # no valen aquí ni al revés. Las contraseñas SÍ son las de producción.
 #
+# Consecuencia, y es a propósito: cada siembra tira las sesiones abiertas EN
+# DESARROLLO, así que después de cada push a master hay que volver a entrar. La
+# aplicación lo dice y lleva al login (api/client.ts, SessionExpiredError); si
+# en vez de eso vieras una pantalla de ceros, eso sí es un fallo.
+#
 # Se usa la imagen de dev y no `alpine` porque hace falta node; de paso su
 # entrypoint deja el /data con el dueño que espera la aplicación.
 docker run --rm -v "$DEV_DIR":/data "$IMAGEN_DEV" node -e "

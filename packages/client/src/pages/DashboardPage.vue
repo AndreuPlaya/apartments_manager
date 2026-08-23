@@ -5,7 +5,7 @@ import { holdsDates } from '../shared/reservationStatus'
 import { api } from '../api/client'
 import type { Listing, Reservation, Guest, Channel } from '../api/client'
 import { useToast } from '../composables/useToast'
-import { useAsyncOp } from '../composables/useAsyncOp'
+import { reportError, useAsyncOp } from '../composables/useAsyncOp'
 import GuestEditModal from './guests/GuestEditModal.vue'
 import TodaySummary from './reservations/TodaySummary.vue'
 import ActiveReservationsView from './reservations/ActiveReservationsView.vue'
@@ -81,7 +81,7 @@ async function load() {
     guests.value = cls
     channels.value = chs
   } catch (e) {
-    if (e instanceof Error) error(e.message)
+    reportError(e)
   } finally {
     pageLoading.value = false
   }

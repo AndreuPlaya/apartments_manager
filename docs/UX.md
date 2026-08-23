@@ -154,6 +154,12 @@ something.
   (`usePageData`) and show what has arrived.
 - **Empty states carry the next action.** "No reservations this month" plus a
   *new reservation* button, not just the sentence.
+- **A dead session is never drawn as zeros.** A 401 on any data call means the
+  session is gone — expired, or signed with a secret the server no longer has,
+  which is what a redeploy of the development server does every time. The app
+  goes back to the login screen and says so. A Today screen reading *0 arrivals*
+  because it was not allowed to ask is worse than an error: it is a statement,
+  and it is false.
 - **A tab older than the server says so.** A deploy can rename a route under a
   tab that has been open since yesterday. When the server answers *unknown
   endpoint*, the operator gets "reload the page", not the endpoint name and not a
@@ -207,3 +213,5 @@ Concrete, checkable claims — if any is false, the UX has regressed:
 8. Both themes are legible on every screen.
 9. Reloading the page after a deploy is enough to be running the deployed
    version — no cache clearing, no hard refresh.
+10. No screen ever shows a zero, an empty list or a blank field that is really a
+    refused request.
