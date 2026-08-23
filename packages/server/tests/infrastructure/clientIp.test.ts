@@ -4,14 +4,14 @@ vi.mock('@hono/node-server/conninfo')
 
 import { getConnInfo } from '@hono/node-server/conninfo'
 import type { Context } from 'hono'
-import { clientIp } from '../../src/infrastructure/clientIp.js'
+import { clientIp, isSecureRequest } from '../../src/infrastructure/clientIp.js'
 
 const mockGetConnInfo = vi.mocked(getConnInfo)
 
-/** Minimal Context stand-in: clientIp only reads one header. */
-function ctx(headers: Record<string, string> = {}): Context {
+/** Minimal Context stand-in: these functions read headers and the URL. */
+function ctx(headers: Record<string, string> = {}, url = 'http://10.10.0.30:5001/api/auth/login'): Context {
   return {
-    req: { header: (name: string) => headers[name.toLowerCase()] },
+    req: { header: (name: string) => headers[name.toLowerCase()], url },
   } as unknown as Context
 }
 
@@ -112,5 +112,29 @@ describe('clientIp', () => {
     it('uses the leftmost entry when there are fewer hops than configured', () => {
       expect(clientIp(ctx({ 'x-forwarded-for': '203.0.113.7' }))).toBe('203.0.113.7')
     })
+  })
+})
+
+describe('isSecureRequest', () => {
+  it('is true when our proxy says the client spoke https', () => {
+    expect(isSecureRequest(ctx({ 'x-forwarded-proto': 'https' }))).toBe(true)
+  })
+
+  it('is false when our proxy says the client spoke http', () => {
+    expect(isSecureRequest(ctx({ 'x-forwarded-proto': 'http' }))).toBe(false)
+  })
+
+  it('reads the leftmost hop, which is the one the client reached', () => {
+    expect(isSecureRequest(ctx({ 'x-forwarded-proto': 'https, http' }))).toBe(true)
+    expect(isSecureRequest(ctx({ 'x-forwarded-proto': 'http, https' }))).toBe(false)
+  })
+
+  it('does not care how the header is cased', () => {
+    expect(isSecureRequest(ctx({ 'x-forwarded-proto': 'HTTPS' }))).toBe(true)
+  })
+
+  it('falls back to the request URL with no proxy in front — the development server', () => {
+    expect(isSecureRequest(ctx({}, 'http://10.10.0.30:5001/api/auth/login'))).toBe(false)
+    expect(isSecureRequest(ctx({}, 'https://pms.example.org/api/auth/login'))).toBe(true)
   })
 })

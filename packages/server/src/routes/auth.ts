@@ -5,7 +5,7 @@ import { rateLimiter } from 'hono-rate-limiter'
 import type { Context } from 'hono'
 import { AppError } from '../application/errors.js'
 import { authenticate, createUser } from '../application/userService.js'
-import { clientIp } from '../infrastructure/clientIp.js'
+import { clientIp, isSecureRequest } from '../infrastructure/clientIp.js'
 import { getSecret, isFirstRun } from '../infrastructure/settings.js'
 
 const authLimiter = rateLimiter({
@@ -35,7 +35,7 @@ export async function issueSessionCookie(
     sameSite: 'Lax',
     path: '/',
     maxAge: 604_800,
-    secure: process.env['NODE_ENV'] === 'production',
+    secure: isSecureRequest(c),
   })
 }
 

@@ -188,3 +188,53 @@ describe('POST /api/auth/setup', () => {
     expect(res.status).toBe(500)
   })
 })
+
+/**
+ * The attribute that broke the development server: a `Secure` cookie is
+ * discarded by the browser on a plain-HTTP origin, so login succeeded and every
+ * request after it came back 401. It follows the connection now, not NODE_ENV.
+ */
+describe('the session cookie and Secure', () => {
+  function login(url: string, headers: Record<string, string> = {}) {
+    vi.mocked(authenticate).mockResolvedValue({
+      username: 'admin',
+      isAdmin: true,
+      resourceId: null,
+    } as Awaited<ReturnType<typeof authenticate>>)
+    return makeApp().request(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify({ username: 'admin', password: 'pass' }),
+    })
+  }
+
+  it('is not Secure over plain http — the development server on port 5001', async () => {
+    const res = await login('http://10.10.0.30:5001/api/auth/login')
+
+    expect(res.status).toBe(200)
+    const cookie = res.headers.get('Set-Cookie') ?? ''
+    expect(cookie).toContain('session=')
+    expect(cookie).not.toContain('Secure')
+  })
+
+  it('is Secure when our proxy reports https — production behind Caddy', async () => {
+    const res = await login('http://pms.example.org/api/auth/login', {
+      'X-Forwarded-Proto': 'https',
+    })
+
+    expect(res.headers.get('Set-Cookie')).toContain('Secure')
+  })
+
+  it('is Secure on a direct https request', async () => {
+    const res = await login('https://pms.example.org/api/auth/login')
+
+    expect(res.headers.get('Set-Cookie')).toContain('Secure')
+  })
+
+  it('is HttpOnly and Lax either way', async () => {
+    const cookie = (await login('https://pms.example.org/api/auth/login')).headers.get('Set-Cookie') ?? ''
+
+    expect(cookie).toContain('HttpOnly')
+    expect(cookie).toContain('SameSite=Lax')
+  })
+})

@@ -20,6 +20,29 @@ function trustedProxyCount(): number {
 }
 
 /**
+ * Whether the connection that will carry a cookie back to the browser is
+ * encrypted — the only honest basis for the `Secure` attribute.
+ *
+ * It used to be `NODE_ENV === 'production'`, which is a statement about the
+ * build, not about the connection. The development server runs the production
+ * build over plain HTTP on port 5001, so it marked its session cookie `Secure`
+ * and the browser silently refused to keep it: the login succeeded, and every
+ * request after it came back 401.
+ *
+ * `X-Forwarded-Proto` is what our own proxy reports, and Caddy overwrites
+ * whatever the client sent. A forged value can only cost the forger their own
+ * session, never expose anyone else's: marking a cookie `Secure` on a plain
+ * connection makes the browser drop it, and dropping the attribute cannot make
+ * a browser send a cookie it never stored.
+ */
+export function isSecureRequest(c: Context): boolean {
+  const proto = c.req.header('x-forwarded-proto')
+  // Leftmost is the protocol the outermost proxy was spoken to.
+  if (proto) return proto.split(',')[0]!.trim().toLowerCase() === 'https'
+  return new URL(c.req.url).protocol === 'https:'
+}
+
+/**
  * Resolve the client IP to key rate limits on.
  *
  * With `TRUST_PROXY=n` we take the n-th entry from the right of
