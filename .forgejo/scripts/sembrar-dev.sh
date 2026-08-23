@@ -38,10 +38,14 @@ mkdirSync('/tmp/pms-dev-seed/database', { recursive: true })
 
 const db = new DatabaseSync('/data/database/app.db')
 db.exec("VACUUM INTO '/tmp/pms-dev-seed/database/app.db'")
-const n = db.prepare('SELECT count(*) AS n FROM bookings').get().n
-const c = db.prepare('SELECT count(*) AS n FROM clients').get().n
+// Los nombres son los del glosario. Si una de estas tablas no existe, el job
+// se para aquí, y eso es lo que se quiere: significaría que producción y esta
+// pipeline hablan esquemas distintos, y sembrar dev con eso no lleva a nada
+// bueno.
+const n = db.prepare('SELECT count(*) AS n FROM reservations').get().n
+const c = db.prepare('SELECT count(*) AS n FROM guests').get().n
 db.close()
-console.log(`   ${c} clientes, ${n} reservas`)
+console.log(`   ${c} huéspedes, ${n} reservas`)
 NODE
 
 # Las cuentas viven en config/settings.json, no en la base: sin esto no se
