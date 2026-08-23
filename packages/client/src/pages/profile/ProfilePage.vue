@@ -1,21 +1,19 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
 import { api } from '../../api/client'
 import type { ProfileData } from '../../api/client'
 import { useToast } from '../../composables/useToast'
 import { useAsyncOp } from '../../composables/useAsyncOp'
 import { useLocale } from '../../composables/useLocale'
 import { useTheme } from '../../composables/useTheme'
-import { clearCachedConfig } from '../../router'
+import { setAuthConfig } from '../../composables/useAuthConfig'
 import ProfileTextField from '../../shared/fields/ProfileTextField.vue'
 import ProfilePasswordField from '../../shared/fields/ProfilePasswordField.vue'
 import ProfileLangField from '../../shared/fields/ProfileLangField.vue'
 import AppSwitch from '../../shared/AppSwitch.vue'
 
 const { t } = useI18n()
-const router = useRouter()
 const { success, error } = useToast()
 const { currentLocale, setLocale } = useLocale()
 const { isDark, setDark } = useTheme()
@@ -62,9 +60,13 @@ async function submitAccount() {
     })
     profile.value = updated
     success(t('profile.saved'))
+    // The server re-issued the session cookie under the new name and said so in
+    // its reply, so adopt it instead of dropping the session — the nav reads
+    // the username straight from here. The `router.push('/profile')` this
+    // replaces navigated to the route we were already on, which vue-router
+    // discards, so it never refreshed anything.
     if (usernameChanged) {
-      clearCachedConfig()
-      router.push('/profile')
+      setAuthConfig({ username: updated.username, isAdmin: updated.is_admin })
     }
   })
 }

@@ -13,7 +13,8 @@ vi.mock('../src/api/client', async (importActual) => {
 })
 
 import { api, setSessionExpiredHandler } from '../src/api/client'
-import { clearCachedConfig, setCachedConfig, default as router } from '../src/router'
+import { clearAuthConfig, setAuthConfig } from '../src/composables/useAuthConfig'
+import router from '../src/router'
 
 /**
  * The router installs its handler as a module side effect, so the mocked
@@ -23,14 +24,14 @@ import { clearCachedConfig, setCachedConfig, default as router } from '../src/ro
 const sessionExpired = vi.mocked(setSessionExpiredHandler).mock.calls[0]![0]!
 
 beforeEach(() => {
-  clearCachedConfig()
+  clearAuthConfig()
   vi.clearAllMocks()
 })
 
-describe('clearCachedConfig', () => {
+describe('clearAuthConfig', () => {
   it('clears cached config so next navigation re-fetches', async () => {
-    setCachedConfig({ ok: true, is_admin: false, username: 'alice' })
-    clearCachedConfig()
+    setAuthConfig({ username: 'alice', isAdmin: false })
+    clearAuthConfig()
     vi.mocked(api.auth.config).mockResolvedValue({ ok: false })
     vi.mocked(api.auth.setupRequired).mockResolvedValue(false)
     await router.push('/')
@@ -38,9 +39,9 @@ describe('clearCachedConfig', () => {
   })
 })
 
-describe('setCachedConfig', () => {
+describe('setAuthConfig', () => {
   it('stores config so the guard skips fetching', async () => {
-    setCachedConfig({ ok: true, is_admin: true, username: 'admin' })
+    setAuthConfig({ username: 'admin', isAdmin: true })
     await router.push('/config')
     expect(api.auth.config).not.toHaveBeenCalled()
   })
@@ -149,7 +150,7 @@ describe('router beforeEach guard', () => {
 
 describe('the session-expired handler the router installs', () => {
   it('sends the operator to the login screen instead of leaving the page mounted', async () => {
-    setCachedConfig({ ok: true, is_admin: true, username: 'admin' })
+    setAuthConfig({ username: 'admin', isAdmin: true })
     await router.push('/config')
     expect(router.currentRoute.value.path).toBe('/config')
 
@@ -172,7 +173,7 @@ describe('the session-expired handler the router installs', () => {
   })
 
   it('drops the cached config, so the next navigation asks the server again', async () => {
-    setCachedConfig({ ok: true, is_admin: true, username: 'admin' })
+    setAuthConfig({ username: 'admin', isAdmin: true })
     sessionExpired()
     await new Promise((r) => setTimeout(r, 0))
 

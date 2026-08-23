@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { api } from '../../api/client'
 import type { Listing, Reservation, Guest, Channel } from '../../api/client'
 import { useToast } from '../../composables/useToast'
+import { useAuthConfig } from '../../composables/useAuthConfig'
 import { reportError, useAsyncOp } from '../../composables/useAsyncOp'
 import CalendarView from './CalendarView.vue'
 import ReservationFormModal from './ReservationFormModal.vue'
@@ -19,7 +20,9 @@ const listings = ref<Listing[]>([])
 const reservations = ref<Reservation[]>([])
 const guests = ref<Guest[]>([])
 const channels = ref<Channel[]>([])
-const isAdmin = ref(false)
+// Whatever the session says — the router guard resolved it before this
+// page mounted, so asking again would only repeat a request.
+const { isAdmin } = useAuthConfig()
 const pageLoading = ref(true)
 
 function monthsAgo(checkIn: string, months: number): string {
@@ -41,9 +44,6 @@ async function onMonthChange(year: number, month: number) {
 async function load() {
   pageLoading.value = true
   try {
-    const cfg = await api.auth.config()
-    isAdmin.value = cfg.ok ? cfg.is_admin : false
-
     const [apts, bks, cls, chs] = await Promise.all([
       api.listings.list(),
       api.reservations.list({ from: loadFromDate.value }),

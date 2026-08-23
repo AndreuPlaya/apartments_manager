@@ -1,14 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { api } from '../../api/client'
 import GuestsTab from './GuestsTab.vue'
+import { useAuthConfig } from '../../composables/useAuthConfig'
 
-const isAdmin = ref(false)
-
-onMounted(async () => {
-  const cfg = await api.auth.config()
-  isAdmin.value = cfg.ok ? cfg.is_admin : false
-})
+// The router guard resolved the session before this page mounted.
+const { isAdmin } = useAuthConfig()
 </script>
 
 <template>

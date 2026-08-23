@@ -54,7 +54,8 @@ apartments_manager/
 │   └── client/src/
 │       ├── pages/
 │       ├── components/
-│       ├── composables/     # useAsyncOp, usePageData, useToast, useConfirm, useAppConfig
+│       ├── composables/     # useAuthConfig (the session), useAsyncOp, useToast,
+│       │                    #   useConfirm, useInlineEdit, useLocale, useTheme
 │       ├── api/             # client.ts — typed api object
 │       ├── styles/          # _variables.scss with CSS custom properties
 │       └── router.ts
@@ -126,6 +127,7 @@ Key invariants:
 - **Application services** receive plain data arguments (never Hono `Context`) so they are testable without HTTP.
 - **Routes** map request → service call → response. No business logic.
 - **Middleware** `auth.ts` sets `c.get('user')`; `admin.ts` checks `user.isAdmin`. Admin routes stack both.
+- **`middleware/securityHeaders.ts`** picks the header set from what the connection can carry, not from `NODE_ENV`: `Cross-Origin-Opener-Policy`, `Strict-Transport-Security` and `Origin-Agent-Cluster` are sent only over TLS, because a browser on a plain-HTTP origin rejects them and says so in the console. Same reasoning as the session cookie's `Secure` attribute — `isSecureRequest()` decides both.
 - **`routes/spa.ts`** serves the built client and owns the cache policy that keeps a deploy from being half-applied in a browser: the shell is `no-store` (its name never changes, so it must always be revalidated), `/assets/*` is `immutable` for a year (content-hashed, so a change is a new URL). It also 404s any unmatched `/api/*` instead of letting the HTML fallback answer it with a 200.
 
 ---
@@ -196,8 +198,8 @@ If any record is rejected (duplicate name, missing foreign key), the whole impor
 
 - **`api/client.ts`**: single typed `api` object with namespaced groups (`api.auth.*`, `api.reservations.*`, `api.admin.*`, etc.). All components import from this object.
 - **`composables/useAsyncOp.ts`**: wraps async calls with `loading` ref and toast error handling.
-- **`composables/usePageData.ts`**: loads all page data in parallel (`Promise.all`), exposes mutation helpers.
-- **`router.ts` guard**: calls `GET /api/auth/config`, caches result in module scope, clears on login/logout. Redirects unauthenticated users to `/login` (or `/setup` if no admin exists).
+- **`composables/useAuthConfig.ts`**: the session — `username`, `isAdmin`, `isAuthenticated` — held once for the whole app. `ensureAuthConfig()` fetches `GET /api/auth/config` only when it has to and shares one in-flight request between concurrent callers; `setAuthConfig()` adopts the session a login, setup or profile-rename reply already described, so those cost no request at all. **The router guard is the only place that fetches it**; `App.vue` and the pages read it. They each used to ask for themselves, which cost two round-trips per navigation and made a cold login screen answer 401 twice in the console.
+- **`router.ts` guard**: calls `ensureAuthConfig()`, and skips even that on `/login` and `/setup` — a route an anonymous visitor is allowed to see must not ask a question only 401 can answer. Redirects unauthenticated users to `/login` (or `/setup` if no admin exists).
 - **Theming**: CSS custom properties defined in `styles/_variables.scss`; theme switching via `document.documentElement.setAttribute('data-theme', theme)`.
 - **Dead sessions**: a 401 from any route other than `/api/auth/*` becomes `SessionExpiredError`, and the handler the router installs clears the cached config and returns to `/login`. Pages must never render a refused request as zeros — `reportError` in `useAsyncOp.ts` is the one place that turns a caught error into a message.
 - **Stale tabs**: an unmatched `/api/*` comes back as `Unknown API endpoint`, which `api/client.ts` turns into `StaleClientError` and `useAsyncOp` reports as "reload the page". This is how a tab left open across a route-renaming deploy tells on itself instead of showing an unactionable error.

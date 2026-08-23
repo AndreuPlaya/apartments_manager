@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { api } from '../../api/client'
-import { setCachedConfig } from '../../router'
+import { setAuthConfig } from '../../composables/useAuthConfig'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -18,7 +18,7 @@ async function login() {
   loading.value = true
   try {
     const res = await api.auth.login({ username: username.value, password: password.value })
-    setCachedConfig({ ok: true, is_admin: res.is_admin, username: res.username })
+    setAuthConfig({ username: res.username, isAdmin: res.is_admin })
     router.push('/')
   } catch (e: unknown) {
     if (e instanceof Error) errorMsg.value = e.message

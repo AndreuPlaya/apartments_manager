@@ -1,11 +1,11 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
-import { secureHeaders } from 'hono/secure-headers'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { importLegacyJson } from './infrastructure/importJson.js'
 import { ensureSecretKey, isFirstRun } from './infrastructure/settings.js'
+import { securityHeaders } from './middleware/securityHeaders.js'
 import adminRoutes from './routes/admin.js'
 import authRoutes from './routes/auth.js'
 import editorRoutes from './routes/editor.js'
@@ -22,7 +22,7 @@ if (migration.imported) {
 
 const app = new Hono()
 
-app.use('*', secureHeaders())
+app.use('*', securityHeaders)
 app.use('/api/*', bodyLimit({ maxSize: 512 * 1024 }))
 
 // Liveness probe: unauthenticated, and answers before setup is complete so a

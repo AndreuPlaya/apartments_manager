@@ -1,32 +1,18 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
 import AppNav from './shared/AppNav.vue'
 import ToastContainer from './shared/ToastContainer.vue'
 import ConfirmModal from './shared/ConfirmModal.vue'
-import { api } from './api/client'
+import { useAuthConfig } from './composables/useAuthConfig'
 
-const route = useRoute()
-const username = ref('')
-const isAdmin = ref(false)
-const showNav = ref(false)
-
-async function loadConfig() {
-  const cfg = await api.auth.config()
-  if (cfg.ok) {
-    username.value = cfg.username
-    isAdmin.value = cfg.is_admin
-    showNav.value = true
-  } else {
-    showNav.value = false
-  }
-}
-
-watch(() => route.path, loadConfig, { immediate: true })
+// The nav follows the session, not the route. The router guard has already
+// resolved the session before any authenticated page renders, and the login
+// screen leaves it null — so there is nothing here left to fetch. Watching
+// `route.path` instead cost a request per navigation, and two on a cold load.
+const { username, isAdmin, isAuthenticated } = useAuthConfig()
 </script>
 
 <template>
-  <AppNav v-if="showNav" :username="username" :is-admin="isAdmin" />
+  <AppNav v-if="isAuthenticated" :username="username" :is-admin="isAdmin" />
   <main style="padding: 1.25rem 0">
     <RouterView />
   </main>

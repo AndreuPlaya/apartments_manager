@@ -1,18 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import type { AuthConfig } from './api/client'
 import { api, setSessionExpiredHandler } from './api/client'
+import { clearAuthConfig, ensureAuthConfig } from './composables/useAuthConfig'
 import { useToast } from './composables/useToast'
 import { i18n } from './i18n'
-
-let cachedConfig: (AuthConfig & { ok: true }) | null = null
-
-export function clearCachedConfig() {
-  cachedConfig = null
-}
-
-export function setCachedConfig(cfg: AuthConfig & { ok: true }) {
-  cachedConfig = cfg
-}
 
 const router = createRouter({
   history: createWebHistory(),
@@ -59,19 +49,16 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
-  // Public routes: always allow
+  // Public routes: always allow, and never ask about a session an anonymous
+  // visitor cannot have — that request could only ever answer 401.
   if (to.path === '/login' || to.path === '/setup') return true
 
-  // Fetch auth config if not cached
-  if (!cachedConfig) {
-    const cfg = await api.auth.config()
-    if (!cfg.ok) {
-      return (await api.auth.setupRequired()) ? '/setup' : '/login'
-    }
-    cachedConfig = cfg
+  const session = await ensureAuthConfig()
+  if (!session) {
+    return (await api.auth.setupRequired()) ? '/setup' : '/login'
   }
 
-  if (to.meta.adminOnly && !cachedConfig.is_admin) return '/'
+  if (to.meta.adminOnly && !session.isAdmin) return '/'
   return true
 })
 
@@ -83,7 +70,7 @@ router.beforeEach(async (to) => {
  * allowed to fill.
  */
 setSessionExpiredHandler(() => {
-  clearCachedConfig()
+  clearAuthConfig()
   if (router.currentRoute.value.path !== '/login') {
     useToast().error(i18n.global.t('errors.sessionExpired'))
     void router.replace('/login')

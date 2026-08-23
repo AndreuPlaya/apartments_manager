@@ -4,7 +4,7 @@ import { useRoute, useRouter, RouterLink } from 'vue-router'
 import AppIcon from './AppIcon.vue'
 import { useI18n } from 'vue-i18n'
 import { api } from '../api/client'
-import { clearCachedConfig } from '../router'
+import { clearAuthConfig } from '../composables/useAuthConfig'
 import { useToast } from '../composables/useToast'
 
 const props = defineProps<{
@@ -31,7 +31,7 @@ watch(() => route.path, () => { mobileOpen.value = false })
 async function logout() {
   try {
     await api.auth.logout()
-    clearCachedConfig()
+    clearAuthConfig()
     router.push('/login')
   } catch {
     error(t('auth.logoutFailed'))
