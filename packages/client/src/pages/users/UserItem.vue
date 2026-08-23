@@ -1,23 +1,33 @@
 <script setup lang="ts">
-import { ref, nextTick } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { UserItem as UserData } from '../../api/client'
+import type { UserItem as UserData, UserPatch } from '../../api/client'
 import { useInlineEdit } from '../../composables/useInlineEdit'
 import BaseItem from '../../shared/BaseItem.vue'
 import TextInput from '../../shared/fields/TextInput.vue'
+import SelectInput from '../../shared/fields/SelectInput.vue'
 import CheckboxInput from '../../shared/fields/CheckboxInput.vue'
 
 const { t } = useI18n()
 
 const props = defineProps<{
   user: UserData
+  /** The row belonging to whoever is looking at it. Its lockout controls are read-only. */
+  isSelf?: boolean
   loading?: boolean
 }>()
 
 const emit = defineEmits<{
-  update: [user: UserData, patch: { username?: string; full_name?: string; enabled?: boolean; password?: string }]
+  update: [user: UserData, patch: UserPatch]
   delete: [user: UserData]
 }>()
+
+const roleOptions = computed(() => [
+  { value: 'admin', label: t('users.adminRole') },
+  { value: 'employee', label: t('users.employeeRole') },
+])
+
+const role = computed(() => (props.user.isAdmin ? 'admin' : 'employee'))
 
 // Password field is kept raw: it shows '••••••••' as display and starts with an empty draft
 const passwordRef = ref<HTMLInputElement | null>(null)
@@ -33,14 +43,15 @@ function commitPassword() {
 
 <template>
   <BaseItem
-    :col-span="5"
+    :col-span="6"
     :loading="loading"
-    :can-delete="!user.isAdmin"
+    :can-delete="!isSelf"
     @delete="emit('delete', user)"
   >
     <template #summary>
       <td>{{ user.username }}</td>
       <td>{{ user.full_name }}</td>
+      <td class="text-muted">{{ user.email || '—' }}</td>
       <td>
         <span :class="['badge', user.isAdmin ? 'badge--admin' : '']">
           {{ user.isAdmin ? t('users.adminRole') : t('users.employeeRole') }}
@@ -73,6 +84,16 @@ function commitPassword() {
             @update:model-value="val => val && emit('update', user, { username: val })"
           />
 
+          <!-- Unlike the fields around it, an empty value is meaningful here: it
+               removes the address. -->
+          <TextInput
+            :text="t('users.email')"
+            :model-value="user.email ?? ''"
+            :placeholder="t('users.emailPlaceholder')"
+            autocomplete="off"
+            @update:model-value="val => emit('update', user, { email: val })"
+          />
+
           <!-- Password: kept raw — display is always '••••••••', draft always starts empty -->
           <div
             :class="['detail-field', passwordEditing === 'password' && 'detail-field--editing']"
@@ -95,10 +116,24 @@ function commitPassword() {
             />
           </div>
 
+          <!--
+            Role and the login switch are the two edits that can lock somebody
+            out, so on your own row they are shown and not offered. The server
+            refuses them either way — this only saves the operator a toast that
+            reads like a fault.
+          -->
+          <SelectInput
+            :text="t('users.roleCol')"
+            :model-value="role"
+            :options="roleOptions"
+            :rights="!isSelf"
+            @update:model-value="val => emit('update', user, { isAdmin: val === 'admin' })"
+          />
+
           <CheckboxInput
-            v-if="!user.isAdmin"
             :text="t('users.enabledLogin')"
             :model-value="user.enabled"
+            :rights="!isSelf"
             @update:model-value="emit('update', user, { enabled: $event })"
           />
 

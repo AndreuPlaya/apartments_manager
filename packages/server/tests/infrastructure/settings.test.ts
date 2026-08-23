@@ -116,6 +116,12 @@ describe('findUser', () => {
     }
   })
 
+  it('matches an admin whatever case it is typed in, returning the stored spelling', () => {
+    const result = findUser('  ADMIN ')
+    expect(result?.type).toBe('admin')
+    if (result?.type === 'admin') expect(result.username).toBe('admin')
+  })
+
   it('returns null for unknown username', () => {
     expect(findUser('nobody')).toBeNull()
   })

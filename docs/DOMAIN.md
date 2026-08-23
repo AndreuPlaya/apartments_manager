@@ -242,14 +242,41 @@ questions.
   lowercased — while the spelling the user chose is what gets stored and shown.
   Accounts migrated from the old app were capitalized, so comparing the
   normalized form makes the spelling irrelevant.
-- **B27 — A disabled employee account cannot log in** and is told so
-  (`Account disabled`) rather than given the generic `Invalid credentials`. The
-  check applies to `users` only; an admin's `enabled` flag is not consulted at
-  login.
+- **B27 — A disabled account cannot log in** and is told so (`Account
+  disabled`) rather than given the generic `Invalid credentials`. Admins and
+  employees alike: `enabled` is required on a user record and optional on an
+  admin one, so the test is against `false` — an admin record written before the
+  flag existed is enabled. A disabled admin used to pass the login check and get
+  refused one request later by `authMiddleware`, which reads as a broken session
+  rather than as the lockout it is.
 - **B28 — First run.** Until an admin exists the API reports a setup state and
   the router sends the user to `/setup`, the only way to create the first admin.
 - **B29 — Status override is admin-only** (B4) — the one four-role rule already
   live, because the lifecycle needed it.
+- **B30 — A role changes in place.** `PATCH /api/admin/users/:id` with `isAdmin`
+  moves the account between `admin_users` and `users`, keeping its password hash,
+  name and email: promoting somebody is not a delete plus a create, which would
+  need a password only its owner knows. The bucket key travels with the role
+  (username for an admin, UUID for an employee), so **the reply carries a new
+  `id`** and the caller has to adopt it. The account's own session stops working
+  at its next request — `authMiddleware` compares the JWT's `isAdmin` against the
+  bucket the username now lives in, so widened reach is never granted on an old
+  claim.
+- **B31 — Deleting a user removes it.** It used to set `enabled = false` and
+  report success, which left a row nobody could ever clear — the disable flag
+  already does that, and reversibly. Nothing in the database references a user
+  (reservations reference guests) and the audit log keeps the username as text,
+  so what somebody did outlives their account.
+- **B32 — Nobody can lock themselves out.** An admin may not disable, demote or
+  delete their own account (403), and no edit may leave zero enabled admins
+  (409). Zero is unrecoverable: `isFirstRun()` reopens `/setup` only when the
+  bucket is *empty*, so a full portfolio behind one disabled admin is a locked
+  door with no support desk behind it.
+- **B33 — A user's email is optional, validated and unique.** Blank means "not
+  provided" rather than an empty string stored, and the address is compared
+  case-insensitively across both buckets. Unique because it is where a password
+  recovery or a second factor will be sent: an address naming two accounts names
+  none. Nothing sends mail yet — the field is the groundwork.
 
 ---
 

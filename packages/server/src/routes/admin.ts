@@ -205,7 +205,9 @@ adminRoutes.patch('/api/admin/users/:id', writeLimiter, async (c) => {
   try {
     const id = c.req.param('id')
     const body = await c.req.json<UpdateUserRequest>()
-    const result = await updateUser(id, body)
+    // The acting admin goes in so the service can refuse the two edits that
+    // lock its own author out: disabling or demoting yourself.
+    const result = await updateUser(id, body, c.get('user'))
     logAudit({ timestamp: new Date().toISOString(), username: c.get('user').username, isAdmin: true, action: 'update', resource: 'user', resourceId: id })
     return c.json(result)
   } catch (err) { return handleError(err, c) }
@@ -214,7 +216,7 @@ adminRoutes.patch('/api/admin/users/:id', writeLimiter, async (c) => {
 adminRoutes.delete('/api/admin/users/:id', writeLimiter, (c) => {
   try {
     const id = c.req.param('id')
-    deleteUser(id)
+    deleteUser(id, c.get('user'))
     logAudit({ timestamp: new Date().toISOString(), username: c.get('user').username, isAdmin: true, action: 'delete', resource: 'user', resourceId: id })
     return c.json({ ok: true })
   } catch (err) { return handleError(err, c) }

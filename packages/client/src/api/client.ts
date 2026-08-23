@@ -69,8 +69,24 @@ export interface UserItem {
   id: string
   username: string
   full_name: string
+  /** Absent until somebody fills it in; the address a second factor will use. */
+  email?: string
   isAdmin: boolean
   enabled: boolean
+}
+
+/**
+ * What one edit of a user account can change. `isAdmin` moves the account
+ * between the server's two buckets, so the reply carries a *different* `id` —
+ * see `UsersTab.updateField`.
+ */
+export interface UserPatch {
+  username?: string
+  password?: string
+  full_name?: string
+  email?: string
+  enabled?: boolean
+  isAdmin?: boolean
 }
 
 export interface MonthlyOccupancy {
@@ -278,10 +294,9 @@ export const api = {
 
   users: {
     list: () => request<UserItem[]>('/api/admin/users'),
-    create: (body: { username: string; password: string; full_name: string; isAdmin: boolean }) =>
+    create: (body: { username: string; password: string; full_name: string; isAdmin: boolean; email?: string }) =>
       json<UserItem>('/api/admin/users', 'POST', body),
-    update: (id: string, body: { username?: string; password?: string; full_name?: string; enabled?: boolean }) =>
-      json<UserItem>(`/api/admin/users/${id}`, 'PATCH', body),
+    update: (id: string, body: UserPatch) => json<UserItem>(`/api/admin/users/${id}`, 'PATCH', body),
     delete: (id: string) => request<void>(`/api/admin/users/${id}`, { method: 'DELETE' }),
   },
 

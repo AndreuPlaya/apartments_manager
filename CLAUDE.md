@@ -142,6 +142,8 @@ Two user types in `settings.json`:
 
 Two roles are not enough for real use; `docs/ACCESS_LEVELS.md` designs four (`admin`, `manager`, `reception`, `viewer`) and is not yet implemented.
 
+`userService.ts` reads and writes both buckets through one flat `Account` shape (`readAccount` / `writeAccount`), which is what makes a role change expressible: promoting an employee is the same account written to the other bucket, password hash and all. The key travels with the role — username for an admin, UUID for an employee — so `PATCH /api/admin/users/:id` can answer with a **different `id`** than it was called with, and the client reloads rather than patching the row in place. The rules that screen depends on are `B30`–`B33` in `docs/DOMAIN.md`: no admin can disable, demote or delete their own account, no edit may leave zero enabled admins, delete is a real delete, and a user's email is optional but unique because 2FA will be delivered to it.
+
 First-run flow: `ensureSecretKey()` generates the secret on startup. If no admin exists, the API redirects to setup state; the Vue router guard sends the user to `/setup`.
 
 ---

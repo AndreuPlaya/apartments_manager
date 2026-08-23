@@ -133,6 +133,7 @@ export interface CreateUserRequest {
   password: string
   full_name: string
   isAdmin: boolean
+  email?: string
 }
 
 export interface UpdateUserRequest {
@@ -140,6 +141,9 @@ export interface UpdateUserRequest {
   password?: string
   full_name?: string
   enabled?: boolean
+  email?: string
+  /** Moves the account between the two buckets — see `writeAccount`. */
+  isAdmin?: boolean
 }
 
 export interface MonthlyOccupancy {
